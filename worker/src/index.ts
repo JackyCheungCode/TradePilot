@@ -6,6 +6,8 @@ import { handleTranslation } from "./routes/translation";
 import { handleSearchExclusions } from "./routes/search-exclusions";
 import { LeadDiscoveryWorkflow } from "./workflows/lead-discovery";
 import { ContactEnrichmentWorkflow } from "./workflows/contact-enrichment";
+import { FacebookDiscoveryWorkflow } from "./workflows/facebook-discovery";
+import { handleFacebookDiscovery } from "./routes/facebook-discovery";
 
 export interface WorkerEnv {
  ASSETS: { fetch(request: Request): Promise<Response> };
@@ -16,6 +18,7 @@ export interface WorkerEnv {
  DEEPL_API_KEY?: string;
  SERPER_API_KEY?: string;
  SERPAPI_API_KEY?: string;
+ APIFY_API_TOKEN?: string;
  CLOUDFLARE_API_TOKEN?: string;
  CLOUDFLARE_ACCOUNT_ID?: string;
  CLOUDFLARE_WORKER_NAME?: string;
@@ -23,9 +26,10 @@ export interface WorkerEnv {
  OVERPASS_API_URL?: string;
  LEAD_DISCOVERY_WORKFLOW: { create(options: { id: string; params: { runId: string; ownerId: string; input: DiscoveryRunInput } }): Promise<{ id: string }> };
  CONTACT_ENRICHMENT_WORKFLOW: { create(options:{id:string;params:{jobId:string;ownerId:string;recordIds:string[]}}):Promise<{id:string}> };
+ FACEBOOK_DISCOVERY_WORKFLOW: { create(options:{id:string;params:{runId:string;ownerId:string;input:import("./routes/facebook-discovery").FacebookInput}}):Promise<{id:string}> };
 }
 
-export { LeadDiscoveryWorkflow, ContactEnrichmentWorkflow };
+export { LeadDiscoveryWorkflow, ContactEnrichmentWorkflow, FacebookDiscoveryWorkflow };
 
 export default {
  async fetch(request: Request, env: WorkerEnv): Promise<Response> {
@@ -35,6 +39,7 @@ export default {
    if (url.pathname === "/api/v1/settings/search-exclusions") return await handleSearchExclusions(request, env);
    if (url.pathname.startsWith("/api/v1/settings/")) return await handleSettings(request, env);
    if (url.pathname.startsWith("/api/v1/discovery/translate")) return await handleTranslation(request, env);
+   if (url.pathname === "/api/v1/facebook-discovery-runs" && request.method === "POST") return await handleFacebookDiscovery(request, env);
    if (url.pathname === "/api/v1/search-discovery-runs" && request.method === "POST") { const { handleSearchDiscovery } = await import("./routes/search-discovery"); return await handleSearchDiscovery(request, env); }
    if (url.pathname.startsWith("/api/v1/discovery-runs") || url.pathname.startsWith("/api/v1/discovery-records") || url.pathname.startsWith("/api/v1/discovery-contact-enrichments") || url.pathname === "/api/v1/leads") return await handleDiscovery(request, env);
    if (url.pathname.startsWith("/api/")) return errorResponse(request,"NOT_FOUND","The requested API endpoint does not exist.",404);

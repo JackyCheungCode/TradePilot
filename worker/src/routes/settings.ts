@@ -8,13 +8,14 @@ interface SettingsEnv {
   DEEPL_API_KEY?: string;
   SERPER_API_KEY?: string;
   SERPAPI_API_KEY?: string;
+  APIFY_API_TOKEN?: string;
   CLOUDFLARE_API_TOKEN?: string;
   CLOUDFLARE_ACCOUNT_ID?: string;
   CLOUDFLARE_WORKER_NAME?: string;
   AI?: { run(model:string,input:Record<string,unknown>): Promise<unknown> };
 }
-type ServiceKey = "cloudflare" | "supabase" | "googleMaps" | "deepl" | "serper" | "serpapi";
-type CredentialBody = { cloudflareApiToken?: string; supabaseServiceRoleKey?: string; googleMapsApiKey?: string; deeplApiKey?: string; serperApiKey?: string; serpapiApiKey?: string };
+type ServiceKey = "cloudflare" | "supabase" | "googleMaps" | "deepl" | "serper" | "serpapi" | "apify";
+type CredentialBody = { cloudflareApiToken?: string; supabaseServiceRoleKey?: string; googleMapsApiKey?: string; deeplApiKey?: string; serperApiKey?: string; serpapiApiKey?: string; apifyApiToken?: string };
 const secretNames: Record<ServiceKey, string> = {
   cloudflare: "CLOUDFLARE_API_TOKEN",
   supabase: "SUPABASE_SERVICE_ROLE_KEY",
@@ -22,6 +23,7 @@ const secretNames: Record<ServiceKey, string> = {
   deepl: "DEEPL_API_KEY",
   serper: "SERPER_API_KEY",
   serpapi: "SERPAPI_API_KEY",
+  apify: "APIFY_API_TOKEN",
 };
 const bodyFields: Record<ServiceKey, keyof CredentialBody> = {
   cloudflare: "cloudflareApiToken",
@@ -30,6 +32,7 @@ const bodyFields: Record<ServiceKey, keyof CredentialBody> = {
   deepl: "deeplApiKey",
   serper: "serperApiKey",
   serpapi: "serpapiApiKey",
+  apify: "apifyApiToken",
 };
 
 async function authenticated(request: Request, env: SettingsEnv): Promise<boolean> {
@@ -75,7 +78,7 @@ async function saveOneSecret(service: ServiceKey, value: string, env: SettingsEn
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ name: secretNames[service], type: "secret_text", text: value }),
   });
-  return `${service === "cloudflare" ? "Cloudflare" : service === "supabase" ? "Supabase" : service === "googleMaps" ? "Google Maps" : service === "deepl" ? "DeepL" : service === "serper" ? "Serper" : "SerpApi"} 密钥已单独保存至 Cloudflare Worker Secrets。`;
+  return `${service === "cloudflare" ? "Cloudflare" : service === "supabase" ? "Supabase" : service === "googleMaps" ? "Google Maps" : service === "deepl" ? "DeepL" : service === "serper" ? "Serper" : service === "serpapi" ? "SerpApi" : "Apify"} 密钥已单独保存至 Cloudflare Worker Secrets。`;
 }
 
 async function testOneService(service: ServiceKey, env: SettingsEnv) {
@@ -101,6 +104,10 @@ async function testOneService(service: ServiceKey, env: SettingsEnv) {
       const body = await response.json() as { organic?: unknown[] };
       return { ok: true, message: "Serper API 可用 · 已返回 " + (body.organic?.length ?? 0) + " 条测试结果（消耗 1 次搜索额度）" };
     } catch { return { ok: false, message: "无法连接 Serper API" }; }
+  }
+  if (service === "apify") {
+    if (!env.APIFY_API_TOKEN) return { ok: false, message: "尚未配置" };
+    try { const response = await fetch("https://api.apify.com/v2/users/me?token=" + encodeURIComponent(env.APIFY_API_TOKEN)); if (!response.ok) return { ok: false, message: "Apify API 请求失败（HTTP " + response.status + "），请检查 Token 和账户状态" }; const body = await response.json() as { data?: { username?: string } }; return { ok: true, message: "Apify API 可用" + (body.data?.username ? " · 账户 " + body.data.username : "") }; } catch { return { ok: false, message: "无法连接 Apify API" }; }
   }
   if (service === "serpapi") {
     if (!env.SERPAPI_API_KEY) return { ok: false, message: "尚未配置" };
@@ -212,6 +219,7 @@ export async function handleSettings(request: Request, env: SettingsEnv): Promis
       deepl: Boolean(env.DEEPL_API_KEY),
       serper: Boolean(env.SERPER_API_KEY),
       serpapi: Boolean(env.SERPAPI_API_KEY),
+      apify: Boolean(env.APIFY_API_TOKEN),
     });
   }
 
