@@ -47,7 +47,7 @@ export function mapBusinessTypeOsmTags(ids: string[]) {
   for (const option of BUSINESS_TYPE_OPTIONS) if (selected.has(option.id)) {
     for (const tag of option.osmTags) unique.set(tag.key + "=" + tag.value, { ...tag, match: "primary" });
   }
-  return [...unique.entries()].map(([key, tag]) => ({
+  return [...unique.values()].map((tag) => ({
     key: tag.key, value: tag.value, label: tag.label, match: tag.match, reason: tag.reason,
   }));
 }
