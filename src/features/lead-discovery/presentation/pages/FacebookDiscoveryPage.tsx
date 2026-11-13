@@ -1,7 +1,7 @@
 import { useEffect,useState } from "react";
 import { Activity,ArrowRight,Facebook,LoaderCircle,Search,SlidersHorizontal,ChevronDown,Check,Building2,UserRound,MessageSquareText,Users,Video,CalendarDays } from "lucide-react";
 import { toast } from "sonner";
-import { Badge,Button,Card,CardContent,CardHeader,CardTitle,Input,Popover,PopoverContent,PopoverTrigger } from "@/shared/ui/primitives";
+import { Badge,Button,Card,CardContent,CardDescription,CardHeader,CardTitle,Input,Popover,PopoverContent,PopoverTrigger } from "@/shared/ui/primitives";
 import { CountrySelect } from "../components/CountrySelect";
 import { RegionCityPicker } from "../components/RegionCityPicker";
 import { facebookDiscoveryApi,discoveryApi } from "../../infrastructure/discovery-api";
@@ -33,6 +33,6 @@ export function FacebookDiscoveryPage(){
     <div className="flex flex-wrap items-center gap-3"><Button onClick={()=>void start()} disabled={busy||running||!selected.length}>{busy||running?<LoaderCircle className="h-4 w-4 animate-spin"/>:<Activity className="h-4 w-4"/>}开始 Facebook 搜索</Button><span className="text-xs text-muted-foreground">仅处理公开可访问内容；不使用私人群组或个人登录 Cookie。</span></div>
    </CardContent></Card>
    {run&&<Card><CardHeader><div className="flex flex-wrap items-center justify-between gap-3"><div><CardDescription>本次任务</CardDescription><CardTitle className="font-mono text-base">{run.taskCode??run.id}</CardTitle></div><Badge variant={run.status==="completed"?"success":run.status==="failed"?"outline":"secondary"}>{({queued:"排队中",running:"执行中",completed:"已完成",partial:"部分完成",failed:"失败",cancelled:"已取消"} as Record<string,string>)[run.status]??run.status}</Badge></div></CardHeader><CardContent className="space-y-3"><div className="h-2 overflow-hidden rounded-full bg-muted"><div className="h-full bg-primary transition-all duration-500" style={{width:run.progress+"%"}}/></div><div className="flex flex-wrap justify-between gap-2 text-xs text-muted-foreground"><span>{run.message}</span><span>{run.progress}% · {run.discoveredCount} 条发现</span></div><div className="flex flex-wrap gap-2"><Button variant="outline" size="sm" onClick={()=>{window.location.href="/lead-discovery/results?runId="+encodeURIComponent(run.id);}}>查看搜索结果<ArrowRight className="h-4 w-4"/></Button><Button variant="ghost" size="sm" onClick={()=>{window.location.href="/lead-discovery/tasks";}}>任务执行中心</Button></div>{logs.length>0&&<div className="max-h-64 space-y-1 overflow-auto rounded-md bg-zinc-950 p-3 font-mono text-xs">{logs.map((item,index)=><p key={item.id??index} className={levelClass[item.level]}>{new Date(item.createdAt).toLocaleTimeString()} · {item.message}</p>)}</div>}</CardContent></Card>}
-  </div></div>
+  </div>
  </div>;
 }
