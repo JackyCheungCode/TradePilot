@@ -120,7 +120,7 @@ export function IntegrationsSettingsPage() {
         <CardContent>
           <form className="space-y-6" onSubmit={save}>
             {fields.map((field, index) => <div key={field.id} className="space-y-2">
-              <div className="flex items-center justify-between gap-3"><label htmlFor={field.id} className="text-sm font-medium">{field.label}</label>{status?.[field.id === "googleMaps" ? "googleMaps" : field.id] && <Badge variant="success">已安全保存</Badge>}</div>
+              <div className="flex items-center justify-between gap-3"><label htmlFor={field.id} className="text-sm font-medium">{field.label}</label></div>
               <div className="relative">
                 <Input id={field.id} type={show[field.id] ? "text" : "password"} autoComplete="new-password" value={field.value} onChange={(event) => field.set(event.target.value)} placeholder={field.placeholder} className="pr-12 font-mono text-sm" />
                 <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1" onClick={() => setShow((current) => ({ ...current, [field.id]: !current[field.id] }))} aria-label={show[field.id] ? "隐藏密钥" : "显示密钥"}>{show[field.id] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button>
