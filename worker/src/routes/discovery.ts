@@ -171,7 +171,12 @@ export async function handleDiscovery(request: Request, env: DiscoveryEnv): Prom
     });
     const run = rows[0];
     await log(env, run.id, userId, "info", "任务已创建，准备启动两个数据源");
-    await env.LEAD_DISCOVERY_WORKFLOW.create({ id: run.id, params: { runId: run.id, ownerId: userId, input } });
+    try {
+      await env.LEAD_DISCOVERY_WORKFLOW.create({ id: run.id, params: { runId: run.id, ownerId: userId, input } });
+    } catch (error) {
+      await markRunFailed(env, run.id, userId, error);
+      return errorResponse(request, "WORKFLOW_START_FAILED", "任务创建成功，但后台工作流启动失败。", 503);
+    }
     return successResponse(request, { id: run.id, status: "queued", progress: 0, discoveredCount: 0, createdLeadCount: 0, message: "任务已排队" }, 202);
   }
   const match = url.pathname.match(/^\/api\/v1\/discovery-runs\/([0-9a-f-]+)$/i);
