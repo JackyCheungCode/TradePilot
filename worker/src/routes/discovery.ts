@@ -6,10 +6,10 @@ export interface DiscoveryEnv {
   SUPABASE_ANON_KEY: string;
   SUPABASE_SERVICE_ROLE_KEY: string;
   GOOGLE_MAPS_API_KEY?: string;
-  LEAD_DISCOVERY_WORKFLOW: { create(options: { id: string; params: { runId: string; ownerId: string; input: DiscoveryRunInput } }): Promise<{ id: string }> };
+  LEAD_DISCOVERY_WORKFLOW: { create(options: { id: string; params: { runId: string; ownerId: string; input: DiscoveryDiscoveryRunInput } }): Promise<{ id: string }> };
   OVERPASS_API_URL?: string;
 }
-export interface DiscoveryRunInput { countries: string[]; query: string; limitPerCountry: number; }
+export interface DiscoveryDiscoveryRunInput { countries: string[]; query: string; limitPerCountry: number; }
 interface OSMElement { type: string; id: number; lat?: number; lon?: number; center?: { lat: number; lon: number }; tags?: Record<string, string>; }
 interface GooglePlace { id?: string; displayName?: { text?: string }; location?: { latitude?: number; longitude?: number }; }
 type ProviderResult<T> = { ok: true; value: T } | { ok: false; error: unknown };
@@ -63,9 +63,9 @@ async function searchOSM(code: string, query: string, limit: number, env: Discov
   const pattern = terms.join("|") || ".*";
   const q = '[out:json][timeout:45];area["ISO3166-1"="' + code + '"][admin_level=2]->.a;(' +
     'nwr["name"~"' + pattern + '",i](area.a);' +
-    'nwr["shop"~"electronics|electrical|computer|mobile_phone|hardware|wholesale",i](area.a);' +
-    'nwr["office"~"company|industrial|telecommunication",i](area.a);' +
-    'nwr["craft"](area.a);nwr["industrial"](area.a););out center tags ' + Math.min(500, limit) + ';';
+    'nwr["shop"~"' + pattern + '",i](area.a);' +
+    'nwr["office"~"' + pattern + '",i](area.a);' +
+    'nwr["amenity"~"' + pattern + '",i](area.a);nwr["craft"~"' + pattern + '",i](area.a);nwr["industrial"~"' + pattern + '",i](area.a););out center tags ' + Math.min(500, limit) + ';';
   const response = await fetch(overpass, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8", "User-Agent": "TradePilot/0.1 (lead discovery)" },
@@ -90,7 +90,7 @@ async function searchGoogle(code: string, query: string, limit: number, env: Dis
   const body = await response.json() as { places?: GooglePlace[] };
   return body.places ?? [];
 }
-export async function processRun(env: DiscoveryEnv, runId: string, ownerId: string, input: DiscoveryRunInput) {
+export async function processRun(env: DiscoveryEnv, runId: string, ownerId: string, input: DiscoveryDiscoveryRunInput) {
   const totalUnits = input.countries.length * 2;
   let doneUnits = 0, discovered = 0, created = 0, googleCount = 0, osmCount = 0, failures = 0;
   await updateRun(env, runId, { status: "running", message: "正在并行查询 Google Maps 与 OpenStreetMap" });
@@ -159,8 +159,8 @@ export async function handleDiscovery(request: Request, env: DiscoveryEnv): Prom
   const userId = await authenticate(request, env);
   if (!userId) return errorResponse(request, "UNAUTHORIZED", "请先登录后再执行潜客发现。", 401);
   if (request.method === "POST" && url.pathname === "/api/v1/discovery-runs") {
-    let input: RunInput;
-    try { input = await request.json() as RunInput; } catch { return errorResponse(request, "VALIDATION_ERROR", "请求内容不是有效 JSON。", 400); }
+    let input: DiscoveryRunInput;
+    try { input = await request.json() as DiscoveryRunInput; } catch { return errorResponse(request, "VALIDATION_ERROR", "请求内容不是有效 JSON。", 400); }
     if (!Array.isArray(input.countries) || !input.countries.length || input.countries.some((code) => !/^[A-Z]{2}$/.test(code)) || !input.query?.trim() || !Number.isInteger(input.limitPerCountry) || input.limitPerCountry < 1 || input.limitPerCountry > 500) {
       return errorResponse(request, "VALIDATION_ERROR", "国家、关键词或数量参数无效。", 400);
     }
