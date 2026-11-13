@@ -24,3 +24,19 @@ export const discoveryWorkspaceApi = {
  action: (id: string, action: "remove" | "discard" | "promote", runId?: string) => request<{id:string;status:string;leadId?:string}>(`/api/v1/discovery-records/${encodeURIComponent(id)}/action`, {method:"POST",body:JSON.stringify({action,runId})}),
  listLeads: () => request<FormalLead[]>("/api/v1/leads"),
 };
+
+export interface SearchDiscoveryInput {
+ country:string; state?:string; city?:string; query:string; advancedQuery:string; limitPerCountry:number;
+ searchEngines:Array<"serper"|"serpapi">; searchTypes:Array<"web"|"shopping"|"images"|"news"|"videos"|"scholar"|"patents">;
+ searchLanguage:string; excludeCategories:string[]; originalQuery?:string; translatedQuery?:string; targetLanguage?:string;
+}
+export const searchDiscoveryApi = {
+ start: async (input:SearchDiscoveryInput) => {
+  const {data:{session}}=await getSupabaseClient().auth.getSession();
+  if(!session?.access_token)throw new Error("请先登录 TradePilot，再启动搜索任务。");
+  const response=await fetch("/api/v1/search-discovery-runs",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify(input)});
+  const raw=await response.text();let body:{data?:DiscoveryRun;error?:{message?:string}};
+  try{body=JSON.parse(raw) as typeof body;}catch{throw new Error("搜索任务接口返回了无效响应（HTTP "+response.status+"）。");}
+  if(!response.ok||!body.data)throw new Error(body.error?.message??"搜索任务创建失败。");return body.data;
+ }
+};
