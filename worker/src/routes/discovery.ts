@@ -63,10 +63,10 @@ function countryName(code: string) {
   return special[code] ?? new Intl.DisplayNames(["en"], { type: "region" }).of(code) ?? code;
 }
 function overpassLiteral(value: string) {
-  return value.replace(/\\\\/g, "\\\\\\").replace(/"/g, '\\"');
+  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }
 function overpassRegexLiteral(value: string) {
-  return overpassLiteral(value.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&"));
+  return overpassLiteral(value.replace(/[.*+?^\${}()|[\]\\]/g, "\\$&"));
 }
 async function searchOSM(code: string, tags: Array<{key:string;value:string}>, limit: number, env: DiscoveryEnv, state?: string, city?: string): Promise<OSMElement[]> {
   const overpassEndpoints = [...new Set([

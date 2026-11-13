@@ -7,7 +7,7 @@ export interface OsmTagRule {
 }
 
 const RULES: Array<{ terms: string[]; rules: OsmTagRule[] }> = [
-  { terms: ["electrical equipment", "electrical distributor", "electrical supplies", "electrical wholesaler", "electrical parts", "electrical components", "electrical"], rules: [
+  { terms: ["electrical equipment", "electrical distributor", "electrical supplies", "electrical wholesaler", "electrical parts", "electrical components"], rules: [
     { key: "shop", value: "electrical", label: "电气设备商店", match: "primary", reason: "直接对应电气用品销售分类" },
     { key: "shop", value: "trade", label: "贸易商", match: "related", reason: "覆盖未细分商品类别的贸易商，相关性较宽" },
     { key: "shop", value: "wholesale", label: "批发商", match: "related", reason: "覆盖批发经营场所，行业属性需二次核验" },
@@ -39,9 +39,10 @@ const RULES: Array<{ terms: string[]; rules: OsmTagRule[] }> = [
 ];
 
 export function mapOsmTags(query: string): OsmTagRule[] {
-  const normalized = query.normalize("NFKC").toLowerCase().replace(/[^\\p{L}\\p{N}]+/gu, " ").trim();
+  const normalized = query.normalize("NFKC").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
   if (!normalized) return [];
   const matched = RULES.filter((entry) => entry.terms.some((term) => normalized.includes(term)));
+  if (!matched.length && normalized.includes("electrical")) matched.push(RULES[0]);
   const unique = new Map<string, OsmTagRule>();
   for (const entry of matched) for (const rule of entry.rules) {
     const key = rule.key + "=" + rule.value;
