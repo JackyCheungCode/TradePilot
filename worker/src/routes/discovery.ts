@@ -15,7 +15,7 @@ interface GooglePlace { id?: string; displayName?: { text?: string }; location?:
 type ProviderResult<T> = { ok: true; value: T } | { ok: false; error: unknown };
 
 async function authenticate(request: Request, env: DiscoveryEnv): Promise<string | null> {
-  const token = request.headers.get("Authorization")?.replace(/^Bearer\\s+/i, "");
+  const token = request.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
   if (!token) return null;
   const response = await fetch(env.SUPABASE_URL + "/auth/v1/user", {
     headers: { apikey: env.SUPABASE_ANON_KEY, Authorization: "Bearer " + token },
@@ -202,7 +202,7 @@ export async function handleDiscovery(request: Request, env: DiscoveryEnv): Prom
     }
     return successResponse(request, { id: run.id, status: "queued", progress: 0, discoveredCount: 0, createdLeadCount: 0, message: "任务已排队 · " + scope }, 202);
   }
-  const match = url.pathname.match(/^\\/api\\/v1\\/discovery-runs\\/([0-9a-f-]+)$/i);
+  const match = url.pathname.match(/^\/api\/v1\/discovery-runs\/([0-9a-f-]+)$/i);
   if (request.method === "GET" && match) {
     const rows = await db<Array<Record<string, unknown>>>(env, "discovery_runs?id=eq." + match[1] + "&owner_id=eq." + userId + "&select=*");
     if (!rows[0]) return errorResponse(request, "NOT_FOUND", "找不到该发现任务。", 404);
