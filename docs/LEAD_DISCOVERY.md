@@ -11,7 +11,7 @@ TradePilot keeps one fixed navigation entry per discovery channel. Search execut
 ## Data model
 
 - `discovery_runs`: one search execution, its keyword, target geography, providers, task code, progress and logs.
-- `discovery_records`: one canonical discovered entity per owner + channel + dedupe key.
+- `discovery_entities`: shared owner-level entity identity, reusable across channels.\n- `discovery_records`: one channel-specific discovery record per owner + channel + dedupe key, linked to a shared entity identity.
 - `discovery_record_occurrences`: each task/provider/keyword occurrence, including external ID, source URL, attribution, license and raw provider metadata.
 - `leads`: formal CRM records only when `is_formal = true`; `discovery_record_id` makes promotion idempotent.
 

@@ -117,6 +117,17 @@ async function persistDiscoveryRecord(
   input: DiscoveryRunInput,
   item: { provider: DiscoveryProvider; externalId: string; name: string; countryCode: string; address?: string | null; phone?: string | null; website?: string | null; latitude?: number | null; longitude?: number | null; sourceUrl?: string | null; license?: string | null; attribution?: string | null; rawData: Record<string, unknown>; dedupeKey: string },
 ): Promise<string> {
+  const entityRows = await db<Array<{id:string}>>(env, "discovery_entities?on_conflict=owner_id,dedupe_key", {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+    body: JSON.stringify({owner_id:ownerId,entity_type:"business",display_name:item.name,dedupe_key:item.dedupeKey,attributes:{country_code:item.countryCode}}),
+  });
+  let entityId=entityRows?.[0]?.id;
+  if(!entityId){
+    const existingEntity=await db<Array<{id:string}>>(env,"discovery_entities?owner_id=eq."+ownerId+"&dedupe_key=eq."+encodeURIComponent(item.dedupeKey)+"&select=id");
+    entityId=existingEntity[0]?.id;
+  }
+  if(!entityId)throw new Error("DISCOVERY_ENTITY_UPSERT_FAILED");
   const rows = await db<Array<{ id: string }>>(env, "discovery_records?on_conflict=owner_id,channel,dedupe_key", {
     method: "POST",
     headers: { Prefer: "resolution=merge-duplicates,return=representation" },
@@ -293,7 +304,7 @@ export async function handleDiscovery(request: Request, env: DiscoveryEnv): Prom
       const existing=await db<Array<{id:string}>>(env,"leads?owner_id=eq."+userId+"&discovery_record_id=eq."+record.id+"&select=id");
       let leadId=existing?.[0]?.id;
       if(!leadId){
-        const created=await db<Array<{id:string}>>(env,"leads",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({owner_id:userId,name:record.name,country_code:record.country_code??"ZZ",address:record.address,phone:record.phone,website:record.website,latitude:record.latitude,longitude:record.longitude,status:"qualified",dedupe_key:"discovery:"+record.id,discovery_record_id:record.id,is_formal:true})});
+        const created=await db<Array<{id:string}>>(env,"leads",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({owner_id:userId,name:record.name,country_code:record.country_code??"ZZ",address:record.address,phone:record.phone,website:record.website,latitude:record.latitude,longitude:record.longitude,status:"qualified",dedupe_key:"discovery:"+record.id,discovery_record_id:record.id,entity_id:record.entity_id,is_formal:true})});
         leadId=created?.[0]?.id;
       }
       if(!leadId)throw new Error("LEAD_PROMOTION_FAILED");
