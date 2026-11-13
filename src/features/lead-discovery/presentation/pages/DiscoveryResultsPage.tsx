@@ -17,7 +17,8 @@ export function DiscoveryResultsPage(){
  const execute=async(action:"remove"|"discard"|"promote")=>{setBusy(true);try{for(const id of selected)await discoveryWorkspaceApi.action(id,action,runId);toast.success("已处理 "+selected.length+" 条记录");setSelected([]);setConfirm(null);await load();}catch(e){toast.error(e instanceof Error?e.message:"批量操作失败");}finally{setBusy(false);}};
  const toggle=(id:string,checked:boolean)=>setSelected(current=>checked?[...current,id]:current.filter(x=>x!==id));
  const providers=(r:DiscoveryRecord)=>[...new Set((r.discovery_record_occurrences??[]).map(o=>o.provider))];
- const selectedBusinessTypes=Array.isArray(task?.searchConfig?.businessTypes)?task.searchConfig.businessTypes.map(id=>BUSINESS_TYPE_OPTIONS.find(option=>option.id===String(id))?.label??String(id)):[];\n const searchTypes=Array.isArray(task?.searchConfig?.searchTypes)?task.searchConfig.searchTypes.map(String):[];
+ const selectedBusinessTypes=Array.isArray(task?.searchConfig?.businessTypes)?task.searchConfig.businessTypes.map(id=>BUSINESS_TYPE_OPTIONS.find(option=>option.id===String(id))?.label??String(id)):[];
+ const searchTypes=Array.isArray(task?.searchConfig?.searchTypes)?task.searchConfig.searchTypes.map(String):[];
  const taskFilters=task?.searchConfig?.filters&&typeof task.searchConfig.filters==="object"?task.searchConfig.filters as Record<string,unknown>:{};
  const filterLabels=[typeof taskFilters.minRating==="number"?"Google 评分 ≥ "+taskFilters.minRating:null,taskFilters.openNow===true?"仅当前营业":null,taskFilters.requireWebsite===true?"必须有官网":null,taskFilters.requirePhone===true?"必须有电话":null].filter(Boolean);
  return <div className="mx-auto w-full max-w-[1600px] space-y-6 p-5 lg:p-8">

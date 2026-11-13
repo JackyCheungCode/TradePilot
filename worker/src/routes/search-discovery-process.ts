@@ -33,7 +33,7 @@ export async function processSearchRun(env:DiscoveryEnv,run:string,owner:string,
  const cats=await db<Array<{category_key:string;domains:string[];enabled:boolean}>>(env,"search_exclusion_rules?owner_id=eq."+owner+"&select=category_key,domains,enabled");
  const selected=new Set(input.excludeCategories??cats.filter(x=>x.enabled).map(x=>x.category_key));
  const rules=[...new Set(cats.filter(x=>x.enabled&&selected.has(x.category_key)).flatMap(x=>x.domains??[]))];
- const q=[input.advancedQuery??input.query,rules.slice(0,20).map(x=>"-site:"+x.split("/")[0]).join(" ")].filter(Boolean).join(" ");
+ const q=input.advancedQuery?.trim()||input.query;
  const jobs=engines.flatMap(engine=>types.map(type=>({engine,type})));let done=0,failed=0,raw=0;const all:Array<{engine:Engine;type:Vertical;item:Result}>=[];
  await update(env,run,{status:"running",progress:1,message:"正在连接搜索引擎并执行查询"});
  await log(env,run,owner,"info","关键词："+input.query+"；实际搜索语法："+q+"；国家："+country+"；搜索类型："+types.join("、")+"；搜索引擎："+engines.join("、"));
