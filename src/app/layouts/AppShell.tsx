@@ -30,7 +30,7 @@ export function AppShell({ children, activePage, onNavigate, userEmail, onSignOu
  </div>;
 
  return <div className="flex min-h-screen bg-background text-foreground">
-  <aside className={`hidden shrink-0 overflow-hidden border-r transition-[width] duration-200 md:block ${collapsed ? "w-[76px]" : "w-64"}`}>{sidebar}</aside>
+  <aside className={`sticky top-0 hidden h-screen shrink-0 overflow-hidden border-r transition-[width] duration-200 md:block ${collapsed ? "w-[76px]" : "w-64"}`}>{sidebar}</aside>
   {mobileOpen && <div className="fixed inset-0 z-50 md:hidden"><button type="button" aria-label="关闭导航菜单" className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} /><aside className="absolute inset-y-0 left-0 w-[min(84vw,320px)] border-r shadow-xl">{sidebar}</aside></div>}
   <main className="min-w-0 flex-1">
    <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b bg-background/95 px-3 backdrop-blur md:hidden">
