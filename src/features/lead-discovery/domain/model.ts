@@ -8,7 +8,7 @@ export interface DiscoveryRun {
   message: string; createdAt?: string;
 }
 export interface DiscoveryLog { id: string; level: "info" | "success" | "warning" | "error"; message: string; createdAt: string; }
-export interface DiscoveryOccurrence { id: string; run_id: string; provider: DiscoveryProvider; keyword: string; external_id: string; source_url?: string | null; captured_at: string; run?: {task_code?: string; query?: string} | null; }
+export interface DiscoveryOccurrence { id: string; run_id: string; provider: DiscoveryProvider; keyword: string; external_id: string; source_url?: string | null; captured_at: string; is_removed?: boolean; run?: {task_code?: string; query?: string} | null; }
 export interface DiscoveryRecord {
   id: string; name: string; country_code: string | null; address: string | null; phone: string | null;
   website: string | null; latitude: number | null; longitude: number | null;

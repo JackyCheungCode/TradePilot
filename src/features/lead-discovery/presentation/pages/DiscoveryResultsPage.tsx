@@ -12,7 +12,7 @@ export function DiscoveryResultsPage(){
  const load=async()=>{setLoading(true);try{setRecords(await discoveryWorkspaceApi.listRecords(runId));}catch(e){toast.error(e instanceof Error?e.message:"读取搜索结果失败");}finally{setLoading(false);}};
  useEffect(()=>{void load();},[runId]);
  const visible=useMemo(()=>records.filter(r=>(r.status!=="removed")&&[r.name,r.address??"",r.website??"",...(r.discovery_record_occurrences??[]).map(o=>o.keyword),...(r.discovery_record_occurrences??[]).map(o=>o.provider),...(r.discovery_record_occurrences??[]).map(o=>o.run?.task_code??"")].join(" ").toLowerCase().includes(filter.toLowerCase())),[records,filter]);
- const execute=async(action:"remove"|"discard"|"promote")=>{setBusy(true);try{for(const id of selected)await discoveryWorkspaceApi.action(id,action);toast.success("已处理 "+selected.length+" 条记录");setSelected([]);setConfirm(null);await load();}catch(e){toast.error(e instanceof Error?e.message:"批量操作失败");}finally{setBusy(false);}};
+ const execute=async(action:"remove"|"discard"|"promote")=>{setBusy(true);try{for(const id of selected)await discoveryWorkspaceApi.action(id,action,runId);toast.success("已处理 "+selected.length+" 条记录");setSelected([]);setConfirm(null);await load();}catch(e){toast.error(e instanceof Error?e.message:"批量操作失败");}finally{setBusy(false);}};
  const toggle=(id:string,checked:boolean)=>setSelected(current=>checked?[...current,id]:current.filter(x=>x!==id));
  const providers=(r:DiscoveryRecord)=>[...new Set((r.discovery_record_occurrences??[]).map(o=>o.provider))];
  return <div className="mx-auto w-full max-w-[1600px] space-y-6 p-5 lg:p-8">

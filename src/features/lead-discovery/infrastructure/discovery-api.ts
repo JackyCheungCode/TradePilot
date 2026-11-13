@@ -21,6 +21,6 @@ export const discoveryApi: DiscoveryGateway = {
 export const discoveryWorkspaceApi = {
  listRuns: () => request<DiscoveryRun[]>("/api/v1/discovery-runs"),
  listRecords: (runId?: string) => request<DiscoveryRecord[]>(`/api/v1/discovery-records${runId ? "?runId="+encodeURIComponent(runId) : ""}`),
- action: (id: string, action: "remove" | "discard" | "promote") => request<{id:string;status:string;leadId?:string}>(`/api/v1/discovery-records/${encodeURIComponent(id)}/action`, {method:"POST",body:JSON.stringify({action})}),
+ action: (id: string, action: "remove" | "discard" | "promote", runId?: string) => request<{id:string;status:string;leadId?:string}>(`/api/v1/discovery-records/${encodeURIComponent(id)}/action`, {method:"POST",body:JSON.stringify({action,runId})}),
  listLeads: () => request<FormalLead[]>("/api/v1/leads"),
 };
