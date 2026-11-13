@@ -1,6 +1,6 @@
 import { errorResponse, successResponse } from "../lib/http";
 interface Env { SUPABASE_URL:string; SUPABASE_ANON_KEY:string; SUPABASE_SERVICE_ROLE_KEY:string; }
-const DEFAULTS = [
+export const DEFAULT_SEARCH_EXCLUSIONS = [
  {key:"ecommerce",label:"电商与购物平台",domains:["amazon.com","ebay.com","walmart.com","etsy.com","aliexpress.com","temu.com","shopee.com","lazada.com","taobao.com","tmall.com","jd.com","rakuten.co.jp"]},
  {key:"social",label:"社交媒体",domains:["facebook.com","instagram.com","linkedin.com","x.com","twitter.com","pinterest.com","tiktok.com"]},
  {key:"video",label:"视频平台",domains:["youtube.com","youtu.be","vimeo.com","dailymotion.com","twitch.tv","bilibili.com"]},
@@ -27,12 +27,12 @@ export async function handleSearchExclusions(request:Request,env:Env):Promise<Re
  if(request.method==="GET"){
   const rows=await db<Array<{category_key:string;category_label:string;domains:string[];enabled:boolean}>>(env,"search_exclusion_rules?owner_id=eq."+owner+"&select=category_key,category_label,domains,enabled");
   const saved=new Map((rows??[]).map(row=>[row.category_key,row]));
-  return successResponse(request,DEFAULTS.map(item=>{const row=saved.get(item.key);return {key:item.key,label:row?.category_label??item.label,domains:row?.domains??[...item.domains],enabled:row?.enabled??true};}));
+  return successResponse(request,DEFAULT_SEARCH_EXCLUSIONS.map(item=>{const row=saved.get(item.key);return {key:item.key,label:row?.category_label??item.label,domains:row?.domains??[...item.domains],enabled:row?.enabled??true};}));
  }
  if(request.method==="PUT"){
   let body:{categories?:Array<{key:string;label:string;domains:string[];enabled:boolean}>};try{body=await request.json() as typeof body;}catch{return errorResponse(request,"INVALID_JSON","请求内容格式不正确。",400);}
-  if(!Array.isArray(body.categories)||body.categories.length!==DEFAULTS.length)return errorResponse(request,"VALIDATION_ERROR","排除分类数据不完整。",400);
-  const allowed=new Set<string>(DEFAULTS.map(item=>item.key));
+  if(!Array.isArray(body.categories)||body.categories.length!==DEFAULT_SEARCH_EXCLUSIONS.length)return errorResponse(request,"VALIDATION_ERROR","排除分类数据不完整。",400);
+  const allowed=new Set<string>(DEFAULT_SEARCH_EXCLUSIONS.map(item=>item.key));
   const rows=body.categories.map(item=>{
    if(!item||!allowed.has(item.key)||typeof item.label!=="string"||item.label.trim().length<1||item.label.length>80||typeof item.enabled!=="boolean"||!Array.isArray(item.domains)||item.domains.length>300)throw new Error("INVALID_CATEGORY");
    const domains=[...new Set(item.domains.map(normalizeDomain).filter((v):v is string=>Boolean(v)))];
