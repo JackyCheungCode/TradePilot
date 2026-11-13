@@ -133,13 +133,15 @@ export async function processRun(env: DiscoveryEnv, runId: string, ownerId: stri
         Math.abs((place.location?.latitude ?? 99) - lat) < 0.001 &&
         Math.abs((place.location?.longitude ?? 99) - lon) < 0.001
       );
-      const leadRows = await db<Array<{ id: string }>>(env, "leads?on_conflict=owner_id,dedupe_key", {
+      const insertedLeads = await db<Array<{ id: string }>>(env, "leads?on_conflict=owner_id,dedupe_key", {
         method: "POST",
-        headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+        headers: { Prefer: "resolution=ignore-duplicates,return=representation" },
         body: JSON.stringify({ owner_id: ownerId, name, country_code: code, address, phone, website, latitude: lat ?? null, longitude: lon ?? null, status: "draft", dedupe_key: dedupeKey }),
       });
-      const leadId = leadRows[0]?.id;
+      const existingLeads = insertedLeads.length ? [] : await db<Array<{ id: string }>>(env, "leads?owner_id=eq." + ownerId + "&dedupe_key=eq." + encodeURIComponent(dedupeKey) + "&select=id");
+      const leadId = insertedLeads[0]?.id ?? existingLeads[0]?.id;
       if (!leadId) continue;
+      if (insertedLeads.length) created++;
       await db(env, "lead_sources?on_conflict=owner_id,provider,external_id", {
         method: "POST",
         headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
@@ -150,7 +152,6 @@ export async function processRun(env: DiscoveryEnv, runId: string, ownerId: stri
         headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
         body: JSON.stringify({ lead_id: leadId, owner_id: ownerId, provider: "google_maps", external_id: matchedGoogle.id, source_url: "https://www.google.com/maps/search/?api=1&query_place_id=" + encodeURIComponent(matchedGoogle.id), license: "Google Maps Platform Place ID", attribution: "Google Maps", metadata: {} }),
       });
-      created++;
     }
     await updateRun(env, runId, { discovered_count: discovered, created_lead_count: created, message: "已完成 " + code + " 的候选归并与草稿线索写入" });
   }
