@@ -438,6 +438,7 @@ export async function handleDiscovery(request: Request, env: DiscoveryEnv): Prom
       return successResponse(request,{id:record.id,status:"discarded"});
     }
     if(body.action==="promote"){
+      if(!["business","website","page"].includes(String(record.record_type??"business")))return errorResponse(request,"RECORD_NOT_PROMOTABLE","该对象不是企业主页或网站记录；请先关联企业主体，再转移到线索。",409);
       if(record.status==="promoted" && record.lead_id)return successResponse(request,{id:record.id,status:"promoted",leadId:record.lead_id});
       const existing=await db<Array<{id:string}>>(env,"leads?owner_id=eq."+userId+"&discovery_record_id=eq."+record.id+"&select=id");
       let leadId=existing?.[0]?.id;
