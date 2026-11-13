@@ -14,13 +14,19 @@ The following documents are mandatory:
 - [System architecture](docs/ARCHITECTURE.md)
 - [Module boundaries](docs/MODULE_BOUNDARIES.md)
 - [UI standard](docs/UI_STANDARD.md)
+- [API contracts](docs/API_CONTRACTS.md)
+- [Data and migrations](docs/DATA_AND_MIGRATIONS.md)
+- [Quality gates](docs/QUALITY_GATES.md)
 - [Development workflow](docs/DEVELOPMENT_WORKFLOW.md)
 
 ## Modularity
 TradePilot uses feature-first modules with explicit domain, application, infrastructure, and presentation boundaries. Domain rules must remain independent from React, Supabase, Cloudflare, and third-party provider SDKs.
 
+## Page approval gate
+No page, layout, navigation, form, dashboard, or user-facing business control may be created or changed without the project owner's explicit approval. A general instruction to continue development is not page approval.
+
 ## Current implementation status
-The repository is establishing its architecture and engineering standards. Application scaffolding, database schema, authentication, and automated deployment will be introduced incrementally after the foundation is reviewed and verified.
+The repository now contains the initial engineering scaffold. See [implementation status](docs/IMPLEMENTATION_STATUS.md) for completed and unverified items. No product page has been created.
 
 ## Branches
 - `main`: production baseline.
