@@ -66,9 +66,12 @@ function overpassLiteral(value: string) {
   return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }
 async function searchOSM(code: string, query: string, limit: number, env: DiscoveryEnv, state?: string, city?: string): Promise<OSMElement[]> {
-  const overpassEndpoints = env.OVERPASS_API_URL
-    ? [env.OVERPASS_API_URL]
-    : ["https://overpass-api.de/api/interpreter","https://overpass.kumi.systems/api/interpreter","https://overpass.private.coffee/api/interpreter"];
+  const overpassEndpoints = [...new Set([
+    env.OVERPASS_API_URL,
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
+    "https://overpass.private.coffee/api/interpreter",
+  ].filter((endpoint): endpoint is string => Boolean(endpoint)))];
   const safeQuery = query.normalize("NFKC").replace(/[^\p{L}\p{N}\s-]/gu, " ").trim();
   const terms = safeQuery.split(/\s+/).filter((word) => word.length > 2 && !["the", "and", "for", "with", "from"].includes(word.toLowerCase())).slice(0, 4);
   const pattern = terms.join("|") || ".*";
