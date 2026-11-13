@@ -1,4 +1,5 @@
 import { errorResponse, successResponse } from "../lib/http";
+import { buildLeadDedupeKey, normalizeBusinessName } from "../lib/deduplication";
 
 interface Env {
   SUPABASE_URL: string;
@@ -50,15 +51,6 @@ async function updateRun(env: Env, id: string, patch: Record<string, unknown>) {
     headers: { Prefer: "return=minimal" },
     body: JSON.stringify({ ...patch, updated_at: new Date().toISOString() }),
   });
-}
-function normalizeHost(value?: string) {
-  if (!value) return "";
-  try {
-    return new URL(value.startsWith("http") ? value : "https://" + value).hostname.toLowerCase().replace(/^www\./, "");
-  } catch { return ""; }
-}
-function normalizeName(value: string) {
-  return value.normalize("NFKD").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
 }
 function countryName(code: string) {
   const special: Record<string, string> = { HK: "Hong Kong", MO: "Macao", TW: "Taiwan" };
@@ -128,13 +120,10 @@ async function processRun(env: Env, runId: string, ownerId: string, input: RunIn
       const lon = item.lon ?? item.center?.lon;
       const website = tags.website ?? tags["contact:website"] ?? null;
       const phone = tags.phone ?? tags["contact:phone"] ?? null;
-      const host = normalizeHost(website);
-      const phoneKey = (phone ?? "").replace(/\D/g, "");
-      const geoKey = lat != null && lon != null ? Math.round(lat * 1000) + ":" + Math.round(lon * 1000) : "no-geo";
-      const dedupeKey = host ? "domain:" + host : phoneKey.length >= 7 ? "phone:" + phoneKey : "name:" + code + ":" + normalizeName(name) + ":" + geoKey;
+      const dedupeKey = buildLeadDedupeKey({ countryCode: code, name, website, phone, latitude: lat, longitude: lon });
       const address = [tags["addr:housenumber"], tags["addr:street"], tags["addr:city"], tags["addr:state"], tags["addr:postcode"]].filter(Boolean).join(", ") || null;
       const matchedGoogle = googleMatches.find((place) =>
-        normalizeName(place.displayName?.text ?? "") === normalizeName(name) &&
+        normalizeBusinessName(place.displayName?.text ?? "") === normalizeBusinessName(name) &&
         lat != null && lon != null &&
         Math.abs((place.location?.latitude ?? 99) - lat) < 0.001 &&
         Math.abs((place.location?.longitude ?? 99) - lon) < 0.001
