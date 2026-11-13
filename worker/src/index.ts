@@ -2,6 +2,7 @@ import { errorResponse } from "./lib/http";
 import { handleHealth } from "./routes/health";
 import { handleDiscovery, type DiscoveryRunInput } from "./routes/discovery";
 import { handleSettings } from "./routes/settings";
+import { handleTranslation } from "./routes/translation";
 import { LeadDiscoveryWorkflow } from "./workflows/lead-discovery";
 
 export interface WorkerEnv {
@@ -10,6 +11,7 @@ export interface WorkerEnv {
  SUPABASE_ANON_KEY: string;
  SUPABASE_SERVICE_ROLE_KEY: string;
  GOOGLE_MAPS_API_KEY?: string;
+ DEEPL_API_KEY?: string;
  CLOUDFLARE_API_TOKEN?: string;
  CLOUDFLARE_ACCOUNT_ID?: string;
  CLOUDFLARE_WORKER_NAME?: string;
@@ -25,6 +27,7 @@ export default {
   try {
    if (url.pathname === "/api/v1/health" && request.method === "GET") return handleHealth(request);
    if (url.pathname.startsWith("/api/v1/settings/")) return await handleSettings(request, env);
+   if (url.pathname.startsWith("/api/v1/discovery/translate")) return await handleTranslation(request, env);
    if (url.pathname.startsWith("/api/v1/discovery-runs") || url.pathname.startsWith("/api/v1/discovery-records") || url.pathname === "/api/v1/leads") return await handleDiscovery(request, env);
    if (url.pathname.startsWith("/api/")) return errorResponse(request,"NOT_FOUND","The requested API endpoint does not exist.",404);
    return env.ASSETS.fetch(request);

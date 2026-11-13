@@ -10,7 +10,24 @@ export interface DiscoveryEnv {
   OVERPASS_API_URL?: string;
 }
 export type DiscoveryProvider = "google_maps" | "openstreetmap";
-export interface DiscoveryRunInput { countries: string[]; query: string; limitPerCountry: number; providers: DiscoveryProvider[]; state?: string; city?: string; osmTags?: Array<{ key: string; value: string }>; }
+export interface DiscoveryRunInput {
+  countries: string[]; query: string; limitPerCountry: number; providers: DiscoveryProvider[];
+  state?: string; city?: string; osmTags?: Array<{ key: string; value: string }>;
+  businessTypes?: string[];
+  filters?: { minRating?: number; openNow?: boolean; requireWebsite?: boolean; requirePhone?: boolean };
+  originalQuery?: string; translatedQuery?: string; targetLanguage?: string;
+}
+const BUSINESS_TYPE_FILTERS: Record<string, { googleTypes: string[]; osmTags: Array<{key:string;value:string}> }> = {
+  distributor: { googleTypes: ["supplier", "wholesaler"], osmTags: [{key:"shop",value:"trade"},{key:"shop",value:"wholesale"}] },
+  manufacturer: { googleTypes: ["manufacturer"], osmTags: [{key:"man_made",value:"works"}] },
+  electrical_equipment: { googleTypes: ["supplier", "hardware_store"], osmTags: [{key:"shop",value:"electrical"},{key:"shop",value:"hardware"}] },
+  electronics: { googleTypes: ["electronics_store"], osmTags: [{key:"shop",value:"electronics"}] },
+  computer_network: { googleTypes: ["electronics_store","telecommunications_service_provider"], osmTags: [{key:"shop",value:"computer"},{key:"shop",value:"telecommunication"}] },
+  electrical_services: { googleTypes: ["electrician"], osmTags: [{key:"craft",value:"electrician"}] },
+  industrial_supplies: { googleTypes: ["supplier","wholesaler"], osmTags: [{key:"shop",value:"trade"},{key:"shop",value:"wholesale"}] },
+  corporate_office: { googleTypes: ["corporate_office"], osmTags: [{key:"office",value:"company"}] },
+  mobile_communications: { googleTypes: ["cell_phone_store","telecommunications_service_provider"], osmTags: [{key:"shop",value:"mobile_phone"},{key:"shop",value:"telecommunication"}] },
+};
 interface OSMElement { type: string; id: number; lat?: number; lon?: number; center?: { lat: number; lon: number }; tags?: Record<string, string>; }
 interface GooglePlace { id?: string; displayName?: { text?: string }; location?: { latitude?: number; longitude?: number }; formattedAddress?: string; nationalPhoneNumber?: string; internationalPhoneNumber?: string; websiteUri?: string; types?: string[]; rating?: number; userRatingCount?: number; businessStatus?: string; }
 type ProviderResult<T> = { ok: true; value: T } | { ok: false; error: unknown };
@@ -68,7 +85,7 @@ function overpassLiteral(value: string) {
 function overpassRegexLiteral(value: string) {
   return overpassLiteral(value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
 }
-async function searchOSM(code: string, tags: Array<{key:string;value:string}>, limit: number, env: DiscoveryEnv, state?: string, city?: string): Promise<OSMElement[]> {
+async function searchOSM(code: string, tags: Array<{key:string;value:string}>, limit: number, env: DiscoveryEnv, state?: string, city?: string, filters: DiscoveryRunInput["filters"] = {}): Promise<OSMElement[]> {
   const overpassEndpoints = [...new Set([
     env.OVERPASS_API_URL,
     "https://overpass-api.de/api/interpreter",
@@ -89,8 +106,15 @@ async function searchOSM(code: string, tags: Array<{key:string;value:string}>, l
   } else {
     scopeClauses.push(".country->.target;");
   }
-  const tagQueries = tags.map(({key,value}) => 'nwr["' + overpassLiteral(key) + '"="' + overpassLiteral(value) + '"](area.target);').join("");
-  const q = '[out:json][timeout:45];' + scopeClauses.join("") + '(' + tagQueries + ');out center tags ' + Math.min(500, limit) + ';';
+  const websiteKeys = filters.requireWebsite ? ["website", "contact:website"] : [null];
+  const phoneKeys = filters.requirePhone ? ["phone", "contact:phone"] : [null];
+  const tagQueries = tags.flatMap(({key,value}) => websiteKeys.flatMap((websiteKey) => phoneKeys.map((phoneKey) =>
+    'nwr["' + overpassLiteral(key) + '"="' + overpassLiteral(value) + '"]' +
+    (websiteKey ? '["' + websiteKey + '"]' : '') +
+    (phoneKey ? '["' + phoneKey + '"]' : '') +
+    '(area.target);'
+  ))).join("");
+  const q = '[out:json][timeout:45];' + scopeClauses.join("") + '(' + tagQueries + ');out center tags ' + Math.min(500, Math.max(limit, limit * 3)) + ';';
   const failures: string[] = [];
   for (let index = 0; index < overpassEndpoints.length; index++) {
     const endpoint = overpassEndpoints[index];
@@ -115,21 +139,49 @@ async function searchOSM(code: string, tags: Array<{key:string;value:string}>, l
   }
   throw new Error("OVERPASS_ALL_ENDPOINTS_FAILED: " + failures.join(" | "));
 }
-async function searchGoogle(code: string, query: string, limit: number, env: DiscoveryEnv, state?: string, city?: string): Promise<GooglePlace[]> {
+async function searchGoogle(
+  code: string, query: string, limit: number, env: DiscoveryEnv, state?: string, city?: string,
+  businessTypes: string[] = [], filters: DiscoveryRunInput["filters"] = {},
+): Promise<GooglePlace[]> {
   if (!env.GOOGLE_MAPS_API_KEY) throw new Error("GOOGLE_MAPS_API_KEY_NOT_CONFIGURED");
   const location = [city, state, countryName(code)].filter(Boolean).join(", ");
-  const response = await fetch("https://places.googleapis.com/v1/places:searchText", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Goog-Api-Key": env.GOOGLE_MAPS_API_KEY,
-      "X-Goog-FieldMask": "places.id,places.displayName,places.location,places.formattedAddress,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.types,places.rating,places.userRatingCount,places.businessStatus",
-    },
-    body: JSON.stringify({ textQuery: query + " in " + location, regionCode: code, maxResultCount: Math.min(20, limit) }),
-  });
-  if (!response.ok) throw new Error("GOOGLE_PLACES_" + response.status);
-  const body = await response.json() as { places?: GooglePlace[] };
-  return body.places ?? [];
+  const requestedTypes = [...new Set(businessTypes.flatMap((id) => BUSINESS_TYPE_FILTERS[id]?.googleTypes ?? []))];
+  const typeQueries: Array<string | undefined> = requestedTypes.length ? requestedTypes : [undefined];
+  const perTypeLimit = Math.max(1, Math.ceil(limit / typeQueries.length));
+  const pageSize = Math.min(20, perTypeLimit);
+  const placesById = new Map<string, GooglePlace>();
+  for (const includedType of typeQueries) {
+    let pageToken: string | undefined;
+    for (let page = 0; page < Math.ceil(perTypeLimit / 20); page++) {
+      const body: Record<string, unknown> = {
+        textQuery: query + " in " + location,
+        regionCode: code,
+        pageSize,
+      };
+      if (includedType) { body.includedType = includedType; body.strictTypeFiltering = true; }
+      if (filters.minRating !== undefined) body.minRating = filters.minRating;
+      if (filters.openNow) body.openNow = true;
+      if (pageToken) body.pageToken = pageToken;
+      const response = await fetch("https://places.googleapis.com/v1/places:searchText", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Goog-Api-Key": env.GOOGLE_MAPS_API_KEY,
+          "X-Goog-FieldMask": "places.id,places.displayName,places.location,places.formattedAddress,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.types,places.rating,places.userRatingCount,places.businessStatus,nextPageToken",
+        },
+        body: JSON.stringify(body),
+      });
+      if (!response.ok) throw new Error("GOOGLE_PLACES_" + response.status + (includedType ? " (" + includedType + ")" : ""));
+      const result = await response.json() as { places?: GooglePlace[]; nextPageToken?: string };
+      for (const place of result.places ?? []) if (place.id) placesById.set(place.id, place);
+      pageToken = result.nextPageToken;
+      if (!pageToken || !(result.places?.length)) break;
+    }
+  }
+  let places = [...placesById.values()];
+  if (filters.requireWebsite) places = places.filter((place) => Boolean(place.websiteUri));
+  if (filters.requirePhone) places = places.filter((place) => Boolean(place.internationalPhoneNumber || place.nationalPhoneNumber));
+  return places.slice(0, limit);
 }
 function calculateConfidence(input:{provider:DiscoveryProvider;address?:string|null;phone?:string|null;website?:string|null;email?:string|null;latitude?:number|null;longitude?:number|null;businessType?:string|null}):number {
   let score=input.provider==="google_maps"?55:45;
@@ -202,15 +254,15 @@ export async function processRun(env: DiscoveryEnv, runId: string, ownerId: stri
   const totalUnits = input.countries.length * providers.length;
   let doneUnits = 0, discovered = 0, created = 0, googleCount = 0, osmCount = 0, failures = 0;
   await updateRun(env, runId, { status: "running", message: "正在执行所选数据源：" + providers.join("、") });
-  await log(env, runId, ownerId, "info", "任务开始；关键词：" + input.query + "；数据源：" + providers.join("、"));
+  await log(env, runId, ownerId, "info", "任务开始；关键词：" + input.query + "；业务类型：" + (input.businessTypes ?? []).join("、") + "；筛选条件：" + JSON.stringify(input.filters ?? {}) + "；数据源：" + providers.join("、"));
   if (providers.includes("openstreetmap")) await log(env, runId, ownerId, "info", "OSM 标签映射：" + (input.osmTags ?? []).map(tag => tag.key + "=" + tag.value).join("、") + "；地区范围：" + [input.city, input.state, countryName(input.countries[0])].filter(Boolean).join(" · "));
   for (const code of input.countries) {
     const scope = [input.city, input.state, countryName(code)].filter(Boolean).join(" · ");
     const osmResult: ProviderResult<OSMElement[]> | null = providers.includes("openstreetmap")
-      ? await searchOSM(code, input.osmTags ?? [], input.limitPerCountry, env, input.state, input.city).then(value => ({ok:true as const,value})).catch(error => ({ok:false as const,error}))
+      ? await searchOSM(code, input.osmTags ?? [], input.limitPerCountry, env, input.state, input.city, input.filters).then(value => ({ok:true as const,value})).catch(error => ({ok:false as const,error}))
       : null;
     const googleResult: ProviderResult<GooglePlace[]> | null = providers.includes("google_maps")
-      ? await searchGoogle(code, input.query, input.limitPerCountry, env, input.state, input.city).then(value => ({ok:true as const,value})).catch(error => ({ok:false as const,error}))
+      ? await searchGoogle(code, input.query, input.limitPerCountry, env, input.state, input.city, input.businessTypes ?? [], input.filters).then(value => ({ok:true as const,value})).catch(error => ({ok:false as const,error}))
       : null;
     const osm = osmResult?.ok ? osmResult.value : [];
     const google = googleResult?.ok ? googleResult.value : [];
@@ -290,6 +342,11 @@ export async function handleDiscovery(request: Request, env: DiscoveryEnv): Prom
       !input.query?.trim() || !Number.isInteger(input.limitPerCountry) || input.limitPerCountry < 1 || input.limitPerCountry > 500 ||
       providers.length < 1 || providers.some(provider => !["google_maps","openstreetmap"].includes(provider)) ||
       (providers.includes("openstreetmap") && (!Array.isArray(input.osmTags) || input.osmTags.length < 1 || input.osmTags.length > 20 || input.osmTags.some(tag => !tag || typeof tag.key !== "string" || typeof tag.value !== "string" || !/^[a-z0-9_:-]{1,64}$/i.test(tag.key) || !/^[a-z0-9_:-]{1,100}$/i.test(tag.value)))) ||
+      (input.businessTypes !== undefined && (!Array.isArray(input.businessTypes) || input.businessTypes.length > 9 || input.businessTypes.some(type => typeof type !== "string" || !(type in BUSINESS_TYPE_FILTERS)))) ||
+      (input.filters !== undefined && (typeof input.filters !== "object" || (input.filters.minRating !== undefined && (typeof input.filters.minRating !== "number" || input.filters.minRating < 0 || input.filters.minRating > 5 || input.filters.minRating * 2 % 1 !== 0)) || (input.filters.openNow !== undefined && typeof input.filters.openNow !== "boolean") || (input.filters.requireWebsite !== undefined && typeof input.filters.requireWebsite !== "boolean") || (input.filters.requirePhone !== undefined && typeof input.filters.requirePhone !== "boolean"))) ||
+      (input.originalQuery !== undefined && (typeof input.originalQuery !== "string" || input.originalQuery.length > 300)) ||
+      (input.translatedQuery !== undefined && (typeof input.translatedQuery !== "string" || input.translatedQuery.length > 300)) ||
+      (input.targetLanguage !== undefined && (typeof input.targetLanguage !== "string" || !/^[A-Z]{2}(?:-[A-Z]{2})?$/.test(input.targetLanguage))) ||
       (input.state !== undefined && (typeof input.state !== "string" || !input.state.trim())) ||
       (input.city !== undefined && (typeof input.city !== "string" || !input.city.trim()))) {
       return errorResponse(request,"VALIDATION_ERROR","请选择一个国家和至少一个数据源；关键词、地区、数量或 OSM 标签映射无效。",400);
@@ -299,18 +356,18 @@ export async function handleDiscovery(request: Request, env: DiscoveryEnv): Prom
     const code=input.countries[0], scope=[input.city,input.state,countryName(code)].filter(Boolean).join(" · ");
     const rows=await db<Array<{id:string;task_code:string}>>(env,"discovery_runs",{
       method:"POST",headers:{Prefer:"return=representation"},
-      body:JSON.stringify({owner_id:userId,query:input.query.trim(),countries:input.countries,limit_per_country:input.limitPerCountry,state:input.state??null,city:input.city??null,providers,channel:"map_local_businesses",status:"queued",progress:0,discovered_count:0,created_lead_count:0,message:"任务已排队 · "+scope,task_code:"MAP-"+code+"-"+new Date().toISOString().slice(0,10).replace(/-/g,"")+"-"+crypto.randomUUID().replace(/-/g,"").slice(0,6).toUpperCase()})
+      body:JSON.stringify({owner_id:userId,query:input.query.trim(),countries:input.countries,limit_per_country:input.limitPerCountry,state:input.state??null,city:input.city??null,providers,search_config:{businessTypes:input.businessTypes??[],filters:input.filters??{},osmTags:input.osmTags??[],originalQuery:input.originalQuery??null,translatedQuery:input.translatedQuery??null,targetLanguage:input.targetLanguage??null},channel:"map_local_businesses",status:"queued",progress:0,discovered_count:0,created_lead_count:0,message:"任务已排队 · "+scope,task_code:"MAP-"+code+"-"+new Date().toISOString().slice(0,10).replace(/-/g,"")+"-"+crypto.randomUUID().replace(/-/g,"").slice(0,6).toUpperCase()})
     });
     const run=rows?.[0]; if(!run?.id) throw new Error("DISCOVERY_RUN_CREATE_FAILED");
     await log(env,run.id,userId,"info","任务编号："+run.task_code+"；关键词："+input.query+"；数据源："+providers.join("、"));
     try { await env.LEAD_DISCOVERY_WORKFLOW.create({id:run.id,params:{runId:run.id,ownerId:userId,input}}); }
     catch(error){await markRunFailed(env,run.id,userId,error);return errorResponse(request,"WORKFLOW_START_FAILED","任务创建成功，但后台工作流启动失败。",503);}
-    return successResponse(request,{id:run.id,taskCode:run.task_code,channel:"map_local_businesses",query:input.query,countries:input.countries,providers,status:"queued",progress:0,discoveredCount:0,createdLeadCount:0,message:"任务已排队 · "+scope},202);
+    return successResponse(request,{id:run.id,taskCode:run.task_code,channel:"map_local_businesses",query:input.query,countries:input.countries,providers,searchConfig:{businessTypes:input.businessTypes??[],filters:input.filters??{},osmTags:input.osmTags??[],originalQuery:input.originalQuery??null,translatedQuery:input.translatedQuery??null,targetLanguage:input.targetLanguage??null},status:"queued",progress:0,discoveredCount:0,createdLeadCount:0,message:"任务已排队 · "+scope},202);
   }
 
   if(request.method==="GET" && url.pathname==="/api/v1/discovery-runs"){
     const rows=await db<Array<Record<string,unknown>>>(env,"discovery_runs?owner_id=eq."+userId+"&select=*&order=created_at.desc&limit=200");
-    return successResponse(request,(rows??[]).map(row=>({id:row.id,taskCode:row.task_code,channel:row.channel,query:row.query,countries:row.countries,state:row.state,city:row.city,providers:row.providers,status:row.status,progress:row.progress,discoveredCount:row.discovered_count,createdLeadCount:row.created_lead_count,message:row.message,createdAt:row.created_at})));
+    return successResponse(request,(rows??[]).map(row=>({id:row.id,taskCode:row.task_code,channel:row.channel,query:row.query,countries:row.countries,state:row.state,city:row.city,providers:row.providers,status:row.status,progress:row.progress,discoveredCount:row.discovered_count,createdLeadCount:row.created_lead_count,message:row.message,searchConfig:row.search_config??{},createdAt:row.created_at})));
   }
 
   const runMatch=url.pathname.match(/^\/api\/v1\/discovery-runs\/([0-9a-f-]+)$/i);
@@ -319,7 +376,7 @@ export async function handleDiscovery(request: Request, env: DiscoveryEnv): Prom
     if(!rows[0]) return errorResponse(request,"NOT_FOUND","找不到该发现任务。",404);
     const logs=await db<Array<Record<string,unknown>>>(env,"discovery_run_logs?run_id=eq."+runMatch[1]+"&owner_id=eq."+userId+"&select=id,level,message,created_at&order=created_at.asc");
     const row=rows[0];
-    return successResponse(request,{id:row.id,taskCode:row.task_code,channel:row.channel,query:row.query,countries:row.countries,state:row.state,city:row.city,providers:row.providers,status:row.status,progress:row.progress,discoveredCount:row.discovered_count,createdLeadCount:row.created_lead_count,message:row.message,createdAt:row.created_at,logs:(logs??[]).map(item=>({id:item.id,level:item.level,message:item.message,createdAt:item.created_at}))});
+    return successResponse(request,{id:row.id,taskCode:row.task_code,channel:row.channel,query:row.query,countries:row.countries,state:row.state,city:row.city,providers:row.providers,status:row.status,progress:row.progress,discoveredCount:row.discovered_count,createdLeadCount:row.created_lead_count,message:row.message,searchConfig:row.search_config??{},createdAt:row.created_at,logs:(logs??[]).map(item=>({id:item.id,level:item.level,message:item.message,createdAt:item.created_at}))});
   }
 
   if(request.method==="GET" && url.pathname==="/api/v1/discovery-records"){

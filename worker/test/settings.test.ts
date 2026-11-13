@@ -45,6 +45,26 @@ describe("integration settings API", () => {
     expect(Object.keys(payload.secrets)).toEqual(["GOOGLE_MAPS_API_KEY"]);
   });
 
+  it("saves DeepL API key as an isolated Worker secret", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ success: true }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ success: true }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const response = await handleSettings(
+      new Request("https://tradepilot.example/api/v1/settings/integrations", {
+        method: "POST",
+        headers: { Authorization: "Bearer test-session", "Content-Type": "application/json" },
+        body: JSON.stringify({ deeplApiKey: "deepl-test-key" }),
+      }),
+      env,
+    );
+    expect(response.status).toBe(200);
+    const patch = fetchMock.mock.calls[2][1] as RequestInit;
+    const payload = JSON.parse(String(patch.body)) as { secrets: Record<string, unknown> };
+    expect(Object.keys(payload.secrets)).toEqual(["DEEPL_API_KEY"]);
+  });
+
   it("rejects attempts to save multiple credentials in one request", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("{}", { status: 200 })));
     const response = await handleSettings(
