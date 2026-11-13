@@ -5,7 +5,7 @@ interface TranslationEnv {
   SUPABASE_ANON_KEY: string;
   DEEPL_API_KEY?: string;
 }
-const TARGET_LANGUAGES = new Set(["EN-US","EN-GB","DE","FR","ES","IT","JA","KO","NL","PL","PT-BR","PT-PT","RU","ZH"]);
+const TARGET_LANGUAGES = new Set(["AR","BG","CS","DA","DE","EL","EN-US","EN-GB","ES","ET","FI","FR","HE","HU","ID","IT","JA","KO","LT","LV","NB","NL","PL","PT-BR","PT-PT","RO","RU","SK","SL","SV","TH","TR","UK","VI","ZH"]);
 async function authenticated(request: Request, env: TranslationEnv) {
   const token = request.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
   if (!token) return false;
@@ -33,7 +33,7 @@ export async function handleTranslation(request: Request, env: TranslationEnv): 
     const response = await fetch(baseUrl + "/v2/translate", {
       method: "POST",
       headers: { Authorization: "DeepL-Auth-Key " + env.DEEPL_API_KEY, "Content-Type": "application/json" },
-      body: JSON.stringify({ text: [text], target_lang: targetLanguage }),
+      body: JSON.stringify({ text: [text], target_lang: targetLanguage, context: "B2B company and industry search keyword for local business discovery. Preserve brand names, model names and technical product terms where appropriate." }),
     });
     if (!response.ok) {
       const message = response.status === 403 ? "DeepL API Key 无效或无权访问。" : response.status === 456 ? "DeepL API 额度已用尽。" : response.status === 429 ? "DeepL 请求过于频繁，请稍后重试。" : "DeepL 请求失败（HTTP " + response.status + "）。";
