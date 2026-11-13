@@ -40,9 +40,11 @@ describe("integration settings API", () => {
     const authRequest = fetchMock.mock.calls[0];
     expect(authRequest[0]).toBe("https://example.supabase.co/auth/v1/user");
     expect((authRequest[1] as RequestInit).headers).toEqual({ apikey: "public-anon-key", Authorization: "Bearer test-session" });
-    const patch = fetchMock.mock.calls[2][1] as RequestInit;
-    const payload = JSON.parse(String(patch.body)) as { secrets: Record<string, unknown> };
-    expect(Object.keys(payload.secrets)).toEqual(["GOOGLE_MAPS_API_KEY"]);
+    const secretRequest = fetchMock.mock.calls[2];
+    expect(secretRequest[0]).toBe("https://api.cloudflare.com/client/v4/accounts/ea4e98dce9c478d7dd5c07f10e5c722d/workers/scripts/tradepilot/secrets");
+    const secretInit = secretRequest[1] as RequestInit;
+    expect(secretInit.method).toBe("PUT");
+    expect(JSON.parse(String(secretInit.body))).toEqual({ name: "GOOGLE_MAPS_API_KEY", type: "secret_text", text: "new-google-key" });
   });
 
   it("saves DeepL API key as an isolated Worker secret", async () => {
@@ -60,9 +62,11 @@ describe("integration settings API", () => {
       env,
     );
     expect(response.status).toBe(200);
-    const patch = fetchMock.mock.calls[2][1] as RequestInit;
-    const payload = JSON.parse(String(patch.body)) as { secrets: Record<string, unknown> };
-    expect(Object.keys(payload.secrets)).toEqual(["DEEPL_API_KEY"]);
+    const secretRequest = fetchMock.mock.calls[2];
+    expect(secretRequest[0]).toBe("https://api.cloudflare.com/client/v4/accounts/ea4e98dce9c478d7dd5c07f10e5c722d/workers/scripts/tradepilot/secrets");
+    const secretInit = secretRequest[1] as RequestInit;
+    expect(secretInit.method).toBe("PUT");
+    expect(JSON.parse(String(secretInit.body))).toEqual({ name: "DEEPL_API_KEY", type: "secret_text", text: "deepl-test-key" });
   });
 
   it("tests the DeepL usage endpoint without exposing the key", async () => {
