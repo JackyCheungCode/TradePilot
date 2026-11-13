@@ -51,9 +51,12 @@ async function cloudflareRequest(token: string, path: string, init?: RequestInit
     ...init,
     headers: { ...cloudflareHeaders(token), ...init?.headers },
   });
-  const body = await response.json() as { success?: boolean; errors?: Array<{ message?: string }> };
+  const raw = await response.text();
+  let body: { success?: boolean; errors?: Array<{ code?: number; message?: string }> } = {};
+  try { body = raw ? JSON.parse(raw) as typeof body : {}; } catch { /* Preserve non-JSON API diagnostics below. */ }
   if (!response.ok || body.success === false) {
-    throw new Error(body.errors?.map((item) => item.message).filter(Boolean).join("; ") || "Cloudflare API 请求失败");
+    const details = body.errors?.map((item) => [item.code ? `[${item.code}]` : "", item.message ?? ""].filter(Boolean).join(" ")).filter(Boolean).join("; ");
+    throw new Error(details || `Cloudflare API HTTP ${response.status}: ${raw.slice(0, 240) || "无响应内容"}`);
   }
   return body;
 }
@@ -64,14 +67,12 @@ async function saveOneSecret(service: ServiceKey, value: string, env: SettingsEn
   const accountId = env.CLOUDFLARE_ACCOUNT_ID ?? "ea4e98dce9c478d7dd5c07f10e5c722d";
   const workerName = env.CLOUDFLARE_WORKER_NAME ?? "tradepilot";
   await cloudflareRequest(cloudflareToken, "/user/tokens/verify");
-  await cloudflareRequest(cloudflareToken, `/accounts/${accountId}/workers/scripts/${workerName}/secrets-bulk`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/merge-patch+json" },
-    body: JSON.stringify({
-      secrets: {
-        [secretNames[service]]: { name: secretNames[service], type: "secret_text", text: value },
-      },
-    }),
+  // This endpoint saves exactly one binding and avoids the bulk-merge path for the
+  // one-key-at-a-time settings UI. Cloudflare's single-secret API is additive.
+  await cloudflareRequest(cloudflareToken, `/accounts/${accountId}/workers/scripts/${workerName}/secrets`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: secretNames[service], type: "secret_text", text: value }),
   });
   return `${service === "cloudflare" ? "Cloudflare" : service === "supabase" ? "Supabase" : service === "googleMaps" ? "Google Maps" : service === "deepl" ? "DeepL" : service === "serper" ? "Serper" : "SerpApi"} 密钥已单独保存至 Cloudflare Worker Secrets。`;
 }
