@@ -10,7 +10,7 @@ export interface DiscoveryEnv {
   OVERPASS_API_URL?: string;
 }
 export type DiscoveryProvider = "google_maps" | "openstreetmap";
-export interface DiscoveryRunInput { countries: string[]; query: string; limitPerCountry: number; providers: DiscoveryProvider[]; state?: string; city?: string; }
+export interface DiscoveryRunInput { countries: string[]; query: string; limitPerCountry: number; providers: DiscoveryProvider[]; state?: string; city?: string; osmTags?: Array<{ key: string; value: string }>; }
 interface OSMElement { type: string; id: number; lat?: number; lon?: number; center?: { lat: number; lon: number }; tags?: Record<string, string>; }
 interface GooglePlace { id?: string; displayName?: { text?: string }; location?: { latitude?: number; longitude?: number }; formattedAddress?: string; nationalPhoneNumber?: string; internationalPhoneNumber?: string; websiteUri?: string; types?: string[]; rating?: number; userRatingCount?: number; businessStatus?: string; }
 type ProviderResult<T> = { ok: true; value: T } | { ok: false; error: unknown };
@@ -63,27 +63,34 @@ function countryName(code: string) {
   return special[code] ?? new Intl.DisplayNames(["en"], { type: "region" }).of(code) ?? code;
 }
 function overpassLiteral(value: string) {
-  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+  return value.replace(/\\\\/g, "\\\\\\").replace(/"/g, '\\"');
 }
-async function searchOSM(code: string, query: string, limit: number, env: DiscoveryEnv, state?: string, city?: string): Promise<OSMElement[]> {
+function overpassRegexLiteral(value: string) {
+  return overpassLiteral(value.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&"));
+}
+async function searchOSM(code: string, tags: Array<{key:string;value:string}>, limit: number, env: DiscoveryEnv, state?: string, city?: string): Promise<OSMElement[]> {
   const overpassEndpoints = [...new Set([
     env.OVERPASS_API_URL,
     "https://overpass-api.de/api/interpreter",
     "https://overpass.kumi.systems/api/interpreter",
     "https://overpass.private.coffee/api/interpreter",
   ].filter((endpoint): endpoint is string => Boolean(endpoint)))];
-  const safeQuery = query.normalize("NFKC").replace(/[^\p{L}\p{N}\s-]/gu, " ").trim();
-  const terms = safeQuery.split(/\s+/).filter((word) => word.length > 2 && !["the", "and", "for", "with", "from"].includes(word.toLowerCase())).slice(0, 4);
-  const pattern = terms.join("|") || ".*";
-  const scopeName = city || state;
-  const scopeClause = scopeName
-    ? 'area["name"="' + overpassLiteral(scopeName) + '"](area.a)->.target;'
-    : ".a->.target;";
-  const q = '[out:json][timeout:45];area["ISO3166-1"="' + code + '"][admin_level=2]->.a;' + scopeClause + '(' +
-    'nwr["name"~"' + pattern + '",i](area.target);' +
-    'nwr["shop"~"electronics|electrical|computer|mobile_phone|hardware|wholesale|' + pattern + '",i](area.target);' +
-    'nwr["office"~"' + pattern + '",i](area.target);' +
-    'nwr["amenity"~"' + pattern + '",i](area.target);nwr["craft"~"' + pattern + '",i](area.target);nwr["industrial"~"' + pattern + '",i](area.target););out center tags ' + Math.min(500, limit) + ';';
+  if (!tags.length) return [];
+  const scopeClauses = ['area["ISO3166-1"="' + code + '"][admin_level=2]->.country;'];
+  let parentArea = "country";
+  if (state) {
+    scopeClauses.push('area["name"~"^' + overpassRegexLiteral(state) + '$",i](area.country)->.state;');
+    parentArea = "state";
+  }
+  if (city) {
+    scopeClauses.push('area["name"~"^' + overpassRegexLiteral(city) + '$",i](area.' + parentArea + ')->.target;');
+  } else if (state) {
+    scopeClauses.push(".state->.target;");
+  } else {
+    scopeClauses.push(".country->.target;");
+  }
+  const tagQueries = tags.map(({key,value}) => 'nwr["' + overpassLiteral(key) + '"="' + overpassLiteral(value) + '"](area.target);').join("");
+  const q = '[out:json][timeout:45];' + scopeClauses.join("") + '(' + tagQueries + ');out center tags ' + Math.min(500, limit) + ';';
   const failures: string[] = [];
   for (let index = 0; index < overpassEndpoints.length; index++) {
     const endpoint = overpassEndpoints[index];
@@ -97,7 +104,7 @@ async function searchOSM(code: string, query: string, limit: number, env: Discov
       if (!response.ok) {
         failures.push(new URL(endpoint).host + ":OVERPASS_" + response.status);
         if ([429, 502, 503, 504, 521, 522, 524].includes(response.status) && index < overpassEndpoints.length - 1) continue;
-        throw new Error("OVERPASS_" + response.status + (failures.length ? " (" + failures.join(", ") + ")" : ""));
+        throw new Error("OVERPASS_" + response.status + " (" + failures.join(", ") + ")");
       }
       const body = await response.json() as { elements?: OSMElement[] };
       return (body.elements ?? []).filter((element) => element.tags?.name).slice(0, limit);
@@ -196,10 +203,11 @@ export async function processRun(env: DiscoveryEnv, runId: string, ownerId: stri
   let doneUnits = 0, discovered = 0, created = 0, googleCount = 0, osmCount = 0, failures = 0;
   await updateRun(env, runId, { status: "running", message: "正在执行所选数据源：" + providers.join("、") });
   await log(env, runId, ownerId, "info", "任务开始；关键词：" + input.query + "；数据源：" + providers.join("、"));
+  if (providers.includes("openstreetmap")) await log(env, runId, ownerId, "info", "OSM 标签映射：" + (input.osmTags ?? []).map(tag => tag.key + "=" + tag.value).join("、") + "；地区范围：" + [input.city, input.state, countryName(input.countries[0])].filter(Boolean).join(" · "));
   for (const code of input.countries) {
     const scope = [input.city, input.state, countryName(code)].filter(Boolean).join(" · ");
     const osmResult: ProviderResult<OSMElement[]> | null = providers.includes("openstreetmap")
-      ? await searchOSM(code, input.query, input.limitPerCountry, env, input.state, input.city).then(value => ({ok:true as const,value})).catch(error => ({ok:false as const,error}))
+      ? await searchOSM(code, input.osmTags ?? [], input.limitPerCountry, env, input.state, input.city).then(value => ({ok:true as const,value})).catch(error => ({ok:false as const,error}))
       : null;
     const googleResult: ProviderResult<GooglePlace[]> | null = providers.includes("google_maps")
       ? await searchGoogle(code, input.query, input.limitPerCountry, env, input.state, input.city).then(value => ({ok:true as const,value})).catch(error => ({ok:false as const,error}))
@@ -208,7 +216,7 @@ export async function processRun(env: DiscoveryEnv, runId: string, ownerId: stri
     const google = googleResult?.ok ? googleResult.value : [];
     if (osmResult) {
       doneUnits++; if (osmResult.ok) osmCount += osm.length; else { failures++; await log(env, runId, ownerId, "warning", scope + " · OpenStreetMap 查询失败：" + String(osmResult.error).slice(0,180)); }
-      await log(env, runId, ownerId, osmResult.ok ? "success" : "warning", scope + " · OpenStreetMap " + (osmResult.ok ? "返回 " + osm.length + " 条候选" : "查询失败"));
+      await log(env, runId, ownerId, osmResult.ok ? (osm.length ? "success" : "warning") : "warning", scope + " · OpenStreetMap " + (osmResult.ok ? (osm.length ? "查询完成，返回 " + osm.length + " 条候选" : "查询已执行，但返回 0 条；请检查标签覆盖和地区边界匹配") : "查询失败"));
     }
     if (googleResult) {
       doneUnits++; if (googleResult.ok) googleCount += google.length; else { failures++; await log(env, runId, ownerId, "warning", scope + " · Google Maps 查询失败：" + String(googleResult.error).slice(0,180)); }
@@ -281,11 +289,13 @@ export async function handleDiscovery(request: Request, env: DiscoveryEnv): Prom
     if (!Array.isArray(input.countries) || input.countries.length !== 1 || input.countries.some(code => !/^[A-Z]{2}$/.test(code)) ||
       !input.query?.trim() || !Number.isInteger(input.limitPerCountry) || input.limitPerCountry < 1 || input.limitPerCountry > 500 ||
       providers.length < 1 || providers.some(provider => !["google_maps","openstreetmap"].includes(provider)) ||
+      (providers.includes("openstreetmap") && (!Array.isArray(input.osmTags) || input.osmTags.length < 1 || input.osmTags.length > 20 || input.osmTags.some(tag => !tag || typeof tag.key !== "string" || typeof tag.value !== "string" || !/^[a-z0-9_:-]{1,64}$/i.test(tag.key) || !/^[a-z0-9_:-]{1,100}$/i.test(tag.value)))) ||
       (input.state !== undefined && (typeof input.state !== "string" || !input.state.trim())) ||
       (input.city !== undefined && (typeof input.city !== "string" || !input.city.trim()))) {
-      return errorResponse(request,"VALIDATION_ERROR","请选择一个国家和至少一个数据源；关键词、地区或数量参数无效。",400);
+      return errorResponse(request,"VALIDATION_ERROR","请选择一个国家和至少一个数据源；关键词、地区、数量或 OSM 标签映射无效。",400);
     }
     input.providers = providers as DiscoveryProvider[];
+    if (input.osmTags) input.osmTags = [...new Map(input.osmTags.map(tag => [tag.key + "=" + tag.value, {key:tag.key,value:tag.value}])).values()];
     const code=input.countries[0], scope=[input.city,input.state,countryName(code)].filter(Boolean).join(" · ");
     const rows=await db<Array<{id:string;task_code:string}>>(env,"discovery_runs",{
       method:"POST",headers:{Prefer:"return=representation"},

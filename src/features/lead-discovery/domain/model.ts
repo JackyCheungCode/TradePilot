@@ -1,6 +1,6 @@
 export type DiscoveryProvider = "google_maps" | "openstreetmap";
 export type DiscoveryStatus = "queued" | "running" | "completed" | "partial" | "failed" | "cancelled";
-export interface DiscoveryRunInput { countries: string[]; query: string; limitPerCountry: number; providers: DiscoveryProvider[]; state?: string; city?: string; }
+export interface DiscoveryRunInput { countries: string[]; query: string; limitPerCountry: number; providers: DiscoveryProvider[]; state?: string; city?: string; osmTags?: Array<{key:string;value:string}>; }
 export interface DiscoveryRun {
   id: string; taskCode?: string; channel?: string; query?: string; countries?: string[];
   state?: string | null; city?: string | null; providers?: DiscoveryProvider[];
