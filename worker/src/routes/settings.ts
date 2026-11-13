@@ -23,7 +23,9 @@ const bodyFields: Record<ServiceKey, keyof CredentialBody> = {
 };
 
 async function authenticated(request: Request, env: SettingsEnv): Promise<boolean> {
-  const token = request.headers.get("Authorization")?.replace(/^Bearer\\s+/i, "");
+  const authorization = request.headers.get("Authorization");
+  const bearerMatch = authorization?.match(/^Bearer\s+(\S+)$/i);
+  const token = bearerMatch?.[1];
   if (!token) return false;
   const response = await fetch(env.SUPABASE_URL + "/auth/v1/user", {
     headers: { apikey: env.SUPABASE_ANON_KEY, Authorization: "Bearer " + token },
