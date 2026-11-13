@@ -1,27 +1,34 @@
 import { useState, type ReactNode } from "react";
-import { Compass, KeyRound, LogOut, MapPinned, Menu, PanelLeftClose, PanelLeftOpen, Radar, Search, Settings, ShieldBan, Users, X, ChevronDown, ChevronRight } from "lucide-react";
+import { Compass, KeyRound, LogOut, MapPinned, Menu, PanelLeftClose, PanelLeftOpen, Radar, Search, Settings, ShieldBan, Users, X, ChevronDown, ChevronRight, ListTodo, Files, ContactRound } from "lucide-react";
 import { Button } from "@/shared/ui/primitives";
+
 type AppPage = "discovery" | "discoveryTasks" | "discoveryResults" | "searchDiscovery" | "leads" | "integrations" | "searchExclusions";
+
 export function AppShell({ children, activePage, onNavigate, userEmail, onSignOut }: { children: ReactNode; activePage: AppPage; onNavigate: (page: AppPage) => void; userEmail: string; onSignOut: () => void }) {
- const [collapsed,setCollapsed]=useState(false),[mobileOpen,setMobileOpen]=useState(false),[discoveryExpanded,setDiscoveryExpanded]=useState(true),[crmExpanded,setCrmExpanded]=useState(true),[settingsExpanded,setSettingsExpanded]=useState(true);
- const navClass="flex w-full items-center gap-3 px-3 py-2.5 text-sm";
+ const [collapsed,setCollapsed]=useState(false),[mobileOpen,setMobileOpen]=useState(false);
+ const [discoveryExpanded,setDiscoveryExpanded]=useState(false),[crmExpanded,setCrmExpanded]=useState(false),[settingsExpanded,setSettingsExpanded]=useState(false);
+ const navClass="flex w-full items-center justify-start gap-3 px-3 py-2.5 text-left text-sm";
+ const childNavClass="flex w-full items-center justify-start gap-3 px-3 py-2.5 text-left text-sm";
  const sidebar=<div className="flex h-full min-h-0 flex-col bg-card text-foreground">
   <div className="flex h-16 shrink-0 items-center gap-3 border-b px-4"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground"><Radar className="h-5 w-5"/></div>{(!collapsed||mobileOpen)&&<div className="min-w-0"><p className="font-semibold tracking-tight">TradePilot</p><p className="text-[11px] text-muted-foreground">Market intelligence</p></div>}<div className="ml-auto hidden md:block"><Button variant="ghost" size="icon" onClick={()=>setCollapsed(!collapsed)} aria-label={collapsed?"展开侧边栏":"收起侧边栏"}>{collapsed?<PanelLeftOpen className="h-4 w-4"/>:<PanelLeftClose className="h-4 w-4"/>}</Button></div><div className="ml-auto md:hidden"><Button variant="ghost" size="icon" onClick={()=>setMobileOpen(false)} aria-label="关闭菜单"><X className="h-5 w-5"/></Button></div></div>
-  <nav className="flex-1 space-y-3 overflow-y-auto p-3">
-   <div><Button variant="ghost" onClick={()=>setDiscoveryExpanded(!discoveryExpanded)} className={navClass}><Compass className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<><span className="flex-1 text-left">潜客发现</span>{discoveryExpanded?<ChevronDown className="h-4 w-4"/>:<ChevronRight className="h-4 w-4"/>}</>}</Button>
-    {discoveryExpanded&&<div className={`space-y-1 ${collapsed&&!mobileOpen?"":"ml-4 border-l pl-3"}`}>
-     <Button variant={activePage==="discovery"?"secondary":"ghost"} onClick={()=>{onNavigate("discovery");setMobileOpen(false);}} className={navClass}><MapPinned className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<span>地图与本地商家</span>}</Button>
-     <Button variant={activePage==="searchDiscovery"?"secondary":"ghost"} onClick={()=>{onNavigate("searchDiscovery");setMobileOpen(false);}} className={navClass}><Search className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<span>搜索引擎发现</span>}</Button>
+  <nav className="flex-1 space-y-2 overflow-y-auto p-3">
+   <div>
+    <Button variant="ghost" onClick={()=>setDiscoveryExpanded(!discoveryExpanded)} className={navClass}><Compass className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<><span className="flex-1 text-left">潜客发现</span>{discoveryExpanded?<ChevronDown className="ml-auto h-4 w-4"/>:<ChevronRight className="ml-auto h-4 w-4"/>}</>}</Button>
+    {discoveryExpanded&&<div className={`ml-5 space-y-1 pl-3 ${collapsed&&!mobileOpen?"":"border-l"}`}>
+     <Button variant={activePage==="discovery"?"secondary":"ghost"} onClick={()=>{onNavigate("discovery");setMobileOpen(false);}} className={childNavClass}><MapPinned className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<span>地图与本地商家</span>}</Button>
+     <Button variant={activePage==="searchDiscovery"?"secondary":"ghost"} onClick={()=>{onNavigate("searchDiscovery");setMobileOpen(false);}} className={childNavClass}><Search className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<span>搜索引擎发现</span>}</Button>
      <div className="my-2 border-t"/>
-     <Button variant={activePage==="discoveryTasks"?"secondary":"ghost"} onClick={()=>{onNavigate("discoveryTasks");setMobileOpen(false);}} className={navClass}>{(!collapsed||mobileOpen)&&<span>搜索任务</span>}</Button>
-     <Button variant={activePage==="discoveryResults"?"secondary":"ghost"} onClick={()=>{onNavigate("discoveryResults");setMobileOpen(false);}} className={navClass}>{(!collapsed||mobileOpen)&&<span>搜索结果</span>}</Button>
+     <Button variant={activePage==="discoveryTasks"?"secondary":"ghost"} onClick={()=>{onNavigate("discoveryTasks");setMobileOpen(false);}} className={childNavClass}><ListTodo className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<span>搜索任务</span>}</Button>
+     <Button variant={activePage==="discoveryResults"?"secondary":"ghost"} onClick={()=>{onNavigate("discoveryResults");setMobileOpen(false);}} className={childNavClass}><Files className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<span>搜索结果</span>}</Button>
     </div>}
    </div>
-   <div><Button variant="ghost" onClick={()=>setCrmExpanded(!crmExpanded)} className={navClass}><Users className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<><span className="flex-1 text-left">客户关系管理</span>{crmExpanded?<ChevronDown className="h-4 w-4"/>:<ChevronRight className="h-4 w-4"/>}</>}</Button>
-    {crmExpanded&&<div className={`space-y-1 ${collapsed&&!mobileOpen?"":"ml-4 border-l pl-3"}`}><Button variant={activePage==="leads"?"secondary":"ghost"} onClick={()=>{onNavigate("leads");setMobileOpen(false);}} className={navClass}><Users className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<span>线索</span>}</Button></div>}
+   <div>
+    <Button variant="ghost" onClick={()=>setCrmExpanded(!crmExpanded)} className={navClass}><Users className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<><span className="flex-1 text-left">客户关系管理</span>{crmExpanded?<ChevronDown className="ml-auto h-4 w-4"/>:<ChevronRight className="ml-auto h-4 w-4"/>}</>}</Button>
+    {crmExpanded&&<div className={`ml-5 space-y-1 pl-3 ${collapsed&&!mobileOpen?"":"border-l"}`}><Button variant={activePage==="leads"?"secondary":"ghost"} onClick={()=>{onNavigate("leads");setMobileOpen(false);}} className={childNavClass}><ContactRound className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<span>线索</span>}</Button></div>}
    </div>
-   <div><Button variant="ghost" onClick={()=>setSettingsExpanded(!settingsExpanded)} className={navClass}><Settings className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<><span className="flex-1 text-left">系统设置</span>{settingsExpanded?<ChevronDown className="h-4 w-4"/>:<ChevronRight className="h-4 w-4"/>}</>}</Button>
-    {settingsExpanded&&<div className={`space-y-1 ${collapsed&&!mobileOpen?"":"ml-4 border-l pl-3"}`}><Button variant={activePage==="integrations"?"secondary":"ghost"} onClick={()=>{onNavigate("integrations");setMobileOpen(false);}} className={navClass}><KeyRound className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<span>设置与集成</span>}</Button><Button variant={activePage==="searchExclusions"?"secondary":"ghost"} onClick={()=>{onNavigate("searchExclusions");setMobileOpen(false);}} className={navClass}><ShieldBan className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<span>搜索排除规则</span>}</Button></div>}
+   <div>
+    <Button variant="ghost" onClick={()=>setSettingsExpanded(!settingsExpanded)} className={navClass}><Settings className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<><span className="flex-1 text-left">系统设置</span>{settingsExpanded?<ChevronDown className="ml-auto h-4 w-4"/>:<ChevronRight className="ml-auto h-4 w-4"/>}</>}</Button>
+    {settingsExpanded&&<div className={`ml-5 space-y-1 pl-3 ${collapsed&&!mobileOpen?"":"border-l"}`}><Button variant={activePage==="integrations"?"secondary":"ghost"} onClick={()=>{onNavigate("integrations");setMobileOpen(false);}} className={childNavClass}><KeyRound className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<span>设置与集成</span>}</Button><Button variant={activePage==="searchExclusions"?"secondary":"ghost"} onClick={()=>{onNavigate("searchExclusions");setMobileOpen(false);}} className={childNavClass}><ShieldBan className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<span>搜索排除规则</span>}</Button></div>}
    </div>
   </nav>
   <div className="shrink-0 border-t p-3">{(!collapsed||mobileOpen)&&<p className="mb-2 truncate px-2 text-xs text-muted-foreground" title={userEmail}>{userEmail}</p>}<Button variant="ghost" onClick={onSignOut} className={`flex w-full items-center gap-2 ${collapsed&&!mobileOpen?"justify-center":"justify-start"}`} aria-label="退出登录"><LogOut className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>退出登录</span>}</Button></div>
