@@ -1,5 +1,8 @@
 import { errorResponse, successResponse } from "../lib/http";
 
+import isoCountries from "i18n-iso-countries";
+import enLocale from "i18n-iso-countries/langs/en.json";
+isoCountries.registerLocale(enLocale);
 interface Env {
  SUPABASE_URL: string;
  SUPABASE_ANON_KEY: string;
@@ -35,20 +38,22 @@ function normalizeHost(value?: string) {
  if (!value) return "";
  try { return new URL(value.startsWith("http") ? value : "https://" + value).hostname.toLowerCase().replace(/^www\./, ""); } catch { return ""; }
 }
-function normalizeName(value: string) { return value.normalize("NFKD").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(); }
+function normalizeName(value: string) { return value.normalize("NFKD").toLowerCase().replace(/[^\\p{L}\\p{N}]+/gu, " ").trim(); }
 function countryName(code: string) {
- const names: Record<string,string> = { US:"United States",GB:"United Kingdom",DE:"Germany",TW:"Taiwan",HK:"Hong Kong",MO:"Macao" };
- return names[code] ?? code;
+ const special: Record<string,string> = { HK:"Hong Kong", MO:"Macao", TW:"Taiwan" };
+ return special[code] ?? isoCountries.getName(code, "en") ?? code;
 }
 async function searchOSM(code: string, query: string, limit: number, env: Env): Promise<OSMElement[]> {
  const overpass = env.OVERPASS_API_URL ?? "https://overpass-api.de/api/interpreter";
  const escaped = code.replace(/[^A-Z]/g, "");
- const q = `[out:json][timeout:45];area["ISO3166-1"="${escaped}"][admin_level=2]->.a;(nwr["name"]["shop"](area.a);nwr["name"]["office"](area.a);nwr["name"]["craft"](area.a);nwr["name"]["industrial"](area.a);nwr["name"]["amenity"](area.a);nwr["name"]["man_made"](area.a););out center tags ${Math.min(500,limit)};`;
+ const terms = query.split(/\\s+/).filter((word) => word.length > 2 && !["the","and","for","with","from"].includes(word.toLowerCase())).slice(0,4);
+ const pattern = terms.map((word) => word.replace(/[.*+?^$()|[\\]\\\\]/g, "\\\\const q = `[out:json][timeout:45];area["ISO3166-1"="${escaped}"][admin_level=2]->.a;(nwr["name"]["shop"](area.a);nwr["name"]["office"](area.a);nwr["name"]["craft"](area.a);nwr["name"]["industrial"](area.a);nwr["name"]["amenity"](area.a);nwr["name"]["man_made"](area.a););out center tags ${Math.min(500,limit)};`;")).join("|");
+ const q = `[out:json][timeout:45];area["ISO3166-1"="${escaped}"][admin_level=2]->.a;(nwr["name"~"${pattern}",i](area.a);nwr["shop"~"electronics|electrical|computer|mobile_phone|hardware|wholesale",i](area.a);nwr["office"~"company|industrial|telecommunication",i](area.a);nwr["craft"](area.a);nwr["industrial"](area.a););out center tags ${Math.min(500,limit)};`;
  const response = await fetch(overpass, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8", "User-Agent": "TradePilot/0.1 (lead discovery)" }, body: "data=" + encodeURIComponent(q) });
  if (!response.ok) throw new Error("OVERPASS_" + response.status);
  const body = await response.json() as { elements?: OSMElement[] };
  const term = normalizeName(query.split(/\s+/).slice(0,2).join(" "));
- return (body.elements ?? []).filter((e) => e.tags?.name).slice(0, limit).map((e) => ({ ...e, tags: { ...e.tags, _tradepilot_query: term } }));
+ return (body.elements ?? []).filter((e) => e.tags?.name).slice(0, limit);
 }
 async function searchGoogle(code: string, query: string, limit: number, env: Env): Promise<GooglePlace[]> {
  if (!env.GOOGLE_MAPS_API_KEY) throw new Error("GOOGLE_MAPS_API_KEY_NOT_CONFIGURED");
@@ -75,7 +80,7 @@ async function processRun(env: Env, runId: string, ownerId: string, input: RunIn
    const tags = item.tags ?? {}; const name = tags.name; if (!name) continue;
    const lat = item.lat ?? item.center?.lat; const lon = item.lon ?? item.center?.lon;
    const website = tags.website ?? tags["contact:website"] ?? null; const phone = tags.phone ?? tags["contact:phone"] ?? null;
-   const host = normalizeHost(website); const dedupeKey = host ? "domain:" + host : "osm:" + item.type + "/" + item.id;
+   const host = normalizeHost(website); const phoneKey = (phone ?? "").replace(/\\D/g, ""); const geoKey = lat != null && lon != null ? Math.round(lat * 1000) + ":" + Math.round(lon * 1000) : "no-geo"; const dedupeKey = host ? "domain:" + host : phoneKey.length >= 7 ? "phone:" + phoneKey : "name:" + code + ":" + normalizeName(name) + ":" + geoKey;
    const addr = [tags["addr:housenumber"],tags["addr:street"],tags["addr:city"],tags["addr:state"],tags["addr:postcode"]].filter(Boolean).join(", ") || null;
    const matchedGoogle = googleMatches.find((g) => normalizeName(g.displayName?.text ?? "") === normalizeName(name) && lat != null && lon != null && Math.abs((g.location?.latitude ?? 99)-lat) < 0.001 && Math.abs((g.location?.longitude ?? 99)-lon) < 0.001);
    const leadRows = await db<Array<{id:string}>>(env, "leads?on_conflict=owner_id,dedupe_key", { method:"POST", headers:{ Prefer:"resolution=merge-duplicates,return=representation" }, body:JSON.stringify({ owner_id:ownerId, name, country_code:code, address:addr, phone, website, latitude:lat ?? null, longitude:lon ?? null, status:"draft", dedupe_key:dedupeKey }) });
