@@ -294,7 +294,7 @@ export async function handleDiscovery(request: Request, env: DiscoveryEnv): Prom
   }
 
   if(request.method==="GET" && url.pathname==="/api/v1/leads"){
-    const rows=await db<Array<Record<string,unknown>>>(env,"leads?owner_id=eq."+userId+"&is_formal=eq.true&select=*,discovery_record:discovery_records(id,channel,name,raw_data)&order=created_at.desc&limit=500");
+    const rows=await db<Array<Record<string,unknown>>>(env,"leads?owner_id=eq."+userId+"&is_formal=eq.true&select=*,discovery_record:discovery_records!leads_discovery_record_owner_fkey(id,channel,name,raw_data,discovery_record_occurrences(provider,keyword,source_url))&order=created_at.desc&limit=500");
     return successResponse(request,rows??[]);
   }
   return errorResponse(request,"NOT_FOUND","The requested discovery endpoint does not exist.",404);
