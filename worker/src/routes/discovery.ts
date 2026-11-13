@@ -24,7 +24,7 @@ async function authenticate(request: Request, env: DiscoveryEnv): Promise<string
   const user = await response.json() as { id?: string };
   return user.id ?? null;
 }
-async function db<T>(env: Env, path: string, init: RequestInit = {}): Promise<T> {
+async function db<T>(env: DiscoveryEnv, path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(env.SUPABASE_URL + "/rest/v1/" + path, {
     ...init,
     headers: {
@@ -38,14 +38,14 @@ async function db<T>(env: Env, path: string, init: RequestInit = {}): Promise<T>
   if (response.status === 204) return undefined as T;
   return await response.json() as T;
 }
-async function log(env: Env, runId: string, ownerId: string, level: string, message: string) {
+async function log(env: DiscoveryEnv, runId: string, ownerId: string, level: string, message: string) {
   await db(env, "discovery_run_logs", {
     method: "POST",
     headers: { Prefer: "return=minimal" },
     body: JSON.stringify({ run_id: runId, owner_id: ownerId, level, message }),
   });
 }
-async function updateRun(env: Env, id: string, patch: Record<string, unknown>) {
+async function updateRun(env: DiscoveryEnv, id: string, patch: Record<string, unknown>) {
   await db(env, "discovery_runs?id=eq." + id, {
     method: "PATCH",
     headers: { Prefer: "return=minimal" },
@@ -56,7 +56,7 @@ function countryName(code: string) {
   const special: Record<string, string> = { HK: "Hong Kong", MO: "Macao", TW: "Taiwan" };
   return special[code] ?? new Intl.DisplayNames(["en"], { type: "region" }).of(code) ?? code;
 }
-async function searchOSM(code: string, query: string, limit: number, env: Env): Promise<OSMElement[]> {
+async function searchOSM(code: string, query: string, limit: number, env: DiscoveryEnv): Promise<OSMElement[]> {
   const overpass = env.OVERPASS_API_URL ?? "https://overpass-api.de/api/interpreter";
   const safeQuery = query.normalize("NFKC").replace(/[^\p{L}\p{N}\s-]/gu, " ").trim();
   const terms = safeQuery.split(/\s+/).filter((word) => word.length > 2 && !["the", "and", "for", "with", "from"].includes(word.toLowerCase())).slice(0, 4);
@@ -75,7 +75,7 @@ async function searchOSM(code: string, query: string, limit: number, env: Env): 
   const body = await response.json() as { elements?: OSMElement[] };
   return (body.elements ?? []).filter((element) => element.tags?.name).slice(0, limit);
 }
-async function searchGoogle(code: string, query: string, limit: number, env: Env): Promise<GooglePlace[]> {
+async function searchGoogle(code: string, query: string, limit: number, env: DiscoveryEnv): Promise<GooglePlace[]> {
   if (!env.GOOGLE_MAPS_API_KEY) throw new Error("GOOGLE_MAPS_API_KEY_NOT_CONFIGURED");
   const response = await fetch("https://places.googleapis.com/v1/places:searchText", {
     method: "POST",
@@ -90,7 +90,7 @@ async function searchGoogle(code: string, query: string, limit: number, env: Env
   const body = await response.json() as { places?: GooglePlace[] };
   return body.places ?? [];
 }
-export async function processRun(env: Env, runId: string, ownerId: string, input: DiscoveryRunInput) {
+export async function processRun(env: DiscoveryEnv, runId: string, ownerId: string, input: DiscoveryRunInput) {
   const totalUnits = input.countries.length * 2;
   let doneUnits = 0, discovered = 0, created = 0, googleCount = 0, osmCount = 0, failures = 0;
   await updateRun(env, runId, { status: "running", message: "正在并行查询 Google Maps 与 OpenStreetMap" });
@@ -154,7 +154,7 @@ export async function processRun(env: Env, runId: string, ownerId: string, input
   await log(env, runId, ownerId, status === "completed" ? "success" : "warning", "任务结束。OSM " + osmCount + " 条；Google " + googleCount + " 条；草稿线索 " + created + " 条。Google 独有记录不持久化。");
   return { status, discovered, created, googleCount, osmCount };
 }
-export async function handleDiscovery(request: Request, env: Env, _ctx?: unknown): Promise<Response> {
+export async function handleDiscovery(request: Request, env: DiscoveryEnv): Promise<Response> {
   const url = new URL(request.url);
   const userId = await authenticate(request, env);
   if (!userId) return errorResponse(request, "UNAUTHORIZED", "请先登录后再执行潜客发现。", 401);
@@ -172,29 +172,6 @@ export async function handleDiscovery(request: Request, env: Env, _ctx?: unknown
     const run = rows[0];
     await log(env, run.id, userId, "info", "任务已创建，准备启动两个数据源");
     await env.LEAD_DISCOVERY_WORKFLOW.create({ id: run.id, params: { runId: run.id, ownerId: userId, input } });
-    /* workflow execution is durable and retried independently from this request */
-    /* no request-lifetime background task is used */
-    /* workflow status is reflected through discovery_runs */
-    /* the API returns once the workflow instance has been created */
-    /* workflow failures are persisted by its own step handler */
-    /* no synchronous provider calls occur on this request path */
-    /* durable workflow execution replaces ctx.waitUntil */
-    /* create is idempotent by run id */
-    /* keep the database task id as the workflow instance id */
-    /* workflow can resume after worker restarts */
-    /* task progress is persisted after each country/provider result */
-    /* the browser reads the same persisted run state */
-    /* provider calls remain parallel within each country */
-    /* all external writes are deduplicated by database constraints */
-    /* source provenance is preserved */
-    /* end workflow dispatch */
-    /* remove the old in-request background execution */
-    /*
-    ctx.waitUntil(processRun(env, run.id, userId, input).catch(async (error) => {
-      await updateRun(env, run.id, { status: "failed", message: "任务执行失败" });
-      await log(env, run.id, userId, "error", "任务异常终止：" + String(error).slice(0, 300));
-    }));
-    */
     return successResponse(request, { id: run.id, status: "queued", progress: 0, discoveredCount: 0, createdLeadCount: 0, message: "任务已排队" }, 202);
   }
   const match = url.pathname.match(/^\/api\/v1\/discovery-runs\/([0-9a-f-]+)$/i);
