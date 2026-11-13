@@ -47,3 +47,17 @@ Each provider has an independent outcome. A provider failure does not cancel the
 - The workflow builds the SPA with the public Supabase URL/publishable key, uploads the two Worker secrets to Cloudflare, then deploys Worker + Static Assets and the Workflow binding.
 - Supabase URL and publishable key are public client configuration and are declared in `wrangler.jsonc`; service role and Google keys are only set as Worker secrets.
 - The deploy workflow does not run on every push and does not merge the feature branch into `develop` or `main`.
+
+
+## Settings and integrations
+
+The Settings → Integrations page manages three runtime credentials:
+- `CLOUDFLARE_API_TOKEN`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `GOOGLE_MAPS_API_KEY`
+
+After the application is bootstrapped, an authenticated user can submit these values through the Worker settings API. The Worker validates the Cloudflare token and writes all three values to Cloudflare Worker Secrets using the bulk secret endpoint. Secret values are never returned to the browser; the page displays configuration state only. Subsequent rotations can leave unchanged fields blank.
+
+### First deployment bootstrap
+
+A one-time deployment is required before the browser settings page exists. Run the **Deploy TradePilot** GitHub Actions workflow manually after adding only `CLOUDFLARE_API_TOKEN` as a GitHub Actions repository secret. The initial deployment does not require the Supabase service role or Google Maps key in GitHub. Once deployed, enter all three runtime credentials in TradePilot → System Settings → Integrations. The Cloudflare token remains available in GitHub Actions for later code deployments and is also stored as a Worker secret so the application can rotate its own runtime configuration.
