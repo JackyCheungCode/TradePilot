@@ -11,7 +11,8 @@ async function db<T>(env:Env,path:string,init:RequestInit={}):Promise<T>{
 function safePageUrl(raw:string):URL{
  let url:URL;try{url=new URL(raw)}catch{throw new Error("官网地址无效")}
  const host=url.hostname.toLowerCase();
- if(!["https:"].includes(url.protocol)||url.username||url.password||!host||host==="localhost"||host.endsWith(".localhost")||host.endsWith(".local")||host.endsWith(".internal")||host.endsWith(".test")||host.startsWith("[")||/^\\d{1,3}(\\.\\d{1,3}){3}$/.test(host))throw new Error("官网地址不是允许访问的 HTTPS 公网域名");
+ if(!["https:","http:"].includes(url.protocol)||url.username||url.password||!host||host==="localhost"||host.endsWith(".localhost")||host.endsWith(".local")||host.endsWith(".internal")||host.endsWith(".test")||host.startsWith("[")||/^\d{1,3}(\.\d{1,3}){3}$/.test(host))throw new Error("官网地址不是允许访问的 HTTPS 公网域名");
+ if(url.protocol==="http:")url.protocol="https:";
  return url;
 }
 async function readHtml(url:URL):Promise<string>{
@@ -25,19 +26,19 @@ async function readHtml(url:URL):Promise<string>{
  return output+decoder.decode();
 }
 function robotsAllows(text:string,path:string):boolean{
- let agent="",blocked=false;for(const line of text.split(/\\r?\\n/)){const clean=line.split("#")[0].trim();if(!clean)continue;const colon=clean.indexOf(":");if(colon<0)continue;const key=clean.slice(0,colon).trim().toLowerCase(),value=clean.slice(colon+1).trim();if(key==="user-agent"){agent=value.toLowerCase();continue;}if(key==="disallow"&&value&&["*","tradepilotcontactbot"].includes(agent)&&path.startsWith(value))blocked=true;}return !blocked;
+ let agent="",blocked=false;for(const line of text.split(/\r?\n/)){const clean=line.split("#")[0].trim();if(!clean)continue;const colon=clean.indexOf(":");if(colon<0)continue;const key=clean.slice(0,colon).trim().toLowerCase(),value=clean.slice(colon+1).trim();if(key==="user-agent"){agent=value.toLowerCase();continue;}if(key==="disallow"&&value&&["*","tradepilotcontactbot"].includes(agent)&&path.startsWith(value))blocked=true;}return !blocked;
 }
 function extractContacts(html:string){
- const emails=[...html.matchAll(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/gi)].map(m=>m[0].toLowerCase()).filter(x=>!/(example\\.|\.png$|\.jpg$)/i.test(x));
- for(const m of html.matchAll(/mailto:([^"'?\\s>]+)/gi))emails.push(decodeURIComponent(m[1]).toLowerCase());
- const phones=[...html.matchAll(/tel:([^"'?\\s>]+)/gi)].map(m=>decodeURIComponent(m[1]).replace(/[^+\\d]/g,""));
- for(const m of html.matchAll(/(?:https?:)?\\/\\/(?:wa\\.me\\/|api\\.whatsapp\\.com\\/send\\?phone=)([+\\d]+)/gi))phones.push(m[1]);
- const text=html.replace(/<script[\\s\\S]*?<\\/script>|<style[\\s\\S]*?<\\/style>/gi," ").replace(/<[^>]+>/g," ");
- for(const m of text.matchAll(/(?:\\+?\\d[\\d ().-]{6,18}\\d)/g)){const v=m[0].replace(/[^+\\d]/g,"");if(v.replace(/\\D/g,"").length>=8&&v.replace(/\\D/g,"").length<=15)phones.push(v);}
- return {emails:[...new Set(emails)].filter(x=>x.length<255).slice(0,10),phones:[...new Set(phones)].filter(x=>x.replace(/\\D/g,"").length>=8).slice(0,10)};
+ const emails=[...html.matchAll(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi)].map(m=>m[0].toLowerCase()).filter(x=>!/(example\.|\.png$|\.jpg$)/i.test(x));
+ for(const m of html.matchAll(/mailto:([^"'?\s>]+)/gi))emails.push(decodeURIComponent(m[1]).toLowerCase());
+ const phones=[...html.matchAll(/tel:([^"'?\s>]+)/gi)].map(m=>decodeURIComponent(m[1]).replace(/[^+\d]/g,""));
+ for(const m of html.matchAll(/(?:https?:)?\/\/(?:wa\.me\/|api\.whatsapp\.com\/send\?phone=)([+\d]+)/gi))phones.push(m[1]);
+ const text=html.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi," ").replace(/<[^>]+>/g," ");
+ for(const m of text.matchAll(/(?:\+?\d[\d ().-]{6,18}\d)/g)){const v=m[0].replace(/[^+\d]/g,"");if(v.replace(/\D/g,"").length>=8&&v.replace(/\D/g,"").length<=15)phones.push(v);}
+ return {emails:[...new Set(emails)].filter(x=>x.length<255).slice(0,10),phones:[...new Set(phones)].filter(x=>x.replace(/\D/g,"").length>=8).slice(0,10)};
 }
 function contactLinks(html:string,base:URL):URL[]{
- const out:URL[]=[];for(const m of html.matchAll(/<a\\b[^>]*href\\s*=\\s*["']([^"'#]+)["'][^>]*>/gi)){const href=m[1];if(!/(contact|about|company|team|support|imprint|location|office)/i.test(href+" "+m[0]))continue;try{const u=new URL(href,base);if(u.origin===base.origin&&u.protocol==="https:"&&!out.some(x=>x.href===u.href))out.push(u);}catch{}}
+ const out:URL[]=[];for(const m of html.matchAll(/<a\b[^>]*href\s*=\s*["']([^"'#]+)["'][^>]*>/gi)){const href=m[1];if(!/(contact|about|company|team|support|imprint|location|office)/i.test(href+" "+m[0]))continue;try{const u=new URL(href,base);if(u.origin===base.origin&&u.protocol==="https:"&&!out.some(x=>x.href===u.href))out.push(u);}catch{}}
  return out.slice(0,4);
 }
 async function enrichOne(env:Env,owner:string,id:string){
