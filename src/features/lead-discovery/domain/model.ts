@@ -15,5 +15,5 @@ export interface DiscoveryRecord {
   status: "new" | "removed" | "discarded" | "promoted"; channel: string; raw_data?: Record<string, unknown>;
   discovery_record_occurrences: DiscoveryOccurrence[];
 }
-export interface FormalLead { id: string; entity_id?: string | null; name: string; country_code: string; address: string | null; phone: string | null; website: string | null; created_at: string; discovery_record?: { channel: string; discovery_record_occurrences?: Array<{provider: DiscoveryProvider; keyword: string; source_url?: string | null}> } | null; }
+export interface FormalLead { id: string; entity_id?: string | null; name: string; country_code: string; address: string | null; phone: string | null; email?: string | null; website: string | null; business_type?: string | null; confidence_score?: number | null; created_at: string; discovery_record?: { channel: string; discovery_record_occurrences?: Array<{provider: DiscoveryProvider; keyword: string; source_url?: string | null}> } | null; }
 export interface CountryOption { code: string; numericCode: string; name: string; flag: string; }

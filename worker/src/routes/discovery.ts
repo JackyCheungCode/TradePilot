@@ -328,7 +328,7 @@ export async function handleDiscovery(request: Request, env: DiscoveryEnv): Prom
       const existing=await db<Array<{id:string}>>(env,"leads?owner_id=eq."+userId+"&discovery_record_id=eq."+record.id+"&select=id");
       let leadId=existing?.[0]?.id;
       if(!leadId){
-        const created=await db<Array<{id:string}>>(env,"leads",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({owner_id:userId,name:record.name,country_code:record.country_code??"ZZ",address:record.address,phone:record.phone,website:record.website,latitude:record.latitude,longitude:record.longitude,status:"qualified",dedupe_key:"discovery:"+record.id,discovery_record_id:record.id,entity_id:record.entity_id,is_formal:true})});
+        const created=await db<Array<{id:string}>>(env,"leads",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({owner_id:userId,name:record.name,country_code:record.country_code??"ZZ",address:record.address,phone:record.phone,email:record.email,website:record.website,business_type:record.business_type,confidence_score:record.confidence_score,latitude:record.latitude,longitude:record.longitude,status:"qualified",dedupe_key:"discovery:"+record.id,discovery_record_id:record.id,entity_id:record.entity_id,is_formal:true})});
         leadId=created?.[0]?.id;
       }
       if(!leadId)throw new Error("LEAD_PROMOTION_FAILED");
