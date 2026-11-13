@@ -1,5 +1,6 @@
 import { getSupabaseClient } from "@/shared/lib/supabase";
 
+export type IntegrationService = "cloudflare" | "supabase" | "googleMaps";
 export interface IntegrationStatus {
   cloudflare: boolean;
   supabase: boolean;
@@ -22,7 +23,19 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 export const integrationsApi = {
   getStatus: () => request<IntegrationStatus>("/api/v1/settings/integrations"),
-  save: (credentials: { cloudflareApiToken: string; supabaseServiceRoleKey: string; googleMapsApiKey: string }) =>
-    request<{ saved: boolean; message: string }>("/api/v1/settings/integrations", { method: "POST", body: JSON.stringify(credentials) }),
-  test: () => request<Record<"cloudflare" | "supabase" | "googleMaps", IntegrationTestResult>>("/api/v1/settings/integrations/test", { method: "POST", body: "{}" }),
+  save: (service: IntegrationService, value: string) => {
+    const fields = {
+      cloudflare: { cloudflareApiToken: value },
+      supabase: { supabaseServiceRoleKey: value },
+      googleMaps: { googleMapsApiKey: value },
+    };
+    return request<{ saved: boolean; service: IntegrationService; message: string }>("/api/v1/settings/integrations", {
+      method: "POST",
+      body: JSON.stringify(fields[service]),
+    });
+  },
+  test: (service: IntegrationService) => request<IntegrationTestResult & { service: IntegrationService }>(
+    "/api/v1/settings/integrations/test",
+    { method: "POST", body: JSON.stringify({ service }) },
+  ),
 };
