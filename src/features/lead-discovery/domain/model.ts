@@ -12,7 +12,7 @@ export interface DiscoveryOccurrence { id: string; run_id: string; provider: Dis
 export interface DiscoveryRecord {
   id: string; name: string; country_code: string | null; address: string | null; phone: string | null;
   website: string | null; latitude: number | null; longitude: number | null;
-  status: "new" | "removed" | "discarded" | "promoted"; channel: string;
+  status: "new" | "removed" | "discarded" | "promoted"; channel: string; raw_data?: Record<string, unknown>;
   discovery_record_occurrences: DiscoveryOccurrence[];
 }
 export interface FormalLead { id: string; name: string; country_code: string; address: string | null; phone: string | null; website: string | null; created_at: string; }
