@@ -65,6 +65,23 @@ describe("integration settings API", () => {
     expect(Object.keys(payload.secrets)).toEqual(["DEEPL_API_KEY"]);
   });
 
+  it("tests the DeepL usage endpoint without exposing the key", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }))
+      .mockResolvedValueOnce(Response.json({ character_count: 1200, character_limit: 500000 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const response = await handleSettings(
+      new Request("https://tradepilot.example/api/v1/settings/integrations/test", {
+        method: "POST", headers: { Authorization: "Bearer test-session", "Content-Type": "application/json" },
+        body: JSON.stringify({ service: "deepl" }),
+      }),
+      { ...env, DEEPL_API_KEY: "free-key:fx" },
+    );
+    expect(response.status).toBe(200);
+    expect((await response.json()).data).toMatchObject({ ok: true, service: "deepl" });
+    expect(fetchMock.mock.calls[1][0]).toBe("https://api-free.deepl.com/v2/usage");
+  });
+
   it("rejects attempts to save multiple credentials in one request", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("{}", { status: 200 })));
     const response = await handleSettings(
