@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { handleDiscovery } from "./discovery";
+import { handleDiscovery, type DiscoveryEnv } from "./discovery";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -13,7 +13,7 @@ describe("handleDiscovery", () => {
       .mockResolvedValueOnce(new Response(null, { status: 201 }));
     vi.stubGlobal("fetch", fetchMock);
 
-    const env = {
+    const env: DiscoveryEnv = {
       SUPABASE_URL: "https://example.supabase.co",
       SUPABASE_ANON_KEY: "anon",
       SUPABASE_SERVICE_ROLE_KEY: "service",
@@ -38,7 +38,7 @@ describe("handleDiscovery", () => {
       SUPABASE_URL: "https://example.supabase.co",
       SUPABASE_ANON_KEY: "anon",
       SUPABASE_SERVICE_ROLE_KEY: "service",
-      LEAD_DISCOVERY_WORKFLOW: { create: vi.fn() },
+      LEAD_DISCOVERY_WORKFLOW: { create: vi.fn().mockResolvedValue({ id: "unused" }) },
     };
     const request = new Request("https://tradepilot.test/api/v1/discovery-runs", {
       method: "POST",
