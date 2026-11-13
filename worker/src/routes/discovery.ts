@@ -220,14 +220,18 @@ export async function processRun(env: DiscoveryEnv, runId: string, ownerId: stri
       const lon = element.lon ?? element.center?.lon ?? null;
       const website = tags.website ?? tags["contact:website"] ?? null;
       const phone = tags.phone ?? tags["contact:phone"] ?? null;
+      const email = tags.email ?? tags["contact:email"] ?? null;
+      const businessType = tags.shop ?? tags.office ?? tags.amenity ?? tags.craft ?? tags.industrial ?? tags.company ?? null;
       const dedupeKey = buildLeadDedupeKey({countryCode:code,name,website,phone,latitude:lat,longitude:lon});
       const address = [tags["addr:housenumber"],tags["addr:street"],tags["addr:city"],tags["addr:state"],tags["addr:postcode"]].filter(Boolean).join(", ") || null;
       await persistDiscoveryRecord(env,ownerId,runId,input,{
         provider:"openstreetmap", externalId:element.type+"/"+element.id, name, countryCode:code,
-        address,phone,website,latitude:lat,longitude:lon,
+        address,phone,email,website,businessType,
+        confidenceScore:calculateConfidence({provider:"openstreetmap",address,phone,website,email,latitude:lat,longitude:lon,businessType}),
+        latitude:lat,longitude:lon,
         sourceUrl:"https://www.openstreetmap.org/"+element.type+"/"+element.id,
         license:"ODbL-1.0",attribution:"© OpenStreetMap contributors",
-        email,businessType,confidenceScore:calculateConfidence({provider:"openstreetmap",address,phone,website,email,latitude:lat,longitude:lon,businessType}),\n        rawData:{osm_type:element.type,osm_id:element.id,tags},dedupeKey,
+        rawData:{osm_type:element.type,osm_id:element.id,tags},dedupeKey,
       });
       osmByName.set(normalizeBusinessName(name),{dedupeKey,lat,lon});
       created++;
@@ -236,11 +240,17 @@ export async function processRun(env: DiscoveryEnv, runId: string, ownerId: stri
       if (!place.id || !place.displayName?.text) continue;
       const name = place.displayName.text.trim();
       const lat = place.location?.latitude ?? null, lon = place.location?.longitude ?? null;
+      const address = place.formattedAddress ?? null;
+      const phone = place.internationalPhoneNumber ?? place.nationalPhoneNumber ?? null;
+      const website = place.websiteUri ?? null;
+      const businessType = place.types?.[0] ?? null;
       const match = osmByName.get(normalizeBusinessName(name));
       const matched = !!match && lat != null && lon != null && match.lat != null && match.lon != null && Math.abs(match.lat-lat)<0.001 && Math.abs(match.lon-lon)<0.001;
       const dedupeKey = matched && match ? match.dedupeKey : buildLeadDedupeKey({countryCode:code,name,latitude:lat,longitude:lon});
       await persistDiscoveryRecord(env,ownerId,runId,input,{
-        provider:"google_maps",externalId:place.id,name,countryCode:code,address,phone,website,businessType,latitude:lat,longitude:lon,\n        confidenceScore:calculateConfidence({provider:"google_maps",address,phone,website,latitude:lat,longitude:lon,businessType}),
+        provider:"google_maps",externalId:place.id,name,countryCode:code,address,phone,website,businessType,
+        confidenceScore:calculateConfidence({provider:"google_maps",address,phone,website,latitude:lat,longitude:lon,businessType}),
+        latitude:lat,longitude:lon,
         sourceUrl:"https://www.google.com/maps/search/?api=1&query_place_id="+encodeURIComponent(place.id),
         license:"Google Maps Platform Place ID",attribution:"Google Maps",
         rawData:{place_id:place.id,formatted_address:address,phone,website,types:place.types??[],rating:place.rating??null,user_rating_count:place.userRatingCount??null,business_status:place.businessStatus??null},dedupeKey,
