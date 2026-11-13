@@ -39,9 +39,9 @@ Each provider has an independent outcome. A provider failure does not cancel the
 - Authentication UI is not part of this page approval. The discovery API requires an existing Supabase Auth session; the page reports a sign-in error when no session exists.
 
 ## Production deployment
-- Deployment is intentionally manual: run the **Deploy TradePilot** GitHub Actions workflow from this feature branch after configuring repository secrets.
+- The **Deploy TradePilot** GitHub Actions workflow runs on pushes to this approved feature branch. After the three repository secrets below are configured, the next push will build, verify, upload Worker secrets, and deploy Worker + Static Assets.
 - Required GitHub Actions secrets:
-  - `CLOUDFLARE_API_TOKEN`: scoped to Workers Scripts edit, Workflows edit, and account read.
+  - `CLOUDFLARE_API_TOKEN`: a Cloudflare API token with Workers Scripts Edit (Editor access for the TradePilot Worker); keep it in GitHub Actions secrets.
   - `SUPABASE_SERVICE_ROLE_KEY`: the project's server-side service role key; never expose it to browser code.
   - `GOOGLE_MAPS_API_KEY`: a server-side Google Places API key with Places API (New) enabled and billing/quota configured.
 - The workflow builds the SPA with the public Supabase URL/publishable key, uploads the two Worker secrets to Cloudflare, then deploys Worker + Static Assets and the Workflow binding.
