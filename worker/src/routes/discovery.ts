@@ -111,7 +111,7 @@ export async function processRun(env: DiscoveryEnv, runId: string, ownerId: stri
       .then(async (value) => { osmCount += value.length; discovered += value.length; doneUnits++; await log(env, runId, ownerId, "success", code + " · OpenStreetMap 返回 " + value.length + " 条候选"); await updateProgress(); return { ok: true as const, value }; })
       .catch(async (error) => { failures++; doneUnits++; await log(env, runId, ownerId, "warning", code + " · OpenStreetMap 查询失败：" + String(error).slice(0, 180)); await updateProgress(); return { ok: false as const, error }; });
     const googlePromise: Promise<ProviderResult<GooglePlace[]>> = searchGoogle(code, input.query, input.limitPerCountry, env)
-      .then(async (value) => { googleCount += value.length; discovered += value.length; doneUnits++; await log(env, runId, ownerId, "success", code + " · Google Maps 返回 " + value.length + " 条候选（仅持久化允许保留的 Place ID）"); await updateProgress(); return { ok: true, value }; })
+      .then(async (value) => { googleCount += value.length; discovered += value.length; doneUnits++; await log(env, runId, ownerId, "success", code + " · Google Maps 返回 " + value.length + " 条候选（仅持久化允许保留的 Place ID）"); await updateProgress(); return { ok: true as const, value }; })
       .catch(async (error) => { failures++; doneUnits++; await log(env, runId, ownerId, "warning", code + " · Google Maps 查询失败：" + String(error).slice(0, 180)); await updateProgress(); return { ok: false, error }; });
     const [osmResult, googleResult] = await Promise.all([osmPromise, googlePromise]);
     const osm = osmResult.ok ? osmResult.value : [];
