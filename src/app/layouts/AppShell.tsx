@@ -1,9 +1,9 @@
 import { useState, type ReactNode } from "react";
-import { ChevronDown, ChevronRight, Compass, MapPinned, PanelLeftClose, PanelLeftOpen, Radar, Settings, KeyRound } from "lucide-react";
+import { ChevronDown, ChevronRight, Compass, MapPinned, PanelLeftClose, PanelLeftOpen, Radar, Settings, KeyRound, LogOut } from "lucide-react";
 import { Button } from "@/shared/ui/primitives";
 
 type AppPage = "discovery" | "integrations";
-export function AppShell({ children, activePage, onNavigate }: { children: ReactNode; activePage: AppPage; onNavigate: (page: AppPage) => void }) {
+export function AppShell({ children, activePage, onNavigate, userEmail, onSignOut }: { children: ReactNode; activePage: AppPage; onNavigate: (page: AppPage) => void; userEmail: string; onSignOut: () => void }) {
  const [collapsed, setCollapsed] = useState(false);
  const [discoveryExpanded, setDiscoveryExpanded] = useState(true);
  const [settingsExpanded, setSettingsExpanded] = useState(true);
@@ -19,7 +19,7 @@ export function AppShell({ children, activePage, onNavigate }: { children: React
      <Button type="button" variant="ghost" onClick={() => setSettingsExpanded(!settingsExpanded)} className={`flex w-full items-center gap-3 px-3 py-2.5 text-sm font-medium ${collapsed ? "justify-center" : "justify-start"}`}><Settings className="h-4 w-4 shrink-0" />{!collapsed && <><span className="flex-1 text-left">系统设置</span>{settingsExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}</>}</Button>
      {settingsExpanded && <div className={`space-y-1 ${collapsed ? "" : "ml-4 border-l pl-3"}`}><Button type="button" variant={activePage === "integrations" ? "secondary" : "ghost"} onClick={() => onNavigate("integrations")} className={`flex w-full items-center gap-3 px-3 py-2.5 text-sm ${collapsed ? "justify-center" : "justify-start"}`}><KeyRound className="h-4 w-4 shrink-0" />{!collapsed && <span>设置与集成</span>}</Button></div>}
     </div>
-   </nav><div className="border-t p-4 text-xs text-muted-foreground">{!collapsed ? "单用户工作空间" : "TP"}</div>
+   </nav><div className="border-t p-3">{!collapsed && <p className="mb-2 truncate px-2 text-xs text-muted-foreground" title={userEmail}>{userEmail}</p>}<Button type="button" variant="ghost" onClick={onSignOut} className={`flex w-full items-center gap-2 ${collapsed ? "justify-center" : "justify-start"}`} aria-label="退出登录"><LogOut className="h-4 w-4" />{!collapsed && <span>退出登录</span>}</Button></div>
   </aside><main className="min-w-0 flex-1">{children}</main>
  </div>;
 }
