@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { ChevronDown, ChevronRight, Compass, MapPinned, PanelLeftClose, PanelLeftOpen, Radar } from "lucide-react";
 import { Button } from "@/shared/ui/primitives";
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({ children }: { children: ReactNode }) {
  const [collapsed, setCollapsed] = useState(false); const [expanded, setExpanded] = useState(true);
  return <div className="flex min-h-screen bg-background text-foreground">
   <aside className={`hidden shrink-0 flex-col border-r bg-card transition-[width] duration-200 md:flex ${collapsed ? "w-[76px]" : "w-64"}`}>
