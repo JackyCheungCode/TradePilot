@@ -12,7 +12,7 @@ export interface DiscoveryEnv {
 export type DiscoveryProvider = "google_maps" | "openstreetmap";
 export interface DiscoveryRunInput { countries: string[]; query: string; limitPerCountry: number; providers: DiscoveryProvider[]; state?: string; city?: string; }
 interface OSMElement { type: string; id: number; lat?: number; lon?: number; center?: { lat: number; lon: number }; tags?: Record<string, string>; }
-interface GooglePlace { id?: string; displayName?: { text?: string }; location?: { latitude?: number; longitude?: number }; }
+interface GooglePlace { id?: string; displayName?: { text?: string }; location?: { latitude?: number; longitude?: number }; formattedAddress?: string; nationalPhoneNumber?: string; internationalPhoneNumber?: string; websiteUri?: string; types?: string[]; rating?: number; userRatingCount?: number; businessStatus?: string; }
 type ProviderResult<T> = { ok: true; value: T } | { ok: false; error: unknown };
 
 async function authenticate(request: Request, env: DiscoveryEnv): Promise<string | null> {
@@ -66,7 +66,9 @@ function overpassLiteral(value: string) {
   return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }
 async function searchOSM(code: string, query: string, limit: number, env: DiscoveryEnv, state?: string, city?: string): Promise<OSMElement[]> {
-  const overpass = env.OVERPASS_API_URL ?? "https://overpass-api.de/api/interpreter";
+  const overpassEndpoints = env.OVERPASS_API_URL
+    ? [env.OVERPASS_API_URL]
+    : ["https://overpass-api.de/api/interpreter","https://overpass.kumi.systems/api/interpreter","https://overpass.private.coffee/api/interpreter"];
   const safeQuery = query.normalize("NFKC").replace(/[^\p{L}\p{N}\s-]/gu, " ").trim();
   const terms = safeQuery.split(/\s+/).filter((word) => word.length > 2 && !["the", "and", "for", "with", "from"].includes(word.toLowerCase())).slice(0, 4);
   const pattern = terms.join("|") || ".*";
@@ -79,14 +81,29 @@ async function searchOSM(code: string, query: string, limit: number, env: Discov
     'nwr["shop"~"electronics|electrical|computer|mobile_phone|hardware|wholesale|' + pattern + '",i](area.target);' +
     'nwr["office"~"' + pattern + '",i](area.target);' +
     'nwr["amenity"~"' + pattern + '",i](area.target);nwr["craft"~"' + pattern + '",i](area.target);nwr["industrial"~"' + pattern + '",i](area.target););out center tags ' + Math.min(500, limit) + ';';
-  const response = await fetch(overpass, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8", "User-Agent": "TradePilot/0.1 (lead discovery)" },
-    body: "data=" + encodeURIComponent(q),
-  });
-  if (!response.ok) throw new Error("OVERPASS_" + response.status);
-  const body = await response.json() as { elements?: OSMElement[] };
-  return (body.elements ?? []).filter((element) => element.tags?.name).slice(0, limit);
+  const failures: string[] = [];
+  for (let index = 0; index < overpassEndpoints.length; index++) {
+    const endpoint = overpassEndpoints[index];
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8", "User-Agent": "TradePilot/0.1 (lead discovery)" },
+        body: "data=" + encodeURIComponent(q),
+        signal: AbortSignal.timeout(55000),
+      });
+      if (!response.ok) {
+        failures.push(new URL(endpoint).host + ":OVERPASS_" + response.status);
+        if ([429, 502, 503, 504, 521, 522, 524].includes(response.status) && index < overpassEndpoints.length - 1) continue;
+        throw new Error("OVERPASS_" + response.status + (failures.length ? " (" + failures.join(", ") + ")" : ""));
+      }
+      const body = await response.json() as { elements?: OSMElement[] };
+      return (body.elements ?? []).filter((element) => element.tags?.name).slice(0, limit);
+    } catch (error) {
+      failures.push(new URL(endpoint).host + ":" + String(error).slice(0,100));
+      if (index === overpassEndpoints.length - 1) throw new Error("OVERPASS_ALL_ENDPOINTS_FAILED: " + failures.join(" | "));
+    }
+  }
+  throw new Error("OVERPASS_ALL_ENDPOINTS_FAILED: " + failures.join(" | "));
 }
 async function searchGoogle(code: string, query: string, limit: number, env: DiscoveryEnv, state?: string, city?: string): Promise<GooglePlace[]> {
   if (!env.GOOGLE_MAPS_API_KEY) throw new Error("GOOGLE_MAPS_API_KEY_NOT_CONFIGURED");
@@ -96,13 +113,20 @@ async function searchGoogle(code: string, query: string, limit: number, env: Dis
     headers: {
       "Content-Type": "application/json",
       "X-Goog-Api-Key": env.GOOGLE_MAPS_API_KEY,
-      "X-Goog-FieldMask": "places.id,places.displayName,places.location",
+      "X-Goog-FieldMask": "places.id,places.displayName,places.location,places.formattedAddress,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.types,places.rating,places.userRatingCount,places.businessStatus",
     },
     body: JSON.stringify({ textQuery: query + " in " + location, regionCode: code, maxResultCount: Math.min(20, limit) }),
   });
   if (!response.ok) throw new Error("GOOGLE_PLACES_" + response.status);
   const body = await response.json() as { places?: GooglePlace[] };
   return body.places ?? [];
+}
+function calculateConfidence(input:{provider:DiscoveryProvider;address?:string|null;phone?:string|null;website?:string|null;email?:string|null;latitude?:number|null;longitude?:number|null;businessType?:string|null}):number {
+  let score=input.provider==="google_maps"?55:45;
+  if(input.address)score+=10;if(input.phone)score+=10;if(input.website)score+=8;
+  if(input.email)score+=5;if(input.latitude!=null&&input.longitude!=null)score+=7;
+  if(input.businessType)score+=5;
+  return Math.min(100,score);
 }
 export async function markRunFailed(env: DiscoveryEnv, runId: string, ownerId: string, error: unknown) {
   await updateRun(env, runId, { status: "failed", message: "任务执行失败" });
@@ -115,7 +139,7 @@ async function persistDiscoveryRecord(
   ownerId: string,
   runId: string,
   input: DiscoveryRunInput,
-  item: { provider: DiscoveryProvider; externalId: string; name: string; countryCode: string; address?: string | null; phone?: string | null; website?: string | null; latitude?: number | null; longitude?: number | null; sourceUrl?: string | null; license?: string | null; attribution?: string | null; rawData: Record<string, unknown>; dedupeKey: string },
+  item: { provider: DiscoveryProvider; externalId: string; name: string; countryCode: string; address?: string | null; phone?: string | null; email?: string | null; website?: string | null; businessType?: string | null; confidenceScore?: number | null; latitude?: number | null; longitude?: number | null; sourceUrl?: string | null; license?: string | null; attribution?: string | null; rawData: Record<string, unknown>; dedupeKey: string },
 ): Promise<string> {
   const entityRows = await db<Array<{id:string}>>(env, "discovery_entities?on_conflict=owner_id,dedupe_key", {
     method: "POST",
@@ -197,7 +221,7 @@ export async function processRun(env: DiscoveryEnv, runId: string, ownerId: stri
         address,phone,website,latitude:lat,longitude:lon,
         sourceUrl:"https://www.openstreetmap.org/"+element.type+"/"+element.id,
         license:"ODbL-1.0",attribution:"© OpenStreetMap contributors",
-        rawData:{osm_type:element.type,osm_id:element.id,tags},dedupeKey,
+        email,businessType,confidenceScore:calculateConfidence({provider:"openstreetmap",address,phone,website,email,latitude:lat,longitude:lon,businessType}),\n        rawData:{osm_type:element.type,osm_id:element.id,tags},dedupeKey,
       });
       osmByName.set(normalizeBusinessName(name),{dedupeKey,lat,lon});
       created++;
@@ -210,10 +234,10 @@ export async function processRun(env: DiscoveryEnv, runId: string, ownerId: stri
       const matched = !!match && lat != null && lon != null && match.lat != null && match.lon != null && Math.abs(match.lat-lat)<0.001 && Math.abs(match.lon-lon)<0.001;
       const dedupeKey = matched && match ? match.dedupeKey : buildLeadDedupeKey({countryCode:code,name,latitude:lat,longitude:lon});
       await persistDiscoveryRecord(env,ownerId,runId,input,{
-        provider:"google_maps",externalId:place.id,name,countryCode:code,latitude:lat,longitude:lon,
+        provider:"google_maps",externalId:place.id,name,countryCode:code,address,phone,website,businessType,latitude:lat,longitude:lon,\n        confidenceScore:calculateConfidence({provider:"google_maps",address,phone,website,latitude:lat,longitude:lon,businessType}),
         sourceUrl:"https://www.google.com/maps/search/?api=1&query_place_id="+encodeURIComponent(place.id),
         license:"Google Maps Platform Place ID",attribution:"Google Maps",
-        rawData:{place_id:place.id},dedupeKey,
+        rawData:{place_id:place.id,formatted_address:address,phone,website,types:place.types??[],rating:place.rating??null,user_rating_count:place.userRatingCount??null,business_status:place.businessStatus??null},dedupeKey,
       });
       if (!matched) created++;
     }
