@@ -55,6 +55,7 @@ async function saveOneSecret(service: ServiceKey, value: string, env: SettingsEn
   await cloudflareRequest(cloudflareToken, "/user/tokens/verify");
   await cloudflareRequest(cloudflareToken, `/accounts/${accountId}/workers/scripts/${workerName}/secrets-bulk`, {
     method: "PATCH",
+    headers: { "Content-Type": "application/merge-patch+json" },
     body: JSON.stringify({
       secrets: {
         [secretNames[service]]: { name: secretNames[service], type: "secret_text", text: value },
