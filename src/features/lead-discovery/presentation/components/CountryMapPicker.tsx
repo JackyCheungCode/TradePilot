@@ -9,7 +9,7 @@ isoCountries.registerLocale(enLocale);
 const flag = (code: string) => String.fromCodePoint(...code.toUpperCase().split("").map((c) => 127397 + c.charCodeAt(0)));
 const specialNames: Record<string, string> = { HK: "中国香港", MO: "中国澳门", TW: "中国台湾" };
 const countries = Object.keys(isoCountries.getAlpha2Codes()).map((code) => ({ code, numericCode: isoCountries.getNumericCode(code) ?? "", name: specialNames[code] ?? isoCountries.getName(code, "en") ?? code, flag: flag(code) })).sort((a,b) => a.name.localeCompare(b.name));
-const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
+const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json";
 export function CountryMapPicker({ value, onChange }: { value: string[]; onChange: (next: string[]) => void }) {
  const [search, setSearch] = useState("");
  const selected = useMemo(() => new Set(value), [value]);
