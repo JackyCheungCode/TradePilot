@@ -114,7 +114,7 @@ async function searchOSM(code: string, tags: Array<{key:string;value:string}>, l
     (phoneKey ? '["' + phoneKey + '"]' : '') +
     '(area.target);'
   ))).join("");
-  const q = '[out:json][timeout:45];' + scopeClauses.join("") + '(' + tagQueries + ');out center tags ' + Math.min(500, Math.max(limit, limit * 3)) + ';';
+  const q = '[out:json][timeout:70];' + scopeClauses.join("") + '(' + tagQueries + ');out center tags;';
   const failures: string[] = [];
   for (let index = 0; index < overpassEndpoints.length; index++) {
     const endpoint = overpassEndpoints[index];
@@ -123,7 +123,7 @@ async function searchOSM(code: string, tags: Array<{key:string;value:string}>, l
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8", "User-Agent": "TradePilot/0.1 (lead discovery)" },
         body: "data=" + encodeURIComponent(q),
-        signal: AbortSignal.timeout(55000),
+        signal: AbortSignal.timeout(80000),
       });
       if (!response.ok) {
         failures.push(new URL(endpoint).host + ":OVERPASS_" + response.status);
