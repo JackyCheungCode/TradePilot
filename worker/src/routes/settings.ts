@@ -11,7 +11,7 @@ interface SettingsEnv {
   CLOUDFLARE_API_TOKEN?: string;
   CLOUDFLARE_ACCOUNT_ID?: string;
   CLOUDFLARE_WORKER_NAME?: string;
-  AI: { run(model:string,input:Record<string,unknown>): Promise<unknown> };
+  AI?: { run(model:string,input:Record<string,unknown>): Promise<unknown> };
 }
 type ServiceKey = "cloudflare" | "supabase" | "googleMaps" | "deepl" | "serper" | "serpapi";
 type CredentialBody = { cloudflareApiToken?: string; supabaseServiceRoleKey?: string; googleMapsApiKey?: string; deeplApiKey?: string; serperApiKey?: string; serpapiApiKey?: string };
@@ -163,7 +163,7 @@ async function saveAISecret(id:string,value:string,env:SettingsEnv){
  await cloudflareRequest(token,"/accounts/"+account+"/workers/scripts/"+worker+"/secrets",{method:"PUT",body:JSON.stringify({name:secret,type:"secret_text",text:value})});
 }
 async function runAIProviderTest(id:string,env:SettingsEnv){
- if(id==="workers-ai"){try{await env.AI.run("@cf/google/gemma-4-26b-a4b-it",{messages:[{role:"user",content:"Reply with OK"}]});return {ok:true,message:"Workers AI 连接成功"};}catch{return {ok:false,message:"Workers AI 调用失败，请检查 AI Binding、模型状态与账户额度"};}}
+ if(id==="workers-ai"){if(!env.AI)return {ok:false,message:"Workers AI Binding 尚未启用"};try{await env.AI.run("@cf/google/gemma-4-26b-a4b-it",{messages:[{role:"user",content:"Reply with OK"}]});return {ok:true,message:"Workers AI 连接成功"};}catch{return {ok:false,message:"Workers AI 调用失败，请检查 AI Binding、模型状态与账户额度"};}}
  const config=await readAIConfig(env),p=config.providers.find(x=>x.id===id),secret=aiSecretNames[id],key=secret?(env as unknown as Record<string,unknown>)[secret] as string|undefined:undefined;
  if(!p||!key)return {ok:false,message:"请先添加服务商并保存 API Key"};
  try{
