@@ -6,10 +6,10 @@ export interface DiscoveryEnv {
   SUPABASE_ANON_KEY: string;
   SUPABASE_SERVICE_ROLE_KEY: string;
   GOOGLE_MAPS_API_KEY?: string;
-  LEAD_DISCOVERY_WORKFLOW: { create(options: { id: string; params: { runId: string; ownerId: string; input: DiscoveryDiscoveryRunInput } }): Promise<{ id: string }> };
+  LEAD_DISCOVERY_WORKFLOW: { create(options: { id: string; params: { runId: string; ownerId: string; input: DiscoveryRunInput } }): Promise<{ id: string }> };
   OVERPASS_API_URL?: string;
 }
-export interface DiscoveryDiscoveryRunInput { countries: string[]; query: string; limitPerCountry: number; }
+export interface DiscoveryRunInput { countries: string[]; query: string; limitPerCountry: number; }
 interface OSMElement { type: string; id: number; lat?: number; lon?: number; center?: { lat: number; lon: number }; tags?: Record<string, string>; }
 interface GooglePlace { id?: string; displayName?: { text?: string }; location?: { latitude?: number; longitude?: number }; }
 type ProviderResult<T> = { ok: true; value: T } | { ok: false; error: unknown };
@@ -90,7 +90,12 @@ async function searchGoogle(code: string, query: string, limit: number, env: Dis
   const body = await response.json() as { places?: GooglePlace[] };
   return body.places ?? [];
 }
-export async function processRun(env: DiscoveryEnv, runId: string, ownerId: string, input: DiscoveryDiscoveryRunInput) {
+export async function markRunFailed(env: DiscoveryEnv, runId: string, ownerId: string, error: unknown) {
+  await updateRun(env, runId, { status: "failed", message: "任务执行失败" });
+  await log(env, runId, ownerId, "error", "任务异常终止：" + String(error).slice(0, 300));
+}
+
+export async function processRun(env: DiscoveryEnv, runId: string, ownerId: string, input: DiscoveryRunInput) {
   const totalUnits = input.countries.length * 2;
   let doneUnits = 0, discovered = 0, created = 0, googleCount = 0, osmCount = 0, failures = 0;
   await updateRun(env, runId, { status: "running", message: "正在并行查询 Google Maps 与 OpenStreetMap" });
@@ -103,8 +108,8 @@ export async function processRun(env: DiscoveryEnv, runId: string, ownerId: stri
       message: "正在处理 " + code + " · 双源并行查询",
     });
     const osmPromise: Promise<ProviderResult<OSMElement[]>> = searchOSM(code, input.query, input.limitPerCountry, env)
-      .then(async (value) => { osmCount += value.length; discovered += value.length; doneUnits++; await log(env, runId, ownerId, "success", code + " · OpenStreetMap 返回 " + value.length + " 条候选"); await updateProgress(); return { ok: true, value }; })
-      .catch(async (error) => { failures++; doneUnits++; await log(env, runId, ownerId, "warning", code + " · OpenStreetMap 查询失败：" + String(error).slice(0, 180)); await updateProgress(); return { ok: false, error }; });
+      .then(async (value) => { osmCount += value.length; discovered += value.length; doneUnits++; await log(env, runId, ownerId, "success", code + " · OpenStreetMap 返回 " + value.length + " 条候选"); await updateProgress(); return { ok: true as const, value }; })
+      .catch(async (error) => { failures++; doneUnits++; await log(env, runId, ownerId, "warning", code + " · OpenStreetMap 查询失败：" + String(error).slice(0, 180)); await updateProgress(); return { ok: false as const, error }; });
     const googlePromise: Promise<ProviderResult<GooglePlace[]>> = searchGoogle(code, input.query, input.limitPerCountry, env)
       .then(async (value) => { googleCount += value.length; discovered += value.length; doneUnits++; await log(env, runId, ownerId, "success", code + " · Google Maps 返回 " + value.length + " 条候选（仅持久化允许保留的 Place ID）"); await updateProgress(); return { ok: true, value }; })
       .catch(async (error) => { failures++; doneUnits++; await log(env, runId, ownerId, "warning", code + " · Google Maps 查询失败：" + String(error).slice(0, 180)); await updateProgress(); return { ok: false, error }; });
