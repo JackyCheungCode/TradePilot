@@ -1,0 +1,18 @@
+import { useEffect, useState } from "react";
+import { Activity, ArrowRight, Clock3, ListChecks, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
+import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/primitives";
+import { discoveryWorkspaceApi } from "../../infrastructure/discovery-api";
+import type { DiscoveryRun } from "../../domain/model";
+const statusLabel:Record<string,string>={queued:"排队中",running:"执行中",completed:"已完成",partial:"部分完成",failed:"失败",cancelled:"已取消"};
+export function DiscoveryTasksPage(){
+ const [runs,setRuns]=useState<DiscoveryRun[]>([]);const [loading,setLoading]=useState(true);
+ const load=async()=>{setLoading(true);try{setRuns(await discoveryWorkspaceApi.listRuns());}catch(e){toast.error(e instanceof Error?e.message:"读取任务失败");}finally{setLoading(false);}};
+ useEffect(()=>{void load();},[]);
+ return <div className="mx-auto w-full max-w-[1500px] space-y-6 p-5 lg:p-8">
+  <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="mb-2 text-sm text-muted-foreground">潜客发现 / 地图与本地商家</p><h1 className="text-2xl font-semibold tracking-tight">搜索任务</h1><p className="mt-1 text-sm text-muted-foreground">每次搜索自动生成独立任务编号，历史任务集中在此管理。</p></div><div className="flex gap-2"><Button variant="outline" onClick={()=>void load()} disabled={loading}><RefreshCw className="h-4 w-4"/>刷新</Button><Button onClick={()=>{window.location.href="/lead-discovery/map-local-businesses";}}>新建搜索</Button></div></div>
+  <Card><CardHeader><CardTitle>历史任务</CardTitle><CardDescription>{runs.length} 个搜索任务 · 不会为单个任务创建侧边栏菜单</CardDescription></CardHeader><CardContent className="space-y-3">
+   {loading?<p className="py-10 text-center text-sm text-muted-foreground">正在加载任务…</p>:runs.length===0?<div className="py-12 text-center"><Clock3 className="mx-auto mb-3 h-6 w-6 text-muted-foreground"/><p className="font-medium">还没有搜索任务</p><p className="mt-1 text-sm text-muted-foreground">创建第一次搜索后，任务会自动出现在这里。</p></div>:runs.map(run=><div key={run.id} className="flex flex-col gap-3 rounded-lg border p-4 md:flex-row md:items-center md:justify-between"><div className="min-w-0 space-y-1"><div className="flex flex-wrap items-center gap-2"><span className="font-mono text-sm font-semibold">{run.taskCode??run.id}</span><Badge variant={run.status==="completed"?"success":"secondary"}>{statusLabel[run.status]??run.status}</Badge></div><p className="truncate text-sm font-medium">{run.query}</p><p className="text-xs text-muted-foreground">{(run.countries??[]).join(", ")}{run.state?" · "+run.state:""}{run.city?" · "+run.city:""} · {(run.providers??[]).join(" + ")}</p><p className="text-xs text-muted-foreground">{run.discoveredCount} 条发现 · {run.progress}% · {run.createdAt?new Date(run.createdAt).toLocaleString():""}</p></div><Button variant="outline" size="sm" onClick={()=>{window.location.href="/lead-discovery/map-local-businesses/results?runId="+encodeURIComponent(run.id);}}>查看结果<ArrowRight className="h-4 w-4"/></Button></div>)}
+  </CardContent></Card>
+ </div>;
+}

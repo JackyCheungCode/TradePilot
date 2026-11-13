@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from "react";
-import { ChevronDown, ChevronRight, Compass, KeyRound, LogOut, MapPinned, Menu, PanelLeftClose, PanelLeftOpen, Radar, Settings, X } from "lucide-react";
+import { ChevronDown, ChevronRight, Compass, KeyRound, LogOut, MapPinned, Menu, PanelLeftClose, PanelLeftOpen, Radar, Settings, X, Users, ListChecks, ClipboardList } from "lucide-react";
 import { Button } from "@/shared/ui/primitives";
 
-type AppPage = "discovery" | "integrations";
+type AppPage = "discovery" | "discoveryTasks" | "discoveryResults" | "leads" | "integrations";
 export function AppShell({ children, activePage, onNavigate, userEmail, onSignOut }: { children: ReactNode; activePage: AppPage; onNavigate: (page: AppPage) => void; userEmail: string; onSignOut: () => void }) {
  const [collapsed, setCollapsed] = useState(false);
  const [mobileOpen, setMobileOpen] = useState(false);
@@ -19,7 +19,7 @@ export function AppShell({ children, activePage, onNavigate, userEmail, onSignOu
   <nav className="flex-1 space-y-3 overflow-y-auto p-3">
    <div>
     <Button type="button" variant="ghost" onClick={() => setDiscoveryExpanded(!discoveryExpanded)} className={`flex w-full items-center gap-3 px-3 py-2.5 text-sm font-medium ${collapsed && !mobileOpen ? "justify-center" : "justify-start"}`}><Compass className="h-4 w-4 shrink-0" />{(!collapsed || mobileOpen) && <><span className="flex-1 text-left">潜客发现</span>{discoveryExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}</>}</Button>
-    {discoveryExpanded && <div className={`space-y-1 ${collapsed && !mobileOpen ? "" : "ml-4 border-l pl-3"}`}><Button type="button" variant={activePage === "discovery" ? "secondary" : "ghost"} onClick={() => { onNavigate("discovery"); setMobileOpen(false); }} className={`flex w-full items-center gap-3 px-3 py-2.5 text-sm ${collapsed && !mobileOpen ? "justify-center" : "justify-start"}`}><MapPinned className="h-4 w-4 shrink-0" />{(!collapsed || mobileOpen) && <span>地图与本地商家</span>}</Button></div>}
+    {discoveryExpanded && <div className={`space-y-1 ${collapsed && !mobileOpen ? "" : "ml-4 border-l pl-3"}`}><Button type="button" variant={activePage === "discovery" ? "secondary" : "ghost"} onClick={() => { onNavigate("discovery"); setMobileOpen(false); }} className={`flex w-full items-center gap-3 px-3 py-2.5 text-sm ${collapsed && !mobileOpen ? "justify-center" : "justify-start"}`}><MapPinned className="h-4 w-4 shrink-0" />{(!collapsed || mobileOpen) && <span>地图与本地商家</span>}</Button><Button type="button" variant={activePage === "discoveryTasks" ? "secondary" : "ghost"} onClick={() => { onNavigate("discoveryTasks"); setMobileOpen(false); }} className="flex w-full items-center gap-3 px-3 py-2.5 text-sm"><ListChecks className="h-4 w-4 shrink-0" />{(!collapsed || mobileOpen) && <span>搜索任务</span>}</Button><Button type="button" variant={activePage === "discoveryResults" ? "secondary" : "ghost"} onClick={() => { onNavigate("discoveryResults"); setMobileOpen(false); }} className="flex w-full items-center gap-3 px-3 py-2.5 text-sm"><ClipboardList className="h-4 w-4 shrink-0" />{(!collapsed || mobileOpen) && <span>搜索结果</span>}</Button></div>}
    </div>
    <div>
     <Button type="button" variant="ghost" onClick={() => setSettingsExpanded(!settingsExpanded)} className={`flex w-full items-center gap-3 px-3 py-2.5 text-sm font-medium ${collapsed && !mobileOpen ? "justify-center" : "justify-start"}`}><Settings className="h-4 w-4 shrink-0" />{(!collapsed || mobileOpen) && <><span className="flex-1 text-left">系统设置</span>{settingsExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}</>}</Button>
@@ -35,7 +35,7 @@ export function AppShell({ children, activePage, onNavigate, userEmail, onSignOu
   <main className="min-w-0 flex-1">
    <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b bg-background/95 px-3 backdrop-blur md:hidden">
     <div className="flex min-w-0 items-center gap-2"><Button type="button" size="icon" variant="ghost" onClick={() => setMobileOpen(true)} aria-label="打开侧边栏菜单"><Menu className="h-5 w-5" /></Button><span className="truncate text-sm font-semibold">TradePilot</span></div>
-    <span className="max-w-[45%] truncate text-xs text-muted-foreground">{activePage === "discovery" ? "地图与本地商家" : "设置与集成"}</span>
+    <span className="max-w-[45%] truncate text-xs text-muted-foreground">{activePage === "integrations" ? "设置与集成" : activePage === "leads" ? "线索" : activePage === "discoveryTasks" ? "搜索任务" : activePage === "discoveryResults" ? "搜索结果" : "地图与本地商家"}</span>
    </header>
    {children}
   </main>

@@ -4,13 +4,13 @@ import type { Session } from "@supabase/supabase-js";
 import { AppShell } from "./layouts/AppShell";
 import { LoginPage } from "./pages/LoginPage";
 import { MapLocalDiscoveryPage } from "@/features/lead-discovery/presentation/pages/MapLocalDiscoveryPage";
-import { IntegrationsSettingsPage } from "@/features/settings/presentation/pages/IntegrationsSettingsPage";
+import { IntegrationsSettingsPage } from "@/features/settings/presentation/pages/IntegrationsSettingsPage";\nimport { DiscoveryTasksPage } from "@/features/lead-discovery/presentation/pages/DiscoveryTasksPage";\nimport { DiscoveryResultsPage } from "@/features/lead-discovery/presentation/pages/DiscoveryResultsPage";\nimport { LeadsPage } from "@/features/crm/presentation/pages/LeadsPage";
 import { getSupabaseClient } from "@/shared/lib/supabase";
 
-type AppPage = "discovery" | "integrations";
+type AppPage = "discovery" | "discoveryTasks" | "discoveryResults" | "leads" | "integrations";
 const ROUTES: Record<AppPage, string> = {
   discovery: "/lead-discovery/map-local-businesses",
-  integrations: "/settings/integrations",
+  discoveryTasks: "/lead-discovery/map-local-businesses/tasks",\n  discoveryResults: "/lead-discovery/map-local-businesses/results",\n  leads: "/crm/leads",\n  integrations: "/settings/integrations",
 };
 const getPath = () => window.location.pathname;
 const getPage = (path: string): AppPage | null => {
@@ -89,7 +89,7 @@ export function App() {
   if (!session || path === "/login") return <><LoginPage /><Toaster richColors position="top-right" /></>;
 
   return <AppShell activePage={activePage ?? "discovery"} onNavigate={navigate} userEmail={session.user.email ?? ""} onSignOut={() => void getSupabaseClient().auth.signOut()}>
-    {activePage === "integrations" ? <IntegrationsSettingsPage /> : <MapLocalDiscoveryPage />}
+    {activePage === "integrations" ? <IntegrationsSettingsPage /> : activePage === "discoveryTasks" ? <DiscoveryTasksPage /> : activePage === "discoveryResults" ? <DiscoveryResultsPage /> : activePage === "leads" ? <LeadsPage /> : <MapLocalDiscoveryPage />}
     <Toaster richColors position="top-right" />
   </AppShell>;
 }
