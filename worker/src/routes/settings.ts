@@ -107,7 +107,7 @@ async function testOneService(service: ServiceKey, env: SettingsEnv) {
   }
   if (service === "apify") {
     if (!env.APIFY_API_TOKEN) return { ok: false, message: "尚未配置" };
-    try { const response = await fetch("https://api.apify.com/v2/users/me?token=" + encodeURIComponent(env.APIFY_API_TOKEN)); if (!response.ok) return { ok: false, message: "Apify API 请求失败（HTTP " + response.status + "），请检查 Token 和账户状态" }; const body = await response.json() as { data?: { username?: string } }; return { ok: true, message: "Apify API 可用" + (body.data?.username ? " · 账户 " + body.data.username : "") }; } catch { return { ok: false, message: "无法连接 Apify API" }; }
+    try { const response = await fetch("https://api.apify.com/v2/users/me", { headers: { Authorization: "Bearer " + env.APIFY_API_TOKEN.trim(), Accept: "application/json" } }); const raw = await response.text(); let body: { data?: { username?: string }; error?: { type?: string; message?: string } } = {}; try { body = raw ? JSON.parse(raw) as typeof body : {}; } catch { /* handled by status below */ } if (!response.ok) { const reason = body.error?.message || body.error?.type || "Apify 未接受此 Token"; return { ok: false, message: "Apify HTTP " + response.status + " · " + reason + (response.status === 401 ? "。请在 Apify Console 新建有效 API Token，并重新保存。" : "") }; } return { ok: true, message: "Apify API 可用" + (body.data?.username ? " · 账户 " + body.data.username : "") }; } catch { return { ok: false, message: "无法连接 Apify API，请检查网络后重试" }; }
   }
   if (service === "serpapi") {
     if (!env.SERPAPI_API_KEY) return { ok: false, message: "尚未配置" };
