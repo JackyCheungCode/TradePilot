@@ -37,3 +37,13 @@ Each provider has an independent outcome. A provider failure does not cancel the
 - Required Worker secrets: SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, GOOGLE_MAPS_API_KEY. OVERPASS_API_URL is optional.
 - Required browser build variables: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY. The browser only receives the publishable/anon key; service-role and Google keys remain server-side.
 - Authentication UI is not part of this page approval. The discovery API requires an existing Supabase Auth session; the page reports a sign-in error when no session exists.
+
+## Production deployment
+- Deployment is intentionally manual: run the **Deploy TradePilot** GitHub Actions workflow from this feature branch after configuring repository secrets.
+- Required GitHub Actions secrets:
+  - `CLOUDFLARE_API_TOKEN`: scoped to Workers Scripts edit, Workflows edit, and account read.
+  - `SUPABASE_SERVICE_ROLE_KEY`: the project's server-side service role key; never expose it to browser code.
+  - `GOOGLE_MAPS_API_KEY`: a server-side Google Places API key with Places API (New) enabled and billing/quota configured.
+- The workflow builds the SPA with the public Supabase URL/publishable key, uploads the two Worker secrets to Cloudflare, then deploys Worker + Static Assets and the Workflow binding.
+- Supabase URL and publishable key are public client configuration and are declared in `wrangler.jsonc`; service role and Google keys are only set as Worker secrets.
+- The deploy workflow does not run on every push and does not merge the feature branch into `develop` or `main`.
