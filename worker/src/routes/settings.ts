@@ -11,7 +11,7 @@ interface SettingsEnv {
 }
 
 async function authenticated(request: Request, env: SettingsEnv): Promise<boolean> {
-  const token = request.headers.get("Authorization")?.replace(/^Bearer\\s+/i, "");
+  const token = request.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
   if (!token) return false;
   const response = await fetch(env.SUPABASE_URL + "/auth/v1/user", {
     headers: { apikey: env.SUPABASE_ANON_KEY, Authorization: "Bearer " + token },
