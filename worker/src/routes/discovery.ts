@@ -132,7 +132,7 @@ async function persistDiscoveryRecord(
     method: "POST",
     headers: { Prefer: "resolution=merge-duplicates,return=representation" },
     body: JSON.stringify({
-      owner_id: ownerId, channel: "map_local_businesses", record_type: "business",
+      owner_id: ownerId, channel: "map_local_businesses", record_type: "business", entity_id: entityId,
       name: item.name, country_code: item.countryCode, address: item.address ?? null,
       phone: item.phone ?? null, website: item.website ?? null,
       latitude: item.latitude ?? null, longitude: item.longitude ?? null,
