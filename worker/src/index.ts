@@ -1,5 +1,7 @@
 export interface WorkerEnv {
-  ASSETS: Fetcher;
+  ASSETS: {
+    fetch(request: Request): Promise<Response>;
+  };
 }
 
 function json(data: unknown, status = 200, requestId = crypto.randomUUID()): Response {
