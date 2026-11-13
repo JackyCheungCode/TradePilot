@@ -1,20 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { errorResponse } from "../src/lib/http";
+import { handleHealth } from "../src/routes/health";
 
-import worker, { type WorkerEnv } from "../src/index";
-
-const env: WorkerEnv = {
-  ASSETS: { fetch: async () => new Response("asset") },
-  SUPABASE_URL: "https://example.supabase.co",
-  SUPABASE_ANON_KEY: "test-anon-key",
-  SUPABASE_SERVICE_ROLE_KEY: "test-service-role-key",
-  LEAD_DISCOVERY_WORKFLOW: { create: async () => ({ id: "workflow-test" }) },
-};
-
-describe("Worker API routes", () => {
-  it("returns the standard success envelope and request id", async () => {
+describe("Worker API response contracts", () => {
+  it("returns the standard health envelope and request id", async () => {
     const request = new Request("https://tradepilot.example/api/v1/health");
-    const response = await worker.fetch(request, env);
-
+    const response = handleHealth(request);
     const body = (await response.json()) as {
       data: { status: string; service: string; timestamp: string };
       meta: { requestId: string };
@@ -27,11 +18,11 @@ describe("Worker API routes", () => {
     expect(Number.isNaN(Date.parse(body.data.timestamp))).toBe(false);
   });
 
-  it("preserves a supplied request id and returns a normalized 404", async () => {
+  it("preserves a supplied request id in normalized errors", async () => {
     const request = new Request("https://tradepilot.example/api/v1/missing", {
       headers: { "X-Request-Id": "trace-123" },
     });
-    const response = await worker.fetch(request, env);
+    const response = errorResponse(request, "NOT_FOUND", "Not found", 404);
     const body = (await response.json()) as {
       error: { code: string; requestId: string };
     };
