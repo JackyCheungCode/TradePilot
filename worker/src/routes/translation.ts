@@ -7,7 +7,7 @@ interface TranslationEnv {
 }
 const TARGET_LANGUAGES = new Set(["EN-US","EN-GB","DE","FR","ES","IT","JA","KO","NL","PL","PT-BR","PT-PT","RU","ZH"]);
 async function authenticated(request: Request, env: TranslationEnv) {
-  const token = request.headers.get("Authorization")?.replace(/^Bearer\\s+/i, "");
+  const token = request.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
   if (!token) return false;
   const response = await fetch(env.SUPABASE_URL + "/auth/v1/user", {
     headers: { apikey: env.SUPABASE_ANON_KEY, Authorization: "Bearer " + token },

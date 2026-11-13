@@ -85,7 +85,17 @@ async function testOneService(service: ServiceKey, env: SettingsEnv) {
       return { ok: response.ok, message: response.ok ? "Supabase 服务密钥可用" : "Supabase 请求失败，请检查服务密钥" };
     } catch { return { ok: false, message: "无法连接 Supabase" }; }
   }
-  if (service === "deepl") {\n    if (!env.DEEPL_API_KEY) return { ok: false, message: "尚未配置" };\n    try {\n      const baseUrl = env.DEEPL_API_KEY.endsWith(":fx") ? "https://api-free.deepl.com" : "https://api.deepl.com";\n      const response = await fetch(baseUrl + "/v2/usage", { headers: { Authorization: "DeepL-Auth-Key " + env.DEEPL_API_KEY } });\n      if (!response.ok) return { ok: false, message: response.status === 403 ? "DeepL API Key 无效或无权访问" : "DeepL API 请求失败（HTTP " + response.status + "）" };\n      const usage = await response.json() as { character_count?: number; character_limit?: number };\n      return { ok: true, message: typeof usage.character_count === "number" && typeof usage.character_limit === "number" ? "DeepL API 可用 · 已使用 " + usage.character_count.toLocaleString() + " / " + usage.character_limit.toLocaleString() + " 字符" : "DeepL API 可用" };\n    } catch { return { ok: false, message: "无法连接 DeepL API" }; }\n  }\n  if (!env.GOOGLE_MAPS_API_KEY) return { ok: false, message: "尚未配置" };
+  if (service === "deepl") {
+    if (!env.DEEPL_API_KEY) return { ok: false, message: "尚未配置" };
+    try {
+      const baseUrl = env.DEEPL_API_KEY.endsWith(":fx") ? "https://api-free.deepl.com" : "https://api.deepl.com";
+      const response = await fetch(baseUrl + "/v2/usage", { headers: { Authorization: "DeepL-Auth-Key " + env.DEEPL_API_KEY } });
+      if (!response.ok) return { ok: false, message: response.status === 403 ? "DeepL API Key 无效或无权访问" : "DeepL API 请求失败（HTTP " + response.status + "）" };
+      const usage = await response.json() as { character_count?: number; character_limit?: number };
+      return { ok: true, message: typeof usage.character_count === "number" && typeof usage.character_limit === "number" ? "DeepL API 可用 · 已使用 " + usage.character_count.toLocaleString() + " / " + usage.character_limit.toLocaleString() + " 字符" : "DeepL API 可用" };
+    } catch { return { ok: false, message: "无法连接 DeepL API" }; }
+  }
+  if (!env.GOOGLE_MAPS_API_KEY) return { ok: false, message: "尚未配置" };
   try {
     const response = await fetch("https://places.googleapis.com/v1/places:searchText", {
       method: "POST",
@@ -104,7 +114,8 @@ export async function handleSettings(request: Request, env: SettingsEnv): Promis
     return successResponse(request, {
       cloudflare: Boolean(env.CLOUDFLARE_API_TOKEN),
       supabase: Boolean(env.SUPABASE_SERVICE_ROLE_KEY),
-      googleMaps: Boolean(env.GOOGLE_MAPS_API_KEY),\n      deepl: Boolean(env.DEEPL_API_KEY),
+      googleMaps: Boolean(env.GOOGLE_MAPS_API_KEY),
+      deepl: Boolean(env.DEEPL_API_KEY),
     });
   }
 
