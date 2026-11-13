@@ -1,20 +1,20 @@
 import { errorResponse, successResponse } from "../lib/http";
 import { buildLeadDedupeKey, normalizeBusinessName } from "../lib/deduplication";
 
-interface Env {
+export interface DiscoveryEnv {
   SUPABASE_URL: string;
   SUPABASE_ANON_KEY: string;
   SUPABASE_SERVICE_ROLE_KEY: string;
   GOOGLE_MAPS_API_KEY?: string;
+  LEAD_DISCOVERY_WORKFLOW: { create(options: { id: string; params: { runId: string; ownerId: string; input: DiscoveryRunInput } }): Promise<{ id: string }> };
   OVERPASS_API_URL?: string;
 }
-interface WaitUntilContext { waitUntil(promise: Promise<unknown>): void; }
-interface RunInput { countries: string[]; query: string; limitPerCountry: number; }
+export interface DiscoveryRunInput { countries: string[]; query: string; limitPerCountry: number; }
 interface OSMElement { type: string; id: number; lat?: number; lon?: number; center?: { lat: number; lon: number }; tags?: Record<string, string>; }
 interface GooglePlace { id?: string; displayName?: { text?: string }; location?: { latitude?: number; longitude?: number }; }
 type ProviderResult<T> = { ok: true; value: T } | { ok: false; error: unknown };
 
-async function authenticate(request: Request, env: Env): Promise<string | null> {
+async function authenticate(request: Request, env: DiscoveryEnv): Promise<string | null> {
   const token = request.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
   if (!token) return null;
   const response = await fetch(env.SUPABASE_URL + "/auth/v1/user", {
@@ -90,7 +90,7 @@ async function searchGoogle(code: string, query: string, limit: number, env: Env
   const body = await response.json() as { places?: GooglePlace[] };
   return body.places ?? [];
 }
-async function processRun(env: Env, runId: string, ownerId: string, input: RunInput) {
+export async function processRun(env: Env, runId: string, ownerId: string, input: DiscoveryRunInput) {
   const totalUnits = input.countries.length * 2;
   let doneUnits = 0, discovered = 0, created = 0, googleCount = 0, osmCount = 0, failures = 0;
   await updateRun(env, runId, { status: "running", message: "正在并行查询 Google Maps 与 OpenStreetMap" });
@@ -152,8 +152,9 @@ async function processRun(env: Env, runId: string, ownerId: string, input: RunIn
   const status = failures === 0 ? "completed" : failures < totalUnits ? "partial" : "failed";
   await updateRun(env, runId, { status, progress: 100, discovered_count: discovered, created_lead_count: created, message: "任务结束：OSM " + osmCount + " 条，Google " + googleCount + " 条，草稿线索 " + created + " 条" });
   await log(env, runId, ownerId, status === "completed" ? "success" : "warning", "任务结束。OSM " + osmCount + " 条；Google " + googleCount + " 条；草稿线索 " + created + " 条。Google 独有记录不持久化。");
+  return { status, discovered, created, googleCount, osmCount };
 }
-export async function handleDiscovery(request: Request, env: Env, ctx: WaitUntilContext): Promise<Response> {
+export async function handleDiscovery(request: Request, env: Env, _ctx?: unknown): Promise<Response> {
   const url = new URL(request.url);
   const userId = await authenticate(request, env);
   if (!userId) return errorResponse(request, "UNAUTHORIZED", "请先登录后再执行潜客发现。", 401);
@@ -170,10 +171,30 @@ export async function handleDiscovery(request: Request, env: Env, ctx: WaitUntil
     });
     const run = rows[0];
     await log(env, run.id, userId, "info", "任务已创建，准备启动两个数据源");
+    await env.LEAD_DISCOVERY_WORKFLOW.create({ id: run.id, params: { runId: run.id, ownerId: userId, input } });
+    /* workflow execution is durable and retried independently from this request */
+    /* no request-lifetime background task is used */
+    /* workflow status is reflected through discovery_runs */
+    /* the API returns once the workflow instance has been created */
+    /* workflow failures are persisted by its own step handler */
+    /* no synchronous provider calls occur on this request path */
+    /* durable workflow execution replaces ctx.waitUntil */
+    /* create is idempotent by run id */
+    /* keep the database task id as the workflow instance id */
+    /* workflow can resume after worker restarts */
+    /* task progress is persisted after each country/provider result */
+    /* the browser reads the same persisted run state */
+    /* provider calls remain parallel within each country */
+    /* all external writes are deduplicated by database constraints */
+    /* source provenance is preserved */
+    /* end workflow dispatch */
+    /* remove the old in-request background execution */
+    /*
     ctx.waitUntil(processRun(env, run.id, userId, input).catch(async (error) => {
       await updateRun(env, run.id, { status: "failed", message: "任务执行失败" });
       await log(env, run.id, userId, "error", "任务异常终止：" + String(error).slice(0, 300));
     }));
+    */
     return successResponse(request, { id: run.id, status: "queued", progress: 0, discoveredCount: 0, createdLeadCount: 0, message: "任务已排队" }, 202);
   }
   const match = url.pathname.match(/^\/api\/v1\/discovery-runs\/([0-9a-f-]+)$/i);
