@@ -10,13 +10,13 @@ export const DEEPL_TARGET_LANGUAGES = [
   { code: "PT-PT", label: "葡萄牙语（葡萄牙）" }, { code: "RO", label: "罗马尼亚语" }, { code: "RU", label: "俄语" },
   { code: "SK", label: "斯洛伐克语" }, { code: "SL", label: "斯洛文尼亚语" }, { code: "SV", label: "瑞典语" },
   { code: "TH", label: "泰语" }, { code: "TR", label: "土耳其语" }, { code: "UK", label: "乌克兰语" },
-  { code: "VI", label: "越南语" }, { code: "ZH", label: "中文" },
+  { code: "VI", label: "越南语" }, { code: "ZH-HANS", label: "中文（简体）" }, { code: "ZH-HANT", label: "中文（繁體）" },
 ] as const;
 
 const COUNTRY_LANGUAGE: Record<string, string> = {
   US: "EN-US", GB: "EN-GB", IE: "EN-GB", AU: "EN-GB", NZ: "EN-GB", CA: "EN-US",
   DE: "DE", AT: "DE", CH: "DE", FR: "FR", BE: "FR", ES: "ES", MX: "ES", AR: "ES", CL: "ES", CO: "ES", PE: "ES",
-  IT: "IT", JP: "JA", KR: "KO", CN: "ZH", TW: "ZH", HK: "ZH", MO: "ZH", NL: "NL", PL: "PL",
+  IT: "IT", JP: "JA", KR: "KO", CN: "ZH-HANS", TW: "ZH-HANT", HK: "ZH-HANT", MO: "ZH-HANT", NL: "NL", PL: "PL",
   BR: "PT-BR", PT: "PT-PT", RU: "RU", SA: "AR", AE: "AR", EG: "AR", QA: "AR", KW: "AR", BH: "AR", OM: "AR", JO: "AR", LB: "AR",
   BG: "BG", CZ: "CS", DK: "DA", GR: "EL", EE: "ET", FI: "FI", IL: "HE", HU: "HU", ID: "ID",
   LT: "LT", LV: "LV", NO: "NB", RO: "RO", SK: "SK", SI: "SL", SE: "SV", TH: "TH", TR: "TR", UA: "UK", VN: "VI",

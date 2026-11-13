@@ -5,7 +5,7 @@ interface TranslationEnv {
   SUPABASE_ANON_KEY: string;
   DEEPL_API_KEY?: string;
 }
-const TARGET_LANGUAGES = new Set(["AR","BG","CS","DA","DE","EL","EN-US","EN-GB","ES","ET","FI","FR","HE","HU","ID","IT","JA","KO","LT","LV","NB","NL","PL","PT-BR","PT-PT","RO","RU","SK","SL","SV","TH","TR","UK","VI","ZH"]);
+const TARGET_LANGUAGES = new Set(["AR","BG","CS","DA","DE","EL","EN-US","EN-GB","ES","ET","FI","FR","HE","HU","ID","IT","JA","KO","LT","LV","NB","NL","PL","PT-BR","PT-PT","RO","RU","SK","SL","SV","TH","TR","UK","VI","ZH","ZH-HANS","ZH-HANT"]);
 async function authenticated(request: Request, env: TranslationEnv) {
   const token = request.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
   if (!token) return false;
