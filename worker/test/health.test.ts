@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import worker from "../src/index";
+import worker, { type WorkerEnv } from "../src/index";
 
 describe("GET /api/v1/health", () => {
   it("returns the standard success envelope and request id", async () => {
     const request = new Request("https://tradepilot.example/api/v1/health");
-    const response = await worker.fetch(request, {
-      ASSETS: { fetch: async () => new Response("asset") } as Fetcher,
-    });
+    const env: WorkerEnv = {
+      ASSETS: { fetch: async () => new Response("asset") },
+    };
+    const response = await worker.fetch(request, env);
 
     const body = (await response.json()) as {
       data: { status: string; service: string; timestamp: string };
