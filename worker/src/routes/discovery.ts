@@ -135,12 +135,12 @@ export async function processRun(env: DiscoveryEnv, runId: string, ownerId: stri
       });
       const leadId = leadRows[0]?.id;
       if (!leadId) continue;
-      await db(env, "lead_sources?on_conflict=provider,external_id", {
+      await db(env, "lead_sources?on_conflict=owner_id,provider,external_id", {
         method: "POST",
         headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
         body: JSON.stringify({ lead_id: leadId, owner_id: ownerId, provider: "openstreetmap", external_id: item.type + "/" + item.id, source_url: "https://www.openstreetmap.org/" + item.type + "/" + item.id, license: "ODbL-1.0", attribution: "© OpenStreetMap contributors", metadata: { osm_type: item.type, osm_id: item.id, tags } }),
       });
-      if (matchedGoogle?.id) await db(env, "lead_sources?on_conflict=provider,external_id", {
+      if (matchedGoogle?.id) await db(env, "lead_sources?on_conflict=owner_id,provider,external_id", {
         method: "POST",
         headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
         body: JSON.stringify({ lead_id: leadId, owner_id: ownerId, provider: "google_maps", external_id: matchedGoogle.id, source_url: "https://www.google.com/maps/search/?api=1&query_place_id=" + encodeURIComponent(matchedGoogle.id), license: "Google Maps Platform Place ID", attribution: "Google Maps", metadata: {} }),
