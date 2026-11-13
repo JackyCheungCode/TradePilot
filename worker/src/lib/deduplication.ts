@@ -10,7 +10,7 @@ export function buildLeadDedupeKey(input: { countryCode: string; name: string; w
  const host = normalizeWebsiteHost(input.website);
  if (host) return "domain:" + host;
  const phone = (input.phone ?? "").replace(/\D/g, "");
- if (phone.length >= 7) return "phone:" + phone;
+ if (phone.length >= 7) return "phone:" + input.countryCode + ":" + phone;
  const geo = input.latitude != null && input.longitude != null ? Math.round(input.latitude * 1000) + ":" + Math.round(input.longitude * 1000) : "no-geo";
  return "name:" + input.countryCode + ":" + normalizeBusinessName(input.name) + ":" + geo;
 }
