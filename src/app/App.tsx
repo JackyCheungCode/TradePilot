@@ -27,6 +27,7 @@ const getPage = (path: string): AppPage | null => {
   if (path === ROUTES.discovery || path === "/") return "discovery";
   if (path === ROUTES.discoveryTasks || path.endsWith("/tasks")) return "discoveryTasks";
   if (path === ROUTES.discoveryResults || path.endsWith("/results")) return "discoveryResults";
+  if (path === ROUTES.searchDiscovery) return "searchDiscovery";
   if (path === ROUTES.leads) return "leads";
   if (path === ROUTES.integrations) return "integrations";
   if (path === ROUTES.searchExclusions) return "searchExclusions";
