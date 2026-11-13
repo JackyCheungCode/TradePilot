@@ -32,7 +32,7 @@ export async function handleSearchExclusions(request:Request,env:Env):Promise<Re
  if(request.method==="PUT"){
   let body:{categories?:Array<{key:string;label:string;domains:string[];enabled:boolean}>};try{body=await request.json() as typeof body;}catch{return errorResponse(request,"INVALID_JSON","请求内容格式不正确。",400);}
   if(!Array.isArray(body.categories)||body.categories.length!==DEFAULTS.length)return errorResponse(request,"VALIDATION_ERROR","排除分类数据不完整。",400);
-  const allowed=new Set(DEFAULTS.map(item=>item.key));
+  const allowed=new Set<string>(DEFAULTS.map(item=>item.key));
   const rows=body.categories.map(item=>{
    if(!item||!allowed.has(item.key)||typeof item.label!=="string"||item.label.trim().length<1||item.label.length>80||typeof item.enabled!=="boolean"||!Array.isArray(item.domains)||item.domains.length>300)throw new Error("INVALID_CATEGORY");
    const domains=[...new Set(item.domains.map(normalizeDomain).filter((v):v is string=>Boolean(v)))];

@@ -1,7 +1,7 @@
 import { useEffect,useState } from "react";
-import { AlertCircle,LoaderCircle,Save,ShieldCheck } from "lucide-react";
+import { LoaderCircle,Save,ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
-import { Badge,Button,Card,CardContent,CardDescription,CardHeader,CardTitle,Input } from "@/shared/ui/primitives";
+import { Badge,Button,Card,CardContent,CardDescription,CardHeader,CardTitle } from "@/shared/ui/primitives";
 import { searchExclusionsApi,type SearchExclusionCategory } from "../../infrastructure/search-exclusions-api";
 export function SearchExclusionRulesPage(){
  const [categories,setCategories]=useState<SearchExclusionCategory[]>([]),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false);
