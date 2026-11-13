@@ -1,4 +1,4 @@
-import { useMemo,useState } from "react";
+import { useEffect,useMemo,useState } from "react";
 import { Activity,ArrowRight,Check,ChevronDown,Globe2,Languages,LoaderCircle,Search,SlidersHorizontal,Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Badge,Button,Card,CardContent,CardDescription,CardHeader,CardTitle,Input,Popover,PopoverContent,PopoverTrigger } from "@/shared/ui/primitives";
@@ -22,10 +22,10 @@ export function SearchEngineDiscoveryPage(){
  const [exact,setExact]=useState(false),[includeTerms,setIncludeTerms]=useState(""),[excludeTerms,setExcludeTerms]=useState(""),[titleTerms,setTitleTerms]=useState(""),[urlTerms,setUrlTerms]=useState(""),[site,setSite]=useState(""),[fileType,setFileType]=useState(""),[after,setAfter]=useState(""),[before,setBefore]=useState("");
  const [engineOpen,setEngineOpen]=useState(false),[typeOpen,setTypeOpen]=useState(false),[businessOpen,setBusinessOpen]=useState(false),[exclusionOpen,setExclusionOpen]=useState(false),[languageOpen,setLanguageOpen]=useState(false);
  const [run,setRun]=useState<{id:string;taskCode?:string}|null>(null);
- useState(()=>{void searchExclusionsApi.get().then(rows=>{setCategories(rows);setSelectedExclusions(rows.filter(x=>x.enabled).map(x=>x.key));}).catch(e=>toast.error(e instanceof Error?e.message:"读取排除规则失败")).finally(()=>setLoadingRules(false));return null;});
+ useEffect(()=>{let active=true;void searchExclusionsApi.get().then(rows=>{if(active){setCategories(rows);setSelectedExclusions(rows.filter(x=>x.enabled).map(x=>x.key));}}).catch(e=>toast.error(e instanceof Error?e.message:"读取排除规则失败")).finally(()=>{if(active)setLoadingRules(false);});return()=>{active=false;};},[]);
  const generated=useMemo(()=>{
   const terms=exact?'"'+query.trim().replace(/^"|"$/g,"")+'"':query.trim();
-  const typeTerms=businessTypes.map(id=>BUSINESS_TYPE_OPTIONS.find(x=>x.id===id)?.label).filter(Boolean);
+  const typeTerms=businessTypes.map(id=>({distributor:"distributor OR wholesaler OR trading company",manufacturer:"manufacturer OR factory OR producer",electrical_equipment:"electrical equipment supplier",electronics:"electronics retailer OR electronics supplier",computer_network:"computer hardware supplier OR networking equipment",electrical_services:"electrical contractor OR electrician",industrial_supplies:"industrial supplies distributor",corporate_office:"company headquarters OR corporate office",mobile_communications:"mobile phone distributor OR telecom equipment"} as Record<string,string>)[id]).filter(Boolean);
   const parts=[terms,includeTerms.trim(),typeTerms.length?"("+typeTerms.join(" OR ")+")":"",excludeTerms.trim().split(/\s+/).filter(Boolean).map(x=>"-"+x.replace(/^-+/,"")).join(" "),titleTerms.trim().split(/\s+/).filter(Boolean).map(x=>"intitle:"+x).join(" "),urlTerms.trim().split(/\s+/).filter(Boolean).map(x=>"inurl:"+x).join(" "),site.trim()?"site:"+site.trim().replace(/^https?:\/\//,"").replace(/^www\./,""):"",fileType.trim()?"filetype:"+fileType.trim().replace(/^\./,""):"",after?"after:"+after:"",before?"before:"+before:"",categories.filter(c=>selectedExclusions.includes(c.key)&&c.enabled).flatMap(c=>c.domains.slice(0,8).map(d=>"-site:"+d.split("/")[0])).join(" ")].filter(Boolean);
   return parts.join(" ");
  },[query,exact,businessTypes,includeTerms,excludeTerms,titleTerms,urlTerms,site,fileType,after,before,categories,selectedExclusions]);
