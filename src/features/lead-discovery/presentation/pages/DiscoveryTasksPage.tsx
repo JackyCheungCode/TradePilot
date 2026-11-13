@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Activity, ArrowRight, Clock3, ListChecks, RefreshCw } from "lucide-react";
+import { ArrowRight, Clock3, ListChecks, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/primitives";
 import { discoveryWorkspaceApi } from "../../infrastructure/discovery-api";

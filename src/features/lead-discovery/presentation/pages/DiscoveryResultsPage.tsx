@@ -1,5 +1,5 @@
 import { useEffect,useMemo,useState } from "react";
-import { ArrowLeft, Check, Filter, RefreshCw, Search, Trash2, XCircle } from "lucide-react";
+import { ArrowLeft, Check, RefreshCw, Search, Trash2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Badge,Button,Card,CardContent,CardDescription,CardHeader,CardTitle,Input } from "@/shared/ui/primitives";
 import { discoveryWorkspaceApi } from "../../infrastructure/discovery-api";
