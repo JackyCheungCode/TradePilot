@@ -30,3 +30,10 @@ Each provider has an independent outcome. A provider failure does not cancel the
 - discovery_runs, discovery_run_logs, leads, lead_sources are owned by lead-discovery.
 - Every table is RLS-protected and scoped to auth.uid().
 - The worker uses service credentials only after validating the caller's Supabase JWT.
+
+## Runtime and operations
+- Discovery runs execute as a Cloudflare Workflow instance keyed by the Supabase discovery run UUID. The provider calls are parallel within each country; each provider result updates persisted progress and logs.
+- Workflow retries wrap the provider orchestration step. Lead upserts are idempotent by owner and deduplication key; source upserts are idempotent by provider and external identity.
+- Required Worker secrets: SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, GOOGLE_MAPS_API_KEY. OVERPASS_API_URL is optional.
+- Required browser build variables: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY. The browser only receives the publishable/anon key; service-role and Google keys remain server-side.
+- Authentication UI is not part of this page approval. The discovery API requires an existing Supabase Auth session; the page reports a sign-in error when no session exists.
