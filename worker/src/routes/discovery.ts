@@ -62,12 +62,12 @@ function countryName(code: string) {
   return special[code] ?? new Intl.DisplayNames(["en"], { type: "region" }).of(code) ?? code;
 }
 function overpassLiteral(value: string) {
-  return value.replace(/\\\\/g, "\\\\\\\\").replace(/"/g, '\\\\"');
+  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }
 async function searchOSM(code: string, query: string, limit: number, env: DiscoveryEnv, state?: string, city?: string): Promise<OSMElement[]> {
   const overpass = env.OVERPASS_API_URL ?? "https://overpass-api.de/api/interpreter";
-  const safeQuery = query.normalize("NFKC").replace(/[^\\p{L}\\p{N}\\s-]/gu, " ").trim();
-  const terms = safeQuery.split(/\\s+/).filter((word) => word.length > 2 && !["the", "and", "for", "with", "from"].includes(word.toLowerCase())).slice(0, 4);
+  const safeQuery = query.normalize("NFKC").replace(/[^\p{L}\p{N}\s-]/gu, " ").trim();
+  const terms = safeQuery.split(/\s+/).filter((word) => word.length > 2 && !["the", "and", "for", "with", "from"].includes(word.toLowerCase())).slice(0, 4);
   const pattern = terms.join("|") || ".*";
   const scopeName = city || state;
   const scopeClause = scopeName
