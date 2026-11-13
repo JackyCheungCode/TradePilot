@@ -12,14 +12,12 @@ import { SearchExclusionRulesPage } from "@/features/settings/presentation/pages
 import { SearchEngineDiscoveryPage } from "@/features/lead-discovery/presentation/pages/SearchEngineDiscoveryPage";
 import { getSupabaseClient } from "@/shared/lib/supabase";
 
-type AppPage = "discovery" | "discoveryTasks" | "discoveryResults" | "searchDiscovery" | "searchDiscoveryTasks" | "searchDiscoveryResults" | "leads" | "integrations" | "searchExclusions";
+type AppPage = "discovery" | "discoveryTasks" | "discoveryResults" | "searchDiscovery" | "leads" | "integrations" | "searchExclusions";
 const ROUTES: Record<AppPage, string> = {
   discovery: "/lead-discovery/map-local-businesses",
-  discoveryTasks: "/lead-discovery/map-local-businesses/tasks",
-  discoveryResults: "/lead-discovery/map-local-businesses/results",
+  discoveryTasks: "/lead-discovery/tasks",
+  discoveryResults: "/lead-discovery/results",
   searchDiscovery: "/lead-discovery/search-engine",
-  searchDiscoveryTasks: "/lead-discovery/search-engine/tasks",
-  searchDiscoveryResults: "/lead-discovery/search-engine/results",
   leads: "/crm/leads",
   integrations: "/settings/integrations",
   searchExclusions: "/settings/search-exclusions",
@@ -27,11 +25,8 @@ const ROUTES: Record<AppPage, string> = {
 const getPath = () => window.location.pathname;
 const getPage = (path: string): AppPage | null => {
   if (path === ROUTES.discovery || path === "/") return "discovery";
-  if (path === ROUTES.discoveryTasks) return "discoveryTasks";
-  if (path === ROUTES.discoveryResults) return "discoveryResults";
-  if (path === ROUTES.searchDiscovery) return "searchDiscovery";
-  if (path === ROUTES.searchDiscoveryTasks) return "searchDiscoveryTasks";
-  if (path === ROUTES.searchDiscoveryResults) return "searchDiscoveryResults";
+  if (path === ROUTES.discoveryTasks || path.endsWith("/tasks")) return "discoveryTasks";
+  if (path === ROUTES.discoveryResults || path.endsWith("/results")) return "discoveryResults";
   if (path === ROUTES.leads) return "leads";
   if (path === ROUTES.integrations) return "integrations";
   if (path === ROUTES.searchExclusions) return "searchExclusions";
@@ -92,7 +87,7 @@ export function App() {
   if (checkingSession) return <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">正在检查登录状态…</div>;
   if (!session || path === "/login") return <><LoginPage /><Toaster richColors position="top-right" /></>;
   return <AppShell activePage={activePage ?? "discovery"} onNavigate={navigate} userEmail={session.user.email ?? ""} onSignOut={() => void getSupabaseClient().auth.signOut()}>
-    {activePage === "integrations" ? <IntegrationsSettingsPage /> : activePage === "searchExclusions" ? <SearchExclusionRulesPage /> : activePage === "discoveryTasks" || activePage === "searchDiscoveryTasks" ? <DiscoveryTasksPage /> : activePage === "discoveryResults" || activePage === "searchDiscoveryResults" ? <DiscoveryResultsPage /> : activePage === "searchDiscovery" ? <SearchEngineDiscoveryPage /> : activePage === "leads" ? <LeadsPage /> : <MapLocalDiscoveryPage />}
+    {activePage === "integrations" ? <IntegrationsSettingsPage /> : activePage === "searchExclusions" ? <SearchExclusionRulesPage /> : activePage === "discoveryTasks" ? <DiscoveryTasksPage /> : activePage === "discoveryResults" ? <DiscoveryResultsPage /> : activePage === "searchDiscovery" ? <SearchEngineDiscoveryPage /> : activePage === "leads" ? <LeadsPage /> : <MapLocalDiscoveryPage />}
     <Toaster richColors position="top-right" />
   </AppShell>;
 }
