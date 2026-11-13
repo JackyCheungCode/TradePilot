@@ -3,7 +3,7 @@ import type { WorkflowEvent, WorkflowStep } from "cloudflare:workers";
 
 interface Env { SUPABASE_URL:string; SUPABASE_SERVICE_ROLE_KEY:string; }
 interface Params { jobId:string; ownerId:string; recordIds:string[]; }
-interface RecordRow { id:string; name:string; website:string|null; phone:string|null; email:string|null; raw_data:Record<string,unknown>|null; }
+interface RecordRow { id:string; name:string; website:string|null; phone:string|null; email:string|null; address:string|null; raw_data:Record<string,unknown>|null; }
 async function db<T>(env:Env,path:string,init:RequestInit={}):Promise<T>{
  const response=await fetch(env.SUPABASE_URL+"/rest/v1/"+path,{...init,headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:"Bearer "+env.SUPABASE_SERVICE_ROLE_KEY,"Content-Type":"application/json",...init.headers}});
  const raw=await response.text();if(!response.ok)throw new Error("DATABASE_"+response.status+": "+raw.slice(0,240));return raw?JSON.parse(raw) as T:undefined as T;
