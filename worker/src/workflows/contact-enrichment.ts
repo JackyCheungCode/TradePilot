@@ -38,7 +38,7 @@ function extractContacts(html:string){
  return {emails:[...new Set(emails)].filter(x=>x.length<255).slice(0,10),phones:[...new Set(phones)].filter(x=>x.replace(/\D/g,"").length>=8).slice(0,10)};
 }
 function contactLinks(html:string,base:URL):URL[]{
- const out:URL[]=[];for(const m of html.matchAll(/<a\b[^>]*href\s*=\s*["']([^"'#]+)["'][^>]*>/gi)){const href=m[1];if(!/(contact|about|company|team|support|imprint|location|office)/i.test(href+" "+m[0]))continue;try{const u=new URL(href,base);if(u.origin===base.origin&&u.protocol==="https:"&&!out.some(x=>x.href===u.href))out.push(u);}catch{}}
+ const out:URL[]=[];for(const m of html.matchAll(/<a\b[^>]*href\s*=\s*["']([^"'#]+)["'][^>]*>/gi)){const href=m[1];if(!/(contact|about|company|team|support|imprint|location|office)/i.test(href+" "+m[0]))continue;try{const u=new URL(href,base);if(u.origin===base.origin&&u.protocol==="https:"&&!out.some(x=>x.href===u.href))out.push(u);}catch { /* Ignore malformed contact links. */ }}
  return out.slice(0,4);
 }
 async function enrichOne(env:Env,owner:string,id:string){
@@ -46,7 +46,7 @@ async function enrichOne(env:Env,owner:string,id:string){
  const row=rows?.[0];if(!row)throw new Error("记录不存在");
  if(!row.website)throw new Error("没有官网地址");
  const home=safePageUrl(row.website);const origin=home.origin;
- let robots="";try{const rr=await fetch(origin+"/robots.txt",{redirect:"manual",signal:AbortSignal.timeout(5000),headers:{"User-Agent":"TradePilotContactBot/1.0"}});if(rr.ok)robots=(await rr.text()).slice(0,100000);}catch{}
+ let robots="";try{const rr=await fetch(origin+"/robots.txt",{redirect:"manual",signal:AbortSignal.timeout(5000),headers:{"User-Agent":"TradePilotContactBot/1.0"}});if(rr.ok)robots=(await rr.text()).slice(0,100000);}catch { /* robots.txt may be unavailable; continue with conservative page limits. */ }
  const targets=[home,...[]];const found={emails:[] as string[],phones:[] as string[]};let visited=0;
  for(let index=0;index<targets.length&&visited<5;index++){
   const url=targets[index];if(url.origin!==origin||!robotsAllows(robots,url.pathname))continue;
@@ -65,7 +65,7 @@ export class ContactEnrichmentWorkflow extends WorkflowEntrypoint<Env,Params>{
   for(let index=0;index<recordIds.length;index++){
    const recordId=recordIds[index];
    try{await step.do("enrich-record-"+recordId,{retries:{limit:1,delay:"5 seconds",backoff:"exponential"},timeout:"2 minutes"},async()=>enrichOne(this.env,ownerId,recordId));completed++;}
-   catch(error){failed++;}
+   catch { failed++; }
    const progress=Math.round((index+1)/total*100);
    await step.do("save-contact-progress-"+(index+1),async()=>{await db(this.env,"discovery_contact_enrichment_runs?id=eq."+jobId+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:index===total-1?(failed===0?"completed":completed===0?"failed":"partial"):"running",progress,completed_count:completed,failed_count:failed,message:(index===total-1?(failed===0?"联系方式采集完成":completed===0?"联系方式采集失败":"联系方式采集部分完成"):"联系方式采集中")+" · "+completed+" 条完成 · "+failed+" 条失败"})});return progress;});
   }
