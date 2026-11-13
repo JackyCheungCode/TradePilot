@@ -1,11 +1,13 @@
 import { getSupabaseClient } from "@/shared/lib/supabase";
 
-export type IntegrationService = "cloudflare" | "supabase" | "googleMaps" | "deepl";
+export type IntegrationService = "cloudflare" | "supabase" | "googleMaps" | "deepl" | "serper" | "serpapi";
 export interface IntegrationStatus {
   cloudflare: boolean;
   supabase: boolean;
   googleMaps: boolean;
   deepl: boolean;
+  serper: boolean;
+  serpapi: boolean;
 }
 export interface IntegrationTestResult {
   ok: boolean;
@@ -30,6 +32,8 @@ export const integrationsApi = {
       supabase: { supabaseServiceRoleKey: value },
       googleMaps: { googleMapsApiKey: value },
       deepl: { deeplApiKey: value },
+      serper: { serperApiKey: value },
+      serpapi: { serpapiApiKey: value },
     };
     return request<{ saved: boolean; service: IntegrationService; message: string }>("/api/v1/settings/integrations", {
       method: "POST",

@@ -12,6 +12,8 @@ export interface WorkerEnv {
  SUPABASE_SERVICE_ROLE_KEY: string;
  GOOGLE_MAPS_API_KEY?: string;
  DEEPL_API_KEY?: string;
+ SERPER_API_KEY?: string;
+ SERPAPI_API_KEY?: string;
  CLOUDFLARE_API_TOKEN?: string;
  CLOUDFLARE_ACCOUNT_ID?: string;
  CLOUDFLARE_WORKER_NAME?: string;

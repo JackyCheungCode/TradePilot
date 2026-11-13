@@ -6,23 +6,29 @@ interface SettingsEnv {
   SUPABASE_SERVICE_ROLE_KEY?: string;
   GOOGLE_MAPS_API_KEY?: string;
   DEEPL_API_KEY?: string;
+  SERPER_API_KEY?: string;
+  SERPAPI_API_KEY?: string;
   CLOUDFLARE_API_TOKEN?: string;
   CLOUDFLARE_ACCOUNT_ID?: string;
   CLOUDFLARE_WORKER_NAME?: string;
 }
-type ServiceKey = "cloudflare" | "supabase" | "googleMaps" | "deepl";
-type CredentialBody = { cloudflareApiToken?: string; supabaseServiceRoleKey?: string; googleMapsApiKey?: string; deeplApiKey?: string };
+type ServiceKey = "cloudflare" | "supabase" | "googleMaps" | "deepl" | "serper" | "serpapi";
+type CredentialBody = { cloudflareApiToken?: string; supabaseServiceRoleKey?: string; googleMapsApiKey?: string; deeplApiKey?: string; serperApiKey?: string; serpapiApiKey?: string };
 const secretNames: Record<ServiceKey, string> = {
   cloudflare: "CLOUDFLARE_API_TOKEN",
   supabase: "SUPABASE_SERVICE_ROLE_KEY",
   googleMaps: "GOOGLE_MAPS_API_KEY",
   deepl: "DEEPL_API_KEY",
+  serper: "SERPER_API_KEY",
+  serpapi: "SERPAPI_API_KEY",
 };
 const bodyFields: Record<ServiceKey, keyof CredentialBody> = {
   cloudflare: "cloudflareApiToken",
   supabase: "supabaseServiceRoleKey",
   googleMaps: "googleMapsApiKey",
   deepl: "deeplApiKey",
+  serper: "serperApiKey",
+  serpapi: "serpapiApiKey",
 };
 
 async function authenticated(request: Request, env: SettingsEnv): Promise<boolean> {
@@ -67,7 +73,7 @@ async function saveOneSecret(service: ServiceKey, value: string, env: SettingsEn
       },
     }),
   });
-  return `${service === "cloudflare" ? "Cloudflare" : service === "supabase" ? "Supabase" : service === "googleMaps" ? "Google Maps" : "DeepL"} 密钥已单独保存至 Cloudflare Worker Secrets。`;
+  return `${service === "cloudflare" ? "Cloudflare" : service === "supabase" ? "Supabase" : service === "googleMaps" ? "Google Maps" : service === "deepl" ? "DeepL" : service === "serper" ? "Serper" : "SerpApi"} 密钥已单独保存至 Cloudflare Worker Secrets。`;
 }
 
 async function testOneService(service: ServiceKey, env: SettingsEnv) {
@@ -84,6 +90,26 @@ async function testOneService(service: ServiceKey, env: SettingsEnv) {
       const response = await fetch(env.SUPABASE_URL + "/rest/v1/", { headers: { apikey: env.SUPABASE_SERVICE_ROLE_KEY, Authorization: "Bearer " + env.SUPABASE_SERVICE_ROLE_KEY } });
       return { ok: response.ok, message: response.ok ? "Supabase 服务密钥可用" : "Supabase 请求失败，请检查服务密钥" };
     } catch { return { ok: false, message: "无法连接 Supabase" }; }
+  }
+  if (service === "serper") {
+    if (!env.SERPER_API_KEY) return { ok: false, message: "尚未配置" };
+    try {
+      const response = await fetch("https://google.serper.dev/search", { method: "POST", headers: { "X-API-KEY": env.SERPER_API_KEY, "Content-Type": "application/json" }, body: JSON.stringify({ q: "TradePilot API connection test", gl: "us", hl: "en", num: 1 }) });
+      if (!response.ok) return { ok: false, message: "Serper API 请求失败（HTTP " + response.status + "），请检查 Key 和账户额度" };
+      const body = await response.json() as { organic?: unknown[] };
+      return { ok: true, message: "Serper API 可用 · 已返回 " + (body.organic?.length ?? 0) + " 条测试结果（消耗 1 次搜索额度）" };
+    } catch { return { ok: false, message: "无法连接 Serper API" }; }
+  }
+  if (service === "serpapi") {
+    if (!env.SERPAPI_API_KEY) return { ok: false, message: "尚未配置" };
+    try {
+      const params = new URLSearchParams({ engine: "google", q: "TradePilot API connection test", gl: "us", hl: "en", num: "1", api_key: env.SERPAPI_API_KEY });
+      const response = await fetch("https://serpapi.com/search.json?" + params.toString());
+      if (!response.ok) return { ok: false, message: "SerpApi 请求失败（HTTP " + response.status + "），请检查 Key 和账户额度" };
+      const body = await response.json() as { error?: string; organic_results?: unknown[] };
+      if (body.error) return { ok: false, message: body.error.slice(0, 180) };
+      return { ok: true, message: "SerpApi 可用 · 已返回 " + (body.organic_results?.length ?? 0) + " 条测试结果（消耗 1 次搜索额度）" };
+    } catch { return { ok: false, message: "无法连接 SerpApi" }; }
   }
   if (service === "deepl") {
     if (!env.DEEPL_API_KEY) return { ok: false, message: "尚未配置" };
@@ -116,6 +142,8 @@ export async function handleSettings(request: Request, env: SettingsEnv): Promis
       supabase: Boolean(env.SUPABASE_SERVICE_ROLE_KEY),
       googleMaps: Boolean(env.GOOGLE_MAPS_API_KEY),
       deepl: Boolean(env.DEEPL_API_KEY),
+      serper: Boolean(env.SERPER_API_KEY),
+      serpapi: Boolean(env.SERPAPI_API_KEY),
     });
   }
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AlertCircle, CheckCircle2, Cloud, Database, Eye, EyeOff, KeyRound, Languages, LoaderCircle, LockKeyhole, Save, ShieldCheck, TestTube2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Cloud, Database, Eye, EyeOff, KeyRound, Languages, LoaderCircle, LockKeyhole, Save, Search, ShieldCheck, TestTube2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input } from "@/shared/ui/primitives";
 import { integrationsApi, type IntegrationService, type IntegrationStatus, type IntegrationTestResult } from "../../infrastructure/integrations-api";
@@ -17,12 +17,14 @@ const services: Array<{
   { key: "supabase", title: "Supabase", description: "后台数据库访问与线索持久化", secretName: "SUPABASE_SERVICE_ROLE_KEY", placeholder: "粘贴 Supabase Service Role Key", hint: "仅在 Worker 服务端使用，拥有高权限，请勿将其用于浏览器客户端。", icon: Database },
   { key: "googleMaps", title: "Google Maps Platform", description: "Google Places 本地商家搜索", secretName: "GOOGLE_MAPS_API_KEY", placeholder: "粘贴 Google Maps API Key", hint: "请启用 Places API (New)，并配置账单和 API 限制。", icon: KeyRound },
   { key: "deepl", title: "DeepL", description: "搜索关键词目标国家语言翻译", secretName: "DEEPL_API_KEY", placeholder: "粘贴 DeepL API Key", hint: "支持 DeepL API Free（:fx）和 Pro。密钥只保存在 Worker Secrets，翻译请求由 Worker 后端代理。", icon: Languages },
+  { key: "serper", title: "Serper", description: "Google 搜索结果 · Web、Shopping、News 等", secretName: "SERPER_API_KEY", placeholder: "粘贴 Serper API Key", hint: "密钥只保存在 Worker Secrets。连接测试会执行 1 次搜索并消耗 1 次额度。", icon: Search },
+  { key: "serpapi", title: "SerpApi", description: "Google 搜索结果 · 多搜索类型与参数", secretName: "SERPAPI_API_KEY", placeholder: "粘贴 SerpApi API Key", hint: "密钥只保存在 Worker Secrets。连接测试会执行 1 次搜索并消耗 1 次额度。", icon: Search },
 ];
 
 export function IntegrationsSettingsPage() {
   const [status, setStatus] = useState<IntegrationStatus | null>(null);
-  const [credentials, setCredentials] = useState<Record<IntegrationService, string>>({ cloudflare: "", supabase: "", googleMaps: "", deepl: "" });
-  const [visible, setVisible] = useState<Record<IntegrationService, boolean>>({ cloudflare: false, supabase: false, googleMaps: false, deepl: false });
+  const [credentials, setCredentials] = useState<Record<IntegrationService, string>>({ cloudflare: "", supabase: "", googleMaps: "", deepl: "", serper: "", serpapi: "" });
+  const [visible, setVisible] = useState<Record<IntegrationService, boolean>>({ cloudflare: false, supabase: false, googleMaps: false, deepl: false, serper: false, serpapi: false });
   const [tests, setTests] = useState<Partial<Record<IntegrationService, IntegrationTestResult>>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<Partial<Record<IntegrationService, boolean>>>({});
