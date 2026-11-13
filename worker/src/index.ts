@@ -1,20 +1,10 @@
+import { errorResponse } from "./lib/http";
+import { handleHealth } from "./routes/health";
+
 export interface WorkerEnv {
   ASSETS: {
     fetch(request: Request): Promise<Response>;
   };
-}
-
-function json(data: unknown, status = 200, requestId = crypto.randomUUID()): Response {
-  return Response.json(
-    { data, meta: { requestId } },
-    {
-      status,
-      headers: {
-        "Cache-Control": "no-store",
-        "X-Request-Id": requestId,
-      },
-    },
-  );
 }
 
 export default {
@@ -22,21 +12,14 @@ export default {
     const url = new URL(request.url);
 
     if (url.pathname === "/api/v1/health" && request.method === "GET") {
-      return json({
-        status: "ok",
-        service: "tradepilot-api",
-        timestamp: new Date().toISOString(),
-      });
+      return handleHealth(request);
     }
 
     if (url.pathname.startsWith("/api/")) {
-      return json(
-        {
-          error: {
-            code: "NOT_FOUND",
-            message: "The requested API endpoint does not exist.",
-          },
-        },
+      return errorResponse(
+        request,
+        "NOT_FOUND",
+        "The requested API endpoint does not exist.",
         404,
       );
     }
