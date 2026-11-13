@@ -37,6 +37,9 @@ describe("integration settings API", () => {
     );
 
     expect(response.status).toBe(200);
+    const authRequest = fetchMock.mock.calls[0];
+    expect(authRequest[0]).toBe("https://example.supabase.co/auth/v1/user");
+    expect((authRequest[1] as RequestInit).headers).toEqual({ apikey: "public-anon-key", Authorization: "Bearer test-session" });
     const patch = fetchMock.mock.calls[2][1] as RequestInit;
     const payload = JSON.parse(String(patch.body)) as { secrets: Record<string, unknown> };
     expect(Object.keys(payload.secrets)).toEqual(["GOOGLE_MAPS_API_KEY"]);
