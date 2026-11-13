@@ -3,7 +3,9 @@
   "name": "tradepilot",
   "main": "worker/src/index.ts",
   "compatibility_date": "2026-11-13",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
@@ -11,5 +13,12 @@
   },
   "observability": {
     "enabled": true
-  }
+  },
+  "workflows": [
+    {
+      "name": "tradepilot-lead-discovery",
+      "binding": "LEAD_DISCOVERY_WORKFLOW",
+      "class_name": "LeadDiscoveryWorkflow"
+    }
+  ]
 }
