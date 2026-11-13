@@ -79,7 +79,7 @@ export function IntegrationsSettingsPage() {
     { id: "cloudflare", label: "Cloudflare API Token", value: cloudflareApiToken, set: setCloudflareApiToken, placeholder: status?.cloudflare ? "已配置，留空表示保持不变" : "粘贴 Cloudflare API Token", hint: "需要 Workers Scripts Write 权限，建议仅授权 TradePilot 所在账户。" },
     { id: "supabase", label: "Supabase Service Role Key", value: supabaseServiceRoleKey, set: setSupabaseServiceRoleKey, placeholder: status?.supabase ? "已配置，留空表示保持不变" : "粘贴 Supabase service_role 密钥", hint: "仅在 Worker 服务端使用，拥有高权限，请勿将其用于浏览器客户端。" },
     { id: "googleMaps", label: "Google Maps API Key", value: googleMapsApiKey, set: setGoogleMapsApiKey, placeholder: status?.googleMaps ? "已配置，留空表示保持不变" : "粘贴 Google Maps API Key", hint: "请启用 Places API (New)，并配置账单和 API 限制。" },
-  ];
+  ] as const;
 
   if (!authenticated) return <div className="flex min-h-screen items-center justify-center bg-background px-5 py-10"><Card className="w-full max-w-md">
       <CardHeader><div className="mb-2 flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground"><LockKeyhole className="h-5 w-5" /></div><CardTitle>登录 TradePilot</CardTitle><CardDescription>登录后才能安全管理系统集成密钥。</CardDescription></CardHeader>
@@ -120,7 +120,7 @@ export function IntegrationsSettingsPage() {
         <CardContent>
           <form className="space-y-6" onSubmit={save}>
             {fields.map((field, index) => <div key={field.id} className="space-y-2">
-              <div className="flex items-center justify-between gap-3"><label htmlFor={field.id} className="text-sm font-medium">{field.label}</label></div>
+              <div className="flex items-center justify-between gap-3"><label htmlFor={field.id} className="text-sm font-medium">{field.label}</label>{status?.[field.id] && <Badge variant="success">已安全保存</Badge>}</div>
               <div className="relative">
                 <Input id={field.id} type={show[field.id] ? "text" : "password"} autoComplete="new-password" value={field.value} onChange={(event) => field.set(event.target.value)} placeholder={field.placeholder} className="pr-12 font-mono text-sm" />
                 <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1" onClick={() => setShow((current) => ({ ...current, [field.id]: !current[field.id] }))} aria-label={show[field.id] ? "隐藏密钥" : "显示密钥"}>{show[field.id] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button>
