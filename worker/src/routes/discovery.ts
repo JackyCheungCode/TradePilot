@@ -9,7 +9,8 @@ export interface DiscoveryEnv {
   LEAD_DISCOVERY_WORKFLOW: { create(options: { id: string; params: { runId: string; ownerId: string; input: DiscoveryRunInput } }): Promise<{ id: string }> };
   OVERPASS_API_URL?: string;
 }
-export type DiscoveryProvider = "google_maps" | "openstreetmap";\nexport interface DiscoveryRunInput { countries: string[]; query: string; limitPerCountry: number; providers: DiscoveryProvider[]; state?: string; city?: string; }
+export type DiscoveryProvider = "google_maps" | "openstreetmap";
+export interface DiscoveryRunInput { countries: string[]; query: string; limitPerCountry: number; providers: DiscoveryProvider[]; state?: string; city?: string; }
 interface OSMElement { type: string; id: number; lat?: number; lon?: number; center?: { lat: number; lon: number }; tags?: Record<string, string>; }
 interface GooglePlace { id?: string; displayName?: { text?: string }; location?: { latitude?: number; longitude?: number }; }
 type ProviderResult<T> = { ok: true; value: T } | { ok: false; error: unknown };
@@ -259,7 +260,7 @@ export async function handleDiscovery(request: Request, env: DiscoveryEnv): Prom
 
   if(request.method==="GET" && url.pathname==="/api/v1/discovery-records"){
     const runId=url.searchParams.get("runId"),status=url.searchParams.get("status"),limit=Math.min(500,Math.max(1,Number(url.searchParams.get("limit"))||250));
-    const filters=["owner_id=eq."+userId,"channel=eq.map_local_businesses","select=*,discovery_record_occurrences(id,run_id,provider,keyword,external_id,source_url,captured_at)","order=created_at.desc","limit="+limit];
+    const filters=["owner_id=eq."+userId,"channel=eq.map_local_businesses","select=*,discovery_record_occurrences"+(runId?"!inner":"")+"(id,run_id,provider,keyword,external_id,source_url,captured_at)","order=created_at.desc","limit="+limit];
     if(runId) filters.push("discovery_record_occurrences.run_id=eq."+runId);
     if(status) filters.push("status=eq."+encodeURIComponent(status));
     else filters.push("status=neq.removed");
