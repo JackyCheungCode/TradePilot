@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { AlertCircle, CheckCircle2, CircleHelp, Cloud, Database, Eye, EyeOff, KeyRound, LoaderCircle, LockKeyhole, Save, ShieldCheck, TestTube2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Separator } from "@/shared/ui/primitives";
 import { integrationsApi, type IntegrationStatus, type IntegrationTestResult } from "../../infrastructure/integrations-api";
-import { getSupabaseClient } from "@/shared/lib/supabase";
 
 const services = [
   { key: "cloudflare" as const, title: "Cloudflare", description: "Worker 部署、运行环境与密钥托管", secretName: "CLOUDFLARE_API_TOKEN", icon: Cloud },
@@ -13,10 +12,6 @@ const services = [
 
 export function IntegrationsSettingsPage() {
   const [status, setStatus] = useState<IntegrationStatus | null>(null);
-  const [authenticated, setAuthenticated] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [signingIn, setSigningIn] = useState(false);
   const [tests, setTests] = useState<Record<string, IntegrationTestResult> | null>(null);
   const [cloudflareApiToken, setCloudflareApiToken] = useState("");
   const [supabaseServiceRoleKey, setSupabaseServiceRoleKey] = useState("");
@@ -26,27 +21,12 @@ export function IntegrationsSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
 
-  const refreshStatus = useCallback(async () => {
+  const refreshStatus = async () => {
     try { setStatus(await integrationsApi.getStatus()); }
     catch (error) { toast.error(error instanceof Error ? error.message : "无法读取集成状态"); }
     finally { setLoading(false); }
-  }, []);
-  useEffect(() => {
-    void getSupabaseClient().auth.getSession().then(async ({ data }) => {
-      if (data.session) { setAuthenticated(true); await refreshStatus(); }
-      else setLoading(false);
-    }).catch(() => setLoading(false));
-  }, [refreshStatus]);
-
-  const signIn = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault(); setSigningIn(true);
-    try {
-      const { error } = await getSupabaseClient().auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      setAuthenticated(true); setPassword(""); setLoading(true); await refreshStatus(); toast.success("登录成功");
-    } catch (error) { toast.error(error instanceof Error ? error.message : "登录失败，请检查邮箱和密码"); }
-    finally { setSigningIn(false); }
   };
+  useEffect(() => { void refreshStatus(); }, []);
 
   const save = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -80,15 +60,6 @@ export function IntegrationsSettingsPage() {
     { id: "supabase", label: "Supabase Service Role Key", value: supabaseServiceRoleKey, set: setSupabaseServiceRoleKey, placeholder: status?.supabase ? "已配置，留空表示保持不变" : "粘贴 Supabase service_role 密钥", hint: "仅在 Worker 服务端使用，拥有高权限，请勿将其用于浏览器客户端。" },
     { id: "googleMaps", label: "Google Maps API Key", value: googleMapsApiKey, set: setGoogleMapsApiKey, placeholder: status?.googleMaps ? "已配置，留空表示保持不变" : "粘贴 Google Maps API Key", hint: "请启用 Places API (New)，并配置账单和 API 限制。" },
   ] as const;
-
-  if (!authenticated) return <div className="flex min-h-screen items-center justify-center bg-background px-5 py-10"><Card className="w-full max-w-md">
-      <CardHeader><div className="mb-2 flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground"><LockKeyhole className="h-5 w-5" /></div><CardTitle>登录 TradePilot</CardTitle><CardDescription>登录后才能安全管理系统集成密钥。</CardDescription></CardHeader>
-      <CardContent><form onSubmit={signIn} className="space-y-4">
-        <div className="space-y-2"><label htmlFor="settings-email" className="text-sm font-medium">邮箱</label><Input id="settings-email" type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></div>
-        <div className="space-y-2"><label htmlFor="settings-password" className="text-sm font-medium">密码</label><Input id="settings-password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></div>
-        <Button type="submit" className="w-full" disabled={signingIn}>{signingIn ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <LockKeyhole className="h-4 w-4" />}登录</Button>
-      </form></CardContent>
-    </Card></div>;
 
   return <div className="min-h-screen bg-background">
     <header className="border-b bg-card/70 px-6 py-5">
