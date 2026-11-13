@@ -19,5 +19,38 @@ export default tseslint.config(
       globals: { ...globals.worker, ...globals.es2022 },
     },
   },
+  {
+    files: ["src/features/**/domain/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: ["react", "react-dom", "zod", "@supabase/supabase-js"],
+          patterns: [
+            "@cloudflare/*",
+            "**/application/**",
+            "**/infrastructure/**",
+            "**/presentation/**",
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["src/features/**/application/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: ["react", "react-dom", "@supabase/supabase-js"],
+          patterns: [
+            "@cloudflare/*",
+            "**/infrastructure/**",
+            "**/presentation/**",
+          ],
+        },
+      ],
+    },
+  },
   prettier,
 );
