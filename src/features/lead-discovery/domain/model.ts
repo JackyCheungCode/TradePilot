@@ -1,4 +1,4 @@
-export type DiscoveryProvider = "google_maps" | "openstreetmap";
+export type DiscoveryProvider = "google_maps" | "openstreetmap" | "serper" | "serpapi";
 export type DiscoveryStatus = "queued" | "running" | "completed" | "partial" | "failed" | "cancelled";
 export type SearchEngine = "serper" | "serpapi";
 export type SearchType = "web" | "shopping" | "images" | "news" | "videos" | "scholar" | "patents";
