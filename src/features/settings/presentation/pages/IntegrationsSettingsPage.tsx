@@ -1,5 +1,5 @@
 import {useEffect,useMemo,useState} from "react";
-import {AlertCircle,BrainCircuit,CheckCircle2,Cloud,Database,Eye,EyeOff,Globe2,KeyRound,Languages,LoaderCircle,LockKeyhole,Save,Search,Settings2,ShieldCheck,TestTube2,Plus} from "lucide-react";
+import {BrainCircuit,CheckCircle2,Cloud,Database,Eye,EyeOff,Globe2,KeyRound,Languages,LoaderCircle,LockKeyhole,Save,Search,Settings2,ShieldCheck,TestTube2,Plus} from "lucide-react";
 import {toast} from "sonner";
 import {Badge,Button,Card,CardContent,CardDescription,CardHeader,CardTitle,Input} from "@/shared/ui/primitives";
 import {integrationsApi,type AIConfig,type AIProvider,type IntegrationService,type IntegrationStatus,type IntegrationTestResult} from "../../infrastructure/integrations-api";
