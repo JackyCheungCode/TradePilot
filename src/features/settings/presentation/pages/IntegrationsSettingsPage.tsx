@@ -1,25 +1,31 @@
-import { useEffect, useState, type FormEvent } from "react";
-import { AlertCircle, CheckCircle2, CircleHelp, Cloud, Database, Eye, EyeOff, KeyRound, LoaderCircle, LockKeyhole, Save, ShieldCheck, TestTube2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { AlertCircle, CheckCircle2, Cloud, Database, Eye, EyeOff, KeyRound, LoaderCircle, LockKeyhole, Save, ShieldCheck, TestTube2 } from "lucide-react";
 import { toast } from "sonner";
-import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Separator } from "@/shared/ui/primitives";
-import { integrationsApi, type IntegrationStatus, type IntegrationTestResult } from "../../infrastructure/integrations-api";
+import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input } from "@/shared/ui/primitives";
+import { integrationsApi, type IntegrationService, type IntegrationStatus, type IntegrationTestResult } from "../../infrastructure/integrations-api";
 
-const services = [
-  { key: "cloudflare" as const, title: "Cloudflare", description: "Worker 部署、运行环境与密钥托管", secretName: "CLOUDFLARE_API_TOKEN", icon: Cloud },
-  { key: "supabase" as const, title: "Supabase", description: "后台数据库访问与线索持久化", secretName: "SUPABASE_SERVICE_ROLE_KEY", icon: Database },
-  { key: "googleMaps" as const, title: "Google Maps Platform", description: "Google Places 本地商家搜索", secretName: "GOOGLE_MAPS_API_KEY", icon: KeyRound },
+const services: Array<{
+  key: IntegrationService;
+  title: string;
+  description: string;
+  secretName: string;
+  placeholder: string;
+  hint: string;
+  icon: typeof Cloud;
+}> = [
+  { key: "cloudflare", title: "Cloudflare", description: "Worker 部署与服务端密钥托管", secretName: "CLOUDFLARE_API_TOKEN", placeholder: "粘贴 Cloudflare API Token", hint: "需要 Workers Scripts Write 权限。请先配置此密钥，后续服务密钥由它安全写入 Worker Secrets。", icon: Cloud },
+  { key: "supabase", title: "Supabase", description: "后台数据库访问与线索持久化", secretName: "SUPABASE_SERVICE_ROLE_KEY", placeholder: "粘贴 Supabase Service Role Key", hint: "仅在 Worker 服务端使用，拥有高权限，请勿将其用于浏览器客户端。", icon: Database },
+  { key: "googleMaps", title: "Google Maps Platform", description: "Google Places 本地商家搜索", secretName: "GOOGLE_MAPS_API_KEY", placeholder: "粘贴 Google Maps API Key", hint: "请启用 Places API (New)，并配置账单和 API 限制。", icon: KeyRound },
 ];
 
 export function IntegrationsSettingsPage() {
   const [status, setStatus] = useState<IntegrationStatus | null>(null);
-  const [tests, setTests] = useState<Record<string, IntegrationTestResult> | null>(null);
-  const [cloudflareApiToken, setCloudflareApiToken] = useState("");
-  const [supabaseServiceRoleKey, setSupabaseServiceRoleKey] = useState("");
-  const [googleMapsApiKey, setGoogleMapsApiKey] = useState("");
-  const [show, setShow] = useState<Record<string, boolean>>({});
+  const [credentials, setCredentials] = useState<Record<IntegrationService, string>>({ cloudflare: "", supabase: "", googleMaps: "" });
+  const [visible, setVisible] = useState<Record<IntegrationService, boolean>>({ cloudflare: false, supabase: false, googleMaps: false });
+  const [tests, setTests] = useState<Partial<Record<IntegrationService, IntegrationTestResult>>>({});
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [testing, setTesting] = useState(false);
+  const [saving, setSaving] = useState<Partial<Record<IntegrationService, boolean>>>({});
+  const [testing, setTesting] = useState<Partial<Record<IntegrationService, boolean>>>({});
 
   const refreshStatus = async () => {
     try { setStatus(await integrationsApi.getStatus()); }
@@ -28,96 +34,79 @@ export function IntegrationsSettingsPage() {
   };
   useEffect(() => { void refreshStatus(); }, []);
 
-  const save = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!status?.cloudflare && !cloudflareApiToken.trim()) { toast.error("首次配置需要填写 Cloudflare API Token。"); return; }
-    if (!status?.supabase && !supabaseServiceRoleKey.trim()) { toast.error("请填写 Supabase Service Role Key。"); return; }
-    if (!status?.googleMaps && !googleMapsApiKey.trim()) { toast.error("请填写 Google Maps API Key。"); return; }
-    setSaving(true);
+  const save = async (service: IntegrationService) => {
+    const value = credentials[service].trim();
+    if (!value) { toast.error("请先输入要保存的新密钥。"); return; }
+    setSaving((current) => ({ ...current, [service]: true }));
     try {
-      const result = await integrationsApi.save({ cloudflareApiToken, supabaseServiceRoleKey, googleMapsApiKey });
+      const result = await integrationsApi.save(service, value);
+      setCredentials((current) => ({ ...current, [service]: "" }));
+      setTests((current) => ({ ...current, [service]: undefined }));
       toast.success(result.message);
-      setCloudflareApiToken(""); setSupabaseServiceRoleKey(""); setGoogleMapsApiKey("");
       await refreshStatus();
-      setTests(null);
-    } catch (error) { toast.error(error instanceof Error ? error.message : "密钥保存失败"); }
-    finally { setSaving(false); }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "密钥保存失败");
+    } finally {
+      setSaving((current) => ({ ...current, [service]: false }));
+    }
   };
 
-  const test = async () => {
-    setTesting(true);
+  const test = async (service: IntegrationService) => {
+    setTesting((current) => ({ ...current, [service]: true }));
     try {
-      const result = await integrationsApi.test();
-      setTests(result);
-      const passed = Object.values(result).filter((item) => item.ok).length;
-      toast[passed === 3 ? "success" : "warning"](`连接测试完成：${passed}/3 项通过`);
-    } catch (error) { toast.error(error instanceof Error ? error.message : "连接测试失败"); }
-    finally { setTesting(false); }
+      const result = await integrationsApi.test(service);
+      setTests((current) => ({ ...current, [service]: result }));
+      toast[result.ok ? "success" : "error"](`${services.find((item) => item.key === service)?.title}：${result.message}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "连接测试失败");
+    } finally {
+      setTesting((current) => ({ ...current, [service]: false }));
+    }
   };
-
-  const fields = [
-    { id: "cloudflare", label: "Cloudflare API Token", value: cloudflareApiToken, set: setCloudflareApiToken, placeholder: status?.cloudflare ? "已配置，留空表示保持不变" : "粘贴 Cloudflare API Token", hint: "需要 Workers Scripts Write 权限，建议仅授权 TradePilot 所在账户。" },
-    { id: "supabase", label: "Supabase Service Role Key", value: supabaseServiceRoleKey, set: setSupabaseServiceRoleKey, placeholder: status?.supabase ? "已配置，留空表示保持不变" : "粘贴 Supabase service_role 密钥", hint: "仅在 Worker 服务端使用，拥有高权限，请勿将其用于浏览器客户端。" },
-    { id: "googleMaps", label: "Google Maps API Key", value: googleMapsApiKey, set: setGoogleMapsApiKey, placeholder: status?.googleMaps ? "已配置，留空表示保持不变" : "粘贴 Google Maps API Key", hint: "请启用 Places API (New)，并配置账单和 API 限制。" },
-  ] as const;
 
   return <div className="min-h-screen bg-background">
-    <header className="border-b bg-card/70 px-6 py-5">
+    <header className="border-b bg-card/70 px-4 py-5 sm:px-6">
       <div className="mx-auto flex max-w-5xl items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground"><KeyRound className="h-5 w-5" /></div>
-        <div><h1 className="text-xl font-semibold tracking-tight">设置与集成</h1><p className="text-sm text-muted-foreground">管理 TradePilot 连接的外部服务与 API 凭据</p></div>
+        <div><h1 className="text-xl font-semibold tracking-tight">设置与集成</h1><p className="text-sm text-muted-foreground">每项服务独立配置、保存和测试</p></div>
       </div>
     </header>
-    <main className="mx-auto max-w-5xl space-y-6 px-6 py-8">
-      <div className="grid gap-3 md:grid-cols-3">
-        {services.map((service) => {
-          const configured = status?.[service.key] ?? false;
-          const Icon = service.icon;
-          return <Card key={service.key} className="border-0 bg-muted/40 shadow-none">
-            <CardContent className="flex items-center gap-3 p-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-background"><Icon className="h-5 w-5 text-muted-foreground" /></div>
-              <div className="min-w-0 flex-1"><p className="text-sm font-medium">{service.title}</p><p className="text-xs text-muted-foreground">{service.secretName}</p></div>
-              {loading ? <LoaderCircle className="h-4 w-4 animate-spin text-muted-foreground" /> : <Badge variant={configured ? "success" : "outline"}>{configured ? "已配置" : "未配置"}</Badge>}
-            </CardContent>
-          </Card>;
-        })}
-      </div>
-
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2"><LockKeyhole className="h-5 w-5" /><CardTitle>API 密钥</CardTitle></div>
-          <CardDescription>输入密钥并保存到 Cloudflare Worker Secrets。已保存的密钥不会再次显示。</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form className="space-y-6" onSubmit={save}>
-            {fields.map((field, index) => <div key={field.id} className="space-y-2">
-              <div className="flex items-center justify-between gap-3"><label htmlFor={field.id} className="text-sm font-medium">{field.label}</label>{status?.[field.id] && <Badge variant="success">已安全保存</Badge>}</div>
-              <div className="relative">
-                <Input id={field.id} type={show[field.id] ? "text" : "password"} autoComplete="new-password" value={field.value} onChange={(event) => field.set(event.target.value)} placeholder={field.placeholder} className="pr-12 font-mono text-sm" />
-                <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1" onClick={() => setShow((current) => ({ ...current, [field.id]: !current[field.id] }))} aria-label={show[field.id] ? "隐藏密钥" : "显示密钥"}>{show[field.id] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button>
-              </div>
-              <p className="text-xs text-muted-foreground">{field.hint}</p>
-              {index < fields.length - 1 && <Separator className="mt-5" />}
-            </div>)}
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-muted/50 p-4">
-              <div className="flex items-start gap-2 text-xs text-muted-foreground"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" /><span>密钥通过登录态保护的 Worker 接口提交，并写入 Cloudflare Secrets。前端不会持久化或回显密钥。</span></div>
-              <Button type="submit" disabled={saving || loading}>{saving ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}{saving ? "正在安全保存…" : "保存密钥"}</Button>
+    <main className="mx-auto max-w-5xl space-y-5 px-4 py-6 sm:px-6 sm:py-8">
+      <div className="flex items-start gap-2 rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" /><span>密钥只提交到登录态保护的 Worker 接口，并保存为 Cloudflare Worker Secrets。已保存的密钥不会回显，也不会存入浏览器本地存储。</span></div>
+      {services.map((service) => {
+        const Icon = service.icon;
+        const configured = status?.[service.key] ?? false;
+        const testResult = tests[service.key];
+        return <Card key={service.key}>
+          <CardHeader className="pb-3">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted"><Icon className="h-5 w-5 text-muted-foreground" /></div>
+              <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><CardTitle>{service.title}</CardTitle>{loading ? <LoaderCircle className="h-4 w-4 animate-spin text-muted-foreground" /> : <Badge variant={configured ? "success" : "outline"}>{configured ? "已配置" : "未配置"}</Badge>}</div><CardDescription className="mt-1">{service.description} · {service.secretName}</CardDescription></div>
             </div>
-          </form>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader><div className="flex items-center gap-2"><TestTube2 className="h-5 w-5" /><CardTitle>连接测试</CardTitle></div><CardDescription>保存密钥后，验证 Cloudflare、Supabase 与 Google Places API 是否可以正常访问。</CardDescription></CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-sm text-muted-foreground">Google Places 测试会发起一次小型搜索请求，可能计入 Google API 用量。</p><Button type="button" variant="outline" onClick={test} disabled={testing || loading || !status || !Object.values(status).every(Boolean)}>{testing ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <TestTube2 className="h-4 w-4" />}测试所有连接</Button></div>
-          {tests && <div className="space-y-2">{services.map((service) => {
-            const result = tests[service.key];
-            return <div key={service.key} className="flex items-center gap-3 rounded-md bg-muted/40 px-3 py-2.5 text-sm"><span>{result?.ok ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <AlertCircle className="h-4 w-4 text-destructive" />}</span><span className="font-medium">{service.title}</span><span className="ml-auto text-xs text-muted-foreground">{result?.message ?? "未测试"}</span></div>;
-          })}</div>}
-          <div className="flex items-start gap-2 text-xs text-muted-foreground"><CircleHelp className="mt-0.5 h-4 w-4 shrink-0" />如测试失败，请检查密钥有效性、Cloudflare 权限、Google Places API 启用状态及账单配置。</div>
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor={`key-${service.key}`} className="text-sm font-medium">{service.title} API Key</label>
+              <div className="relative">
+                <Input id={`key-${service.key}`} type={visible[service.key] ? "text" : "password"} autoComplete="new-password" value={credentials[service.key]} onChange={(event) => setCredentials((current) => ({ ...current, [service.key]: event.target.value }))} placeholder={configured ? "已配置；输入新密钥可替换" : service.placeholder} className="pr-12 font-mono text-sm" />
+                <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1" onClick={() => setVisible((current) => ({ ...current, [service.key]: !current[service.key] }))} aria-label={visible[service.key] ? "隐藏密钥" : "显示密钥"}>{visible[service.key] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button>
+              </div>
+              <p className="text-xs text-muted-foreground">{service.hint}</p>
+              {service.key !== "cloudflare" && !status?.cloudflare && <p className="text-xs text-amber-700 dark:text-amber-400">需要先保存 Cloudflare API Token，才能安全写入此密钥。</p>}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button type="button" onClick={() => void save(service.key)} disabled={loading || saving[service.key] || !credentials[service.key].trim()}>
+                {saving[service.key] ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}{saving[service.key] ? "正在保存…" : "单独保存"}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => void test(service.key)} disabled={loading || testing[service.key] || !configured}>
+                {testing[service.key] ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <TestTube2 className="h-4 w-4" />}{testing[service.key] ? "正在测试…" : "连接测试"}
+              </Button>
+              {testResult && <div className="flex min-w-0 items-center gap-1.5 text-xs" role="status">{testResult.ok ? <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" /> : <AlertCircle className="h-4 w-4 shrink-0 text-destructive" />}<span className={testResult.ok ? "text-emerald-700 dark:text-emerald-400" : "text-destructive"}>{testResult.message}</span></div>}
+            </div>
+          </CardContent>
+        </Card>;
+      })}
+      <div className="flex items-center gap-2 text-xs text-muted-foreground"><LockKeyhole className="h-4 w-4" />每次操作只会修改当前服务，不会覆盖其他服务的密钥。</div>
     </main>
   </div>;
 }
