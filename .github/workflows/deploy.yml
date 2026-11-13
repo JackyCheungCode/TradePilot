@@ -2,6 +2,9 @@ name: Deploy TradePilot
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - feature/lead-discovery-map-local-businesses
 
 permissions:
   contents: read
