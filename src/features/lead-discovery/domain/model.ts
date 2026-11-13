@@ -1,10 +1,10 @@
 export type DiscoveryProvider = "google_maps" | "openstreetmap";
 export type DiscoveryStatus = "queued" | "running" | "completed" | "partial" | "failed" | "cancelled";
-export interface DiscoveryRunInput { countries: string[]; query: string; limitPerCountry: number; providers: DiscoveryProvider[]; state?: string; city?: string; osmTags?: Array<{key:string;value:string}>; }
+export interface DiscoveryRunInput { countries: string[]; query: string; limitPerCountry: number; providers: DiscoveryProvider[]; state?: string; city?: string; osmTags?: Array<{key:string;value:string}>; businessTypes?: string[]; filters?: {minRating?:number;openNow?:boolean;requireWebsite?:boolean;requirePhone?:boolean}; originalQuery?:string; translatedQuery?:string; targetLanguage?:string; }
 export interface DiscoveryRun {
   id: string; taskCode?: string; channel?: string; query?: string; countries?: string[];
   state?: string | null; city?: string | null; providers?: DiscoveryProvider[];
-  status: DiscoveryStatus; progress: number; discoveredCount: number; createdLeadCount: number;
+  searchConfig?: Record<string, unknown>; status: DiscoveryStatus; progress: number; discoveredCount: number; createdLeadCount: number;
   message: string; createdAt?: string;
 }
 export interface DiscoveryLog { id: string; level: "info" | "success" | "warning" | "error"; message: string; createdAt: string; }
