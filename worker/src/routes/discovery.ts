@@ -260,7 +260,7 @@ export async function handleDiscovery(request: Request, env: DiscoveryEnv): Prom
 
   if(request.method==="GET" && url.pathname==="/api/v1/discovery-records"){
     const runId=url.searchParams.get("runId"),status=url.searchParams.get("status"),limit=Math.min(500,Math.max(1,Number(url.searchParams.get("limit"))||250));
-    const filters=["owner_id=eq."+userId,"channel=eq.map_local_businesses","select=*,discovery_record_occurrences"+(runId?"!inner":"")+"(id,run_id,provider,keyword,external_id,source_url,license,attribution,raw_data,captured_at)","order=created_at.desc","limit="+limit];
+    const filters=["owner_id=eq."+userId,"channel=eq.map_local_businesses","select=*,discovery_record_occurrences"+(runId?"!inner":"")+"(id,run_id,provider,keyword,external_id,source_url,license,attribution,raw_data,captured_at,run:discovery_runs!discovery_record_occurrences_run_id_owner_id_fkey(task_code,query))","order=created_at.desc","limit="+limit];
     if(runId) filters.push("discovery_record_occurrences.run_id=eq."+runId);
     if(status) filters.push("status=eq."+encodeURIComponent(status));
     else filters.push("status=neq.removed");
