@@ -14,7 +14,7 @@ export interface WorkerEnv {
  CLOUDFLARE_ACCOUNT_ID?: string;
  CLOUDFLARE_WORKER_NAME?: string;
  OVERPASS_API_URL?: string;
- LEAD_DISCOVERY_WORKFLOW: { create(options: { id: string; params: { runId: string; ownerId: string; input: { countries: string[]; query: string; limitPerCountry: number } } }): Promise<{ id: string }> };
+ LEAD_DISCOVERY_WORKFLOW: { create(options: { id: string; params: { runId: string; ownerId: string; input: { countries: string[]; query: string; limitPerCountry: number; state?: string; city?: string } } }): Promise<{ id: string }> };
 }
 
 export { LeadDiscoveryWorkflow };
@@ -22,10 +22,18 @@ export { LeadDiscoveryWorkflow };
 export default {
  async fetch(request: Request, env: WorkerEnv): Promise<Response> {
   const url = new URL(request.url);
-  if (url.pathname === "/api/v1/health" && request.method === "GET") return handleHealth(request);
-  if (url.pathname.startsWith("/api/v1/settings/")) return handleSettings(request, env);
-  if (url.pathname.startsWith("/api/v1/discovery-runs")) return handleDiscovery(request, env);
-  if (url.pathname.startsWith("/api/")) return errorResponse(request,"NOT_FOUND","The requested API endpoint does not exist.",404);
-  return env.ASSETS.fetch(request);
+  try {
+   if (url.pathname === "/api/v1/health" && request.method === "GET") return handleHealth(request);
+   if (url.pathname.startsWith("/api/v1/settings/")) return await handleSettings(request, env);
+   if (url.pathname.startsWith("/api/v1/discovery-runs")) return await handleDiscovery(request, env);
+   if (url.pathname.startsWith("/api/")) return errorResponse(request,"NOT_FOUND","The requested API endpoint does not exist.",404);
+   return env.ASSETS.fetch(request);
+  } catch (error) {
+   console.error("WORKER_API_UNHANDLED_ERROR", { path: url.pathname, error: String(error).slice(0, 500) });
+   if (url.pathname.startsWith("/api/")) {
+    return errorResponse(request, "INTERNAL_SERVER_ERROR", "服务暂时不可用，请稍后重试。", 500);
+   }
+   throw error;
+  }
  },
 };
