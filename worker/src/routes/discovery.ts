@@ -9,7 +9,7 @@ export interface DiscoveryEnv {
   SERPER_API_KEY?: string;
   SERPAPI_API_KEY?: string;
   LEAD_DISCOVERY_WORKFLOW: { create(options: { id: string; params: { runId: string; ownerId: string; input: DiscoveryRunInput } }): Promise<{ id: string }> };
-  CONTACT_ENRICHMENT_WORKFLOW: { create(options:{id:string;params:{jobId:string;ownerId:string;recordIds:string[]}}):Promise<{id:string}> };
+  CONTACT_ENRICHMENT_WORKFLOW?: { create(options:{id:string;params:{jobId:string;ownerId:string;recordIds:string[]}}):Promise<{id:string}> };
   OVERPASS_API_URL?: string;
 }
 export type DiscoveryProvider = "google_maps" | "openstreetmap";
@@ -396,6 +396,7 @@ export async function handleDiscovery(request: Request, env: DiscoveryEnv): Prom
     if(records.some(record=>!record.website))return errorResponse(request,"VALIDATION_ERROR","所选记录中存在没有官网地址的项目，请先筛选有官网的记录。",400);
     const created=await db<Array<{id:string}>>(env,"discovery_contact_enrichment_runs",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({owner_id:userId,record_ids:recordIds,status:"queued",progress:0,completed_count:0,failed_count:0,message:"联系方式采集任务已排队"})});
     const job=created?.[0];if(!job?.id)throw new Error("CONTACT_ENRICHMENT_JOB_CREATE_FAILED");
+    if(!env.CONTACT_ENRICHMENT_WORKFLOW)return errorResponse(request,"WORKFLOW_NOT_CONFIGURED","联系方式采集工作流尚未部署，请稍后重试。",503);
     try{await env.CONTACT_ENRICHMENT_WORKFLOW.create({id:job.id,params:{jobId:job.id,ownerId:userId,recordIds}});}catch(error){await db(env,"discovery_contact_enrichment_runs?id=eq."+job.id,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"failed",message:"工作流启动失败："+String(error).slice(0,180)})});return errorResponse(request,"WORKFLOW_START_FAILED","任务已创建，但后台工作流启动失败。",503);}
     return successResponse(request,{id:job.id,status:"queued",progress:0,completedCount:0,failedCount:0,message:"联系方式采集工作流已启动"},202);
   }
