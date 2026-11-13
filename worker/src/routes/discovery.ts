@@ -181,7 +181,7 @@ export async function handleDiscovery(request: Request, env: DiscoveryEnv): Prom
   if (request.method === "POST" && url.pathname === "/api/v1/discovery-runs") {
     let input: DiscoveryRunInput;
     try { input = await request.json() as DiscoveryRunInput; } catch { return errorResponse(request, "VALIDATION_ERROR", "请求内容不是有效 JSON。", 400); }
-    if (!Array.isArray(input.countries) || input.countries.length !== 1 || input.countries.some((code) => !/^[A-Z]{2}$/.test(code)) || !input.query?.trim() || !Number.isInteger(input.limitPerCountry) || input.limitPerCountry < 1 || input.limitPerCountry > 500 || (input.state !== undefined && (typeof input.state !== "string" || !input.state.trim())) || (input.city !== undefined && (typeof input.city !== "string" || !input.city.trim())) || (input.city && !input.state)) {
+    if (!Array.isArray(input.countries) || input.countries.length !== 1 || input.countries.some((code) => !/^[A-Z]{2}$/.test(code)) || !input.query?.trim() || !Number.isInteger(input.limitPerCountry) || input.limitPerCountry < 1 || input.limitPerCountry > 500 || (input.state !== undefined && (typeof input.state !== "string" || !input.state.trim())) || (input.city !== undefined && (typeof input.city !== "string" || !input.city.trim()))) {
       return errorResponse(request, "VALIDATION_ERROR", "请选择一个国家；省州与城市必须按层级选择，关键词或数量参数也必须有效。", 400);
     }
     const code = input.countries[0];
