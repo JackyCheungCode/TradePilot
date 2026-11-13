@@ -51,10 +51,10 @@ export async function handleSettings(request: Request, env: SettingsEnv): Promis
     let body: { cloudflareApiToken?: string; supabaseServiceRoleKey?: string; googleMapsApiKey?: string };
     try { body = await request.json() as typeof body; } catch { return errorResponse(request, "INVALID_JSON", "请求内容格式不正确。", 400); }
     const cloudflareToken = body.cloudflareApiToken?.trim() || env.CLOUDFLARE_API_TOKEN;
-    const serviceRoleKey = body.supabaseServiceRoleKey?.trim();
-    const googleMapsKey = body.googleMapsApiKey?.trim();
+    const serviceRoleKey = body.supabaseServiceRoleKey?.trim() || env.SUPABASE_SERVICE_ROLE_KEY;
+    const googleMapsKey = body.googleMapsApiKey?.trim() || env.GOOGLE_MAPS_API_KEY;
     if (!cloudflareToken || !serviceRoleKey || !googleMapsKey) {
-      return errorResponse(request, "MISSING_CREDENTIALS", "首次配置需要填写 Cloudflare、Supabase 和 Google Maps 三个密钥。", 400);
+      return errorResponse(request, "MISSING_CREDENTIALS", "首次配置需要填写三个密钥；已配置的密钥可以留空以保持不变。", 400);
     }
     if (cloudflareToken.length > 4096 || serviceRoleKey.length > 4096 || googleMapsKey.length > 4096) {
       return errorResponse(request, "INVALID_CREDENTIAL", "密钥长度不符合要求。", 400);
