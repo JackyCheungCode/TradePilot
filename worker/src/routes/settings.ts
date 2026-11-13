@@ -9,9 +9,21 @@ interface SettingsEnv {
   CLOUDFLARE_ACCOUNT_ID?: string;
   CLOUDFLARE_WORKER_NAME?: string;
 }
+type ServiceKey = "cloudflare" | "supabase" | "googleMaps";
+type CredentialBody = { cloudflareApiToken?: string; supabaseServiceRoleKey?: string; googleMapsApiKey?: string };
+const secretNames: Record<ServiceKey, string> = {
+  cloudflare: "CLOUDFLARE_API_TOKEN",
+  supabase: "SUPABASE_SERVICE_ROLE_KEY",
+  googleMaps: "GOOGLE_MAPS_API_KEY",
+};
+const bodyFields: Record<ServiceKey, keyof CredentialBody> = {
+  cloudflare: "cloudflareApiToken",
+  supabase: "supabaseServiceRoleKey",
+  googleMaps: "googleMapsApiKey",
+};
 
 async function authenticated(request: Request, env: SettingsEnv): Promise<boolean> {
-  const token = request.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
+  const token = request.headers.get("Authorization")?.replace(/^Bearer\\s+/i, "");
   if (!token) return false;
   const response = await fetch(env.SUPABASE_URL + "/auth/v1/user", {
     headers: { apikey: env.SUPABASE_ANON_KEY, Authorization: "Bearer " + token },
@@ -35,6 +47,49 @@ async function cloudflareRequest(token: string, path: string, init?: RequestInit
   return body;
 }
 
+async function saveOneSecret(service: ServiceKey, value: string, env: SettingsEnv): Promise<string> {
+  const cloudflareToken = service === "cloudflare" ? value : env.CLOUDFLARE_API_TOKEN;
+  if (!cloudflareToken) throw new Error("请先单独保存 Cloudflare API Token，再配置其他服务。");
+  const accountId = env.CLOUDFLARE_ACCOUNT_ID ?? "ea4e98dce9c478d7dd5c07f10e5c722d";
+  const workerName = env.CLOUDFLARE_WORKER_NAME ?? "tradepilot";
+  await cloudflareRequest(cloudflareToken, "/user/tokens/verify");
+  await cloudflareRequest(cloudflareToken, `/accounts/${accountId}/workers/scripts/${workerName}/secrets-bulk`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      secrets: {
+        [secretNames[service]]: { name: secretNames[service], type: "secret_text", text: value },
+      },
+    }),
+  });
+  return `${service === "cloudflare" ? "Cloudflare" : service === "supabase" ? "Supabase" : "Google Maps"} 密钥已单独保存至 Cloudflare Worker Secrets。`;
+}
+
+async function testOneService(service: ServiceKey, env: SettingsEnv) {
+  if (service === "cloudflare") {
+    if (!env.CLOUDFLARE_API_TOKEN) return { ok: false, message: "尚未配置" };
+    try {
+      await cloudflareRequest(env.CLOUDFLARE_API_TOKEN, "/user/tokens/verify");
+      return { ok: true, message: "Cloudflare Token 有效" };
+    } catch { return { ok: false, message: "Cloudflare Token 无效或权限不足" }; }
+  }
+  if (service === "supabase") {
+    if (!env.SUPABASE_SERVICE_ROLE_KEY) return { ok: false, message: "尚未配置" };
+    try {
+      const response = await fetch(env.SUPABASE_URL + "/rest/v1/", { headers: { apikey: env.SUPABASE_SERVICE_ROLE_KEY, Authorization: "Bearer " + env.SUPABASE_SERVICE_ROLE_KEY } });
+      return { ok: response.ok, message: response.ok ? "Supabase 服务密钥可用" : "Supabase 请求失败，请检查服务密钥" };
+    } catch { return { ok: false, message: "无法连接 Supabase" }; }
+  }
+  if (!env.GOOGLE_MAPS_API_KEY) return { ok: false, message: "尚未配置" };
+  try {
+    const response = await fetch("https://places.googleapis.com/v1/places:searchText", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Goog-Api-Key": env.GOOGLE_MAPS_API_KEY, "X-Goog-FieldMask": "places.id" },
+      body: JSON.stringify({ textQuery: "electronics store", maxResultCount: 1 }),
+    });
+    return { ok: response.ok, message: response.ok ? "Google Places API 可用" : "Google Places API 请求失败，请检查 API 启用状态、账单和密钥限制" };
+  } catch { return { ok: false, message: "无法连接 Google Places API" }; }
+}
+
 export async function handleSettings(request: Request, env: SettingsEnv): Promise<Response> {
   if (!(await authenticated(request, env))) return errorResponse(request, "UNAUTHORIZED", "请先登录后再管理集成密钥。", 401);
   const url = new URL(request.url);
@@ -48,63 +103,28 @@ export async function handleSettings(request: Request, env: SettingsEnv): Promis
   }
 
   if (request.method === "POST" && url.pathname === "/api/v1/settings/integrations") {
-    let body: { cloudflareApiToken?: string; supabaseServiceRoleKey?: string; googleMapsApiKey?: string };
-    try { body = await request.json() as typeof body; } catch { return errorResponse(request, "INVALID_JSON", "请求内容格式不正确。", 400); }
-    const cloudflareToken = body.cloudflareApiToken?.trim() || env.CLOUDFLARE_API_TOKEN;
-    const serviceRoleKey = body.supabaseServiceRoleKey?.trim() || env.SUPABASE_SERVICE_ROLE_KEY;
-    const googleMapsKey = body.googleMapsApiKey?.trim() || env.GOOGLE_MAPS_API_KEY;
-    if (!cloudflareToken || !serviceRoleKey || !googleMapsKey) {
-      return errorResponse(request, "MISSING_CREDENTIALS", "首次配置需要填写三个密钥；已配置的密钥可以留空以保持不变。", 400);
-    }
-    if (cloudflareToken.length > 4096 || serviceRoleKey.length > 4096 || googleMapsKey.length > 4096) {
-      return errorResponse(request, "INVALID_CREDENTIAL", "密钥长度不符合要求。", 400);
-    }
-    const accountId = env.CLOUDFLARE_ACCOUNT_ID ?? "ea4e98dce9c478d7dd5c07f10e5c722d";
-    const workerName = env.CLOUDFLARE_WORKER_NAME ?? "tradepilot";
+    let body: CredentialBody;
+    try { body = await request.json() as CredentialBody; } catch { return errorResponse(request, "INVALID_JSON", "请求内容格式不正确。", 400); }
+    const supplied = (Object.entries(bodyFields) as Array<[ServiceKey, keyof CredentialBody]>)
+      .filter(([, field]) => typeof body[field] === "string" && Boolean(body[field]?.trim()));
+    if (supplied.length !== 1) return errorResponse(request, "ONE_KEY_AT_A_TIME", "每次只能提交一个服务的密钥，请分别保存。", 400);
+    const [service, field] = supplied[0];
+    const value = body[field]?.trim() ?? "";
+    if (value.length > 4096) return errorResponse(request, "INVALID_CREDENTIAL", "密钥长度不符合要求。", 400);
     try {
-      await cloudflareRequest(cloudflareToken, "/user/tokens/verify");
-      await cloudflareRequest(cloudflareToken, `/accounts/${accountId}/workers/scripts/${workerName}/secrets-bulk`, {
-        method: "PATCH",
-        body: JSON.stringify({
-          secrets: {
-            CLOUDFLARE_API_TOKEN: { name: "CLOUDFLARE_API_TOKEN", type: "secret_text", text: cloudflareToken },
-            SUPABASE_SERVICE_ROLE_KEY: { name: "SUPABASE_SERVICE_ROLE_KEY", type: "secret_text", text: serviceRoleKey },
-            GOOGLE_MAPS_API_KEY: { name: "GOOGLE_MAPS_API_KEY", type: "secret_text", text: googleMapsKey },
-          },
-        }),
-      });
-      return successResponse(request, { saved: true, message: "三个密钥已安全提交至 Cloudflare Worker Secrets。" });
+      const message = await saveOneSecret(service, value, env);
+      return successResponse(request, { saved: true, service, message });
     } catch (error) {
       return errorResponse(request, "SECRET_UPDATE_FAILED", error instanceof Error ? error.message : "密钥保存失败，请检查 Cloudflare Token 权限。", 502);
     }
   }
 
   if (request.method === "POST" && url.pathname === "/api/v1/settings/integrations/test") {
-    const results: Record<string, { ok: boolean; message: string }> = {};
-    if (!env.CLOUDFLARE_API_TOKEN) results.cloudflare = { ok: false, message: "尚未配置" };
-    else {
-      try { await cloudflareRequest(env.CLOUDFLARE_API_TOKEN, "/user/tokens/verify"); results.cloudflare = { ok: true, message: "Cloudflare Token 有效" }; }
-      catch { results.cloudflare = { ok: false, message: "Cloudflare Token 无效或权限不足" }; }
-    }
-    if (!env.SUPABASE_SERVICE_ROLE_KEY) results.supabase = { ok: false, message: "尚未配置" };
-    else {
-      try {
-        const response = await fetch(env.SUPABASE_URL + "/rest/v1/", { headers: { apikey: env.SUPABASE_SERVICE_ROLE_KEY, Authorization: "Bearer " + env.SUPABASE_SERVICE_ROLE_KEY } });
-        results.supabase = { ok: response.ok, message: response.ok ? "Supabase 服务密钥可用" : "Supabase 请求失败，请检查服务密钥" };
-      } catch { results.supabase = { ok: false, message: "无法连接 Supabase" }; }
-    }
-    if (!env.GOOGLE_MAPS_API_KEY) results.googleMaps = { ok: false, message: "尚未配置" };
-    else {
-      try {
-        const response = await fetch("https://places.googleapis.com/v1/places:searchText", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-Goog-Api-Key": env.GOOGLE_MAPS_API_KEY, "X-Goog-FieldMask": "places.id" },
-          body: JSON.stringify({ textQuery: "electronics store", maxResultCount: 1 }),
-        });
-        results.googleMaps = { ok: response.ok, message: response.ok ? "Google Places API 可用" : "Google Places API 请求失败，请检查 API 启用状态、账单和密钥限制" };
-      } catch { results.googleMaps = { ok: false, message: "无法连接 Google Places API" }; }
-    }
-    return successResponse(request, results);
+    let body: { service?: ServiceKey };
+    try { body = await request.json() as { service?: ServiceKey }; } catch { return errorResponse(request, "INVALID_JSON", "请求内容格式不正确。", 400); }
+    if (!body.service || !(body.service in secretNames)) return errorResponse(request, "INVALID_SERVICE", "请选择需要测试的服务。", 400);
+    const result = await testOneService(body.service, env);
+    return successResponse(request, { service: body.service, ...result });
   }
 
   return errorResponse(request, "NOT_FOUND", "设置接口不存在。", 404);
