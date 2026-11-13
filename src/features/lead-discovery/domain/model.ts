@@ -1,4 +1,4 @@
-export type DiscoveryProvider = "google_maps" | "openstreetmap" | "serper" | "serpapi";
+export type DiscoveryProvider = "google_maps" | "openstreetmap" | "serper" | "serpapi" | "apify";
 export type DiscoveryStatus = "queued" | "running" | "completed" | "partial" | "failed" | "cancelled";
 export type SearchEngine = "serper" | "serpapi";
 export type SearchType = "web" | "shopping" | "images" | "news" | "videos" | "scholar" | "patents";
@@ -12,7 +12,7 @@ export interface DiscoveryRun {
 export interface DiscoveryLog { id: string; level: "info" | "success" | "warning" | "error"; message: string; createdAt: string; }
 export interface DiscoveryOccurrence { id: string; run_id: string; provider: DiscoveryProvider; keyword: string; external_id: string; source_url?: string | null; captured_at: string; is_removed?: boolean; run?: {task_code?: string; query?: string} | null; }
 export interface DiscoveryRecord {
-  id: string; entity_id?: string | null; name: string; country_code: string | null; address: string | null; phone: string | null; email?: string | null;
+  id: string; entity_id?: string | null; record_type?: string; name: string; country_code: string | null; address: string | null; phone: string | null; email?: string | null;
   website: string | null; business_type?: string | null; confidence_score?: number | null; latitude: number | null; longitude: number | null;
   status: "new" | "removed" | "discarded" | "promoted"; channel: string; raw_data?: Record<string, unknown>;
   discovery_record_occurrences: DiscoveryOccurrence[];

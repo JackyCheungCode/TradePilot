@@ -10,14 +10,16 @@ import { LeadsPage } from "@/features/crm/presentation/pages/LeadsPage";
 import { IntegrationsSettingsPage } from "@/features/settings/presentation/pages/IntegrationsSettingsPage";
 import { SearchExclusionRulesPage } from "@/features/settings/presentation/pages/SearchExclusionRulesPage";
 import { SearchEngineDiscoveryPage } from "@/features/lead-discovery/presentation/pages/SearchEngineDiscoveryPage";
+import { FacebookDiscoveryPage } from "@/features/lead-discovery/presentation/pages/FacebookDiscoveryPage";
 import { getSupabaseClient } from "@/shared/lib/supabase";
 
-type AppPage = "discovery" | "discoveryTasks" | "discoveryResults" | "searchDiscovery" | "leads" | "integrations" | "searchExclusions";
+type AppPage = "discovery" | "discoveryTasks" | "discoveryResults" | "searchDiscovery" | "facebookDiscovery" | "leads" | "integrations" | "searchExclusions";
 const ROUTES: Record<AppPage, string> = {
   discovery: "/lead-discovery/map-local-businesses",
   discoveryTasks: "/lead-discovery/tasks",
   discoveryResults: "/lead-discovery/results",
   searchDiscovery: "/lead-discovery/search-engine",
+  facebookDiscovery: "/lead-discovery/facebook",
   leads: "/crm/leads",
   integrations: "/settings/integrations",
   searchExclusions: "/settings/search-exclusions",
@@ -28,6 +30,7 @@ const getPage = (path: string): AppPage | null => {
   if (path === ROUTES.discoveryTasks || path.endsWith("/tasks")) return "discoveryTasks";
   if (path === ROUTES.discoveryResults || path.endsWith("/results")) return "discoveryResults";
   if (path === ROUTES.searchDiscovery) return "searchDiscovery";
+  if (path === ROUTES.facebookDiscovery) return "facebookDiscovery";
   if (path === ROUTES.leads) return "leads";
   if (path === ROUTES.integrations) return "integrations";
   if (path === ROUTES.searchExclusions) return "searchExclusions";
@@ -88,7 +91,7 @@ export function App() {
   if (checkingSession) return <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">正在检查登录状态…</div>;
   if (!session || path === "/login") return <><LoginPage /><Toaster richColors position="top-right" /></>;
   return <AppShell activePage={activePage ?? "discovery"} onNavigate={navigate} userEmail={session.user.email ?? ""} onSignOut={() => void getSupabaseClient().auth.signOut()}>
-    {activePage === "integrations" ? <IntegrationsSettingsPage /> : activePage === "searchExclusions" ? <SearchExclusionRulesPage /> : activePage === "discoveryTasks" ? <DiscoveryTasksPage /> : activePage === "discoveryResults" ? <DiscoveryResultsPage /> : activePage === "searchDiscovery" ? <SearchEngineDiscoveryPage /> : activePage === "leads" ? <LeadsPage /> : <MapLocalDiscoveryPage />}
+    {activePage === "integrations" ? <IntegrationsSettingsPage /> : activePage === "searchExclusions" ? <SearchExclusionRulesPage /> : activePage === "discoveryTasks" ? <DiscoveryTasksPage /> : activePage === "discoveryResults" ? <DiscoveryResultsPage /> : activePage === "searchDiscovery" ? <SearchEngineDiscoveryPage /> : activePage === "facebookDiscovery" ? <FacebookDiscoveryPage /> : activePage === "leads" ? <LeadsPage /> : <MapLocalDiscoveryPage />}
     <Toaster richColors position="top-right" />
   </AppShell>;
 }

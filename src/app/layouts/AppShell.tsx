@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from "react";
-import { Compass, KeyRound, LogOut, MapPinned, Menu, PanelLeftClose, PanelLeftOpen, Radar, Search, Settings, ShieldBan, Users, X, ChevronDown, ChevronRight, ListTodo, Files, ContactRound } from "lucide-react";
+import { Compass, Facebook, KeyRound, LogOut, MapPinned, Menu, PanelLeftClose, PanelLeftOpen, Radar, Search, Settings, ShieldBan, Users, X, ChevronDown, ChevronRight, ListTodo, Files, ContactRound } from "lucide-react";
 import { Button } from "@/shared/ui/primitives";
 
-type AppPage = "discovery" | "discoveryTasks" | "discoveryResults" | "searchDiscovery" | "leads" | "integrations" | "searchExclusions";
+type AppPage = "discovery" | "discoveryTasks" | "discoveryResults" | "searchDiscovery" | "facebookDiscovery" | "leads" | "integrations" | "searchExclusions";
 
 export function AppShell({ children, activePage, onNavigate, userEmail, onSignOut }: { children: ReactNode; activePage: AppPage; onNavigate: (page: AppPage) => void; userEmail: string; onSignOut: () => void }) {
  const [collapsed,setCollapsed]=useState(false),[mobileOpen,setMobileOpen]=useState(false);
@@ -17,8 +17,9 @@ export function AppShell({ children, activePage, onNavigate, userEmail, onSignOu
     {discoveryExpanded&&<div className={`ml-5 space-y-1 pl-3 ${collapsed&&!mobileOpen?"":"border-l"}`}>
      <Button variant={activePage==="discovery"?"secondary":"ghost"} onClick={()=>{onNavigate("discovery");setMobileOpen(false);}} className={childNavClass}><MapPinned className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<span>地图与本地商家</span>}</Button>
      <Button variant={activePage==="searchDiscovery"?"secondary":"ghost"} onClick={()=>{onNavigate("searchDiscovery");setMobileOpen(false);}} className={childNavClass}><Search className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<span>搜索引擎发现</span>}</Button>
+     <Button variant={activePage==="facebookDiscovery"?"secondary":"ghost"} onClick={()=>{onNavigate("facebookDiscovery");setMobileOpen(false);}} className={childNavClass}><Facebook className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<span>Facebook 发现</span>}</Button>
      <div className="my-2 border-t"/>
-     <Button variant={activePage==="discoveryTasks"?"secondary":"ghost"} onClick={()=>{onNavigate("discoveryTasks");setMobileOpen(false);}} className={childNavClass}><ListTodo className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<span>搜索任务</span>}</Button>
+     <Button variant={activePage==="discoveryTasks"?"secondary":"ghost"} onClick={()=>{onNavigate("discoveryTasks");setMobileOpen(false);}} className={childNavClass}><ListTodo className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<span>任务执行中心</span>}</Button>
      <Button variant={activePage==="discoveryResults"?"secondary":"ghost"} onClick={()=>{onNavigate("discoveryResults");setMobileOpen(false);}} className={childNavClass}><Files className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<span>搜索结果</span>}</Button>
     </div>}
    </div>
@@ -33,6 +34,6 @@ export function AppShell({ children, activePage, onNavigate, userEmail, onSignOu
   </nav>
   <div className="shrink-0 border-t p-3">{(!collapsed||mobileOpen)&&<p className="mb-2 truncate px-2 text-xs text-muted-foreground" title={userEmail}>{userEmail}</p>}<Button variant="ghost" onClick={onSignOut} className={`flex w-full items-center gap-2 ${collapsed&&!mobileOpen?"justify-center":"justify-start"}`} aria-label="退出登录"><LogOut className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>退出登录</span>}</Button></div>
  </div>;
- const pageTitle=activePage==="integrations"?"AI 与 API 集成":activePage==="searchExclusions"?"搜索排除规则":activePage==="leads"?"线索":activePage==="discoveryTasks"?"搜索任务":activePage==="discoveryResults"?"搜索结果":activePage==="searchDiscovery"?"搜索引擎发现":"地图与本地商家";
+ const pageTitle=activePage==="integrations"?"AI 与 API 集成":activePage==="searchExclusions"?"搜索排除规则":activePage==="leads"?"线索":activePage==="discoveryTasks"?"任务执行中心":activePage==="discoveryResults"?"搜索结果":activePage==="searchDiscovery"?"搜索引擎发现":activePage==="facebookDiscovery"?"Facebook 发现":"地图与本地商家";
  return <div className="flex min-h-screen bg-background text-foreground"><aside className={`sticky top-0 hidden h-screen shrink-0 overflow-hidden border-r transition-[width] duration-200 md:block ${collapsed?"w-[76px]":"w-64"}`}>{sidebar}</aside>{mobileOpen&&<div className="fixed inset-0 z-50 md:hidden"><button type="button" aria-label="关闭导航菜单" className="absolute inset-0 bg-black/40" onClick={()=>setMobileOpen(false)}/><aside className="absolute inset-y-0 left-0 w-[min(84vw,320px)] border-r shadow-xl">{sidebar}</aside></div>}<main className="min-w-0 flex-1"><header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b bg-background/95 px-3 backdrop-blur md:hidden"><div className="flex min-w-0 items-center gap-2"><Button size="icon" variant="ghost" onClick={()=>setMobileOpen(true)} aria-label="打开侧边栏菜单"><Menu className="h-5 w-5"/></Button><span className="truncate text-sm font-semibold">TradePilot</span></div><span className="max-w-[45%] truncate text-xs text-muted-foreground">{pageTitle}</span></header>{children}</main></div>;
 }
