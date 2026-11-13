@@ -41,7 +41,7 @@ export function SearchEngineDiscoveryPage(){
   setSaving(true);
   try{
    const input:SearchDiscoveryInput={country,state:state||undefined,city:city||undefined,query:query.trim(),advancedQuery:generated,limitPerCountry:Math.max(1,Math.min(500,Number(limit)||100)),searchEngines:engines,searchTypes:types,searchLanguage:languageFor(targetLanguage),excludeCategories:selectedExclusions,businessTypes,originalQuery:applied&&translation?translation.source:undefined,translatedQuery:applied&&translation?translation.translated:undefined,targetLanguage:applied?targetLanguage:undefined};
-   const created=await searchDiscoveryApi.start(input);setRun(created);setLogs(created.logs??[]);toast.success("搜索任务已创建："+(created.taskCode??created.id));
+   const created=await searchDiscoveryApi.start(input);setRun(created);setLogs([]);toast.success("搜索任务已创建："+(created.taskCode??created.id));
   }catch(e){toast.error(e instanceof Error?e.message:"搜索任务创建失败");}finally{setSaving(false);}
  };
  return <div className="mx-auto w-full max-w-[1500px] space-y-6 p-5 lg:p-8">
