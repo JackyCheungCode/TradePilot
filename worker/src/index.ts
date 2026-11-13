@@ -16,7 +16,7 @@ export interface WorkerEnv {
 export { LeadDiscoveryWorkflow };
 
 export default {
- async fetch(request: Request, env: WorkerEnv, _ctx: unknown): Promise<Response> {
+ async fetch(request: Request, env: WorkerEnv): Promise<Response> {
   const url = new URL(request.url);
   if (url.pathname === "/api/v1/health" && request.method === "GET") return handleHealth(request);
   if (url.pathname.startsWith("/api/v1/discovery-runs")) return handleDiscovery(request, env);
