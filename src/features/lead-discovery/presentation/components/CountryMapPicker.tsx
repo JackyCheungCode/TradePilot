@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/primitives";
-import * as PopoverPrimitive from "@radix-ui/react-popover";
-const PopoverPrimitiveClose = PopoverPrimitive.Close;
+import { Popover, PopoverClose, PopoverContent, PopoverTrigger } from "@/shared/ui/primitives";
+
 import { ComposableMap, Geographies, Geography, ZoomableGroup } from "react-simple-maps";
 import isoCountries from "i18n-iso-countries";
 import zhLocale from "i18n-iso-countries/langs/zh.json";
@@ -24,7 +23,7 @@ export function CountryMapPicker({ value, onChange }: { value: string[]; onChang
    <PopoverContent align="start" sideOffset={6} className="z-50 w-[min(92vw,390px)] rounded-lg border bg-popover p-2 text-popover-foreground shadow-lg">
     <div className="relative mb-2"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="搜索国家 / 地区" className="pl-9" /></div>
     <div className="max-h-64 overflow-y-auto">{filtered.map((c) => <Button key={c.code} type="button" variant="ghost" onClick={() => toggle(c.code)} className="flex h-auto w-full justify-start gap-3 rounded-md px-2 py-2 text-left text-sm font-normal"><span className="text-lg">{c.flag}</span><span className="flex-1">{c.name}</span><span className="text-xs text-muted-foreground">{c.code}</span>{selected.has(c.code) && <Check className="h-4 w-4 text-primary" />}</Button>)}{!filtered.length && <p className="p-4 text-center text-sm text-muted-foreground">没有匹配的国家或地区</p>}</div>
-    <div className="flex justify-between border-t pt-2"><Button size="sm" variant="ghost" onClick={() => onChange([])}>清空</Button><PopoverPrimitiveClose asChild><Button size="sm">完成</Button></PopoverPrimitiveClose></div>
+    <div className="flex justify-between border-t pt-2"><Button size="sm" variant="ghost" onClick={() => onChange([])}>清空</Button><PopoverClose asChild><Button size="sm">完成</Button></PopoverClose></div>
    </PopoverContent>
   </Popover>
   {value.length > 0 && <div className="flex flex-wrap gap-1.5">{value.map((code) => { const c = countries.find((item) => item.code === code); return <Badge key={code} variant="outline" className="gap-1.5 py-1">{c?.flag} {c?.name}<Button type="button" size="icon" variant="ghost" aria-label={`移除${c?.name}`} onClick={() => toggle(code)} className="h-5 w-5"><X className="h-3 w-3" /></Button></Badge>; })}</div>}
