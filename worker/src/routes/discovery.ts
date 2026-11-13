@@ -63,7 +63,7 @@ async function searchOSM(code: string, query: string, limit: number, env: Discov
   const pattern = terms.join("|") || ".*";
   const q = '[out:json][timeout:45];area["ISO3166-1"="' + code + '"][admin_level=2]->.a;(' +
     'nwr["name"~"' + pattern + '",i](area.a);' +
-    'nwr["shop"~"' + pattern + '",i](area.a);' +
+    'nwr["shop"~"electronics|electrical|computer|mobile_phone|hardware|wholesale|' + pattern + '",i](area.a);' +
     'nwr["office"~"' + pattern + '",i](area.a);' +
     'nwr["amenity"~"' + pattern + '",i](area.a);nwr["craft"~"' + pattern + '",i](area.a);nwr["industrial"~"' + pattern + '",i](area.a););out center tags ' + Math.min(500, limit) + ';';
   const response = await fetch(overpass, {
