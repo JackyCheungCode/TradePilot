@@ -346,7 +346,7 @@ export async function handleDiscovery(request: Request, env: DiscoveryEnv): Prom
       (input.filters !== undefined && (!input.filters || typeof input.filters !== "object" || (input.filters.minRating !== undefined && (typeof input.filters.minRating !== "number" || input.filters.minRating < 0 || input.filters.minRating > 5 || input.filters.minRating * 2 % 1 !== 0)) || (input.filters.openNow !== undefined && typeof input.filters.openNow !== "boolean") || (input.filters.requireWebsite !== undefined && typeof input.filters.requireWebsite !== "boolean") || (input.filters.requirePhone !== undefined && typeof input.filters.requirePhone !== "boolean"))) ||
       (input.originalQuery !== undefined && (typeof input.originalQuery !== "string" || input.originalQuery.length > 300)) ||
       (input.translatedQuery !== undefined && (typeof input.translatedQuery !== "string" || input.translatedQuery.length > 300)) ||
-      (input.targetLanguage !== undefined && (typeof input.targetLanguage !== "string" || !/^[A-Z]{2}(?:-[A-Z]{2})?$/.test(input.targetLanguage))) ||
+      (input.targetLanguage !== undefined && (typeof input.targetLanguage !== "string" || !/^[A-Z]{2}(?:-[A-Z]{2,5})?$/.test(input.targetLanguage))) ||
       (input.state !== undefined && (typeof input.state !== "string" || !input.state.trim())) ||
       (input.city !== undefined && (typeof input.city !== "string" || !input.city.trim()))) {
       return errorResponse(request,"VALIDATION_ERROR","请选择一个国家和至少一个数据源；关键词、地区、数量或 OSM 标签映射无效。",400);
