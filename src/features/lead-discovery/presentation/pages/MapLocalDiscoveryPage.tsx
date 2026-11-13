@@ -44,7 +44,7 @@ export function MapLocalDiscoveryPage() {
   finally { setStarting(false); }
  };
  const running = run && ["queued", "running"].includes(run.status);
- useEffect(() => { setTargetLanguage(defaultDeepLTargetLanguage(country)); }, [country]);
+ useEffect(() => { setTargetLanguage(defaultDeepLTargetLanguage(country)); setTranslation(null); setTranslationApplied(false); }, [country]);
  useEffect(() => { setOsmTags(businessTypes.length ? mapBusinessTypeOsmTags(businessTypes) : mapOsmTags(query)); }, [query, businessTypes]);
  const updateOsmTag = (index: number, raw: string) => { const [key = "", value = ""] = raw.split("=", 2); setOsmTags((current) => current.map((tag, i) => i === index ? { ...tag, key: key.trim(), value: (value ?? "").trim() } : tag)); };
  const addOsmTag = () => setOsmTags((current) => [...current, { key: "shop", value: "", label: "自定义标签", match: "related", reason: "用户自定义 OSM 标签" }]);
