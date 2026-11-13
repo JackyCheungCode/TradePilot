@@ -8,7 +8,9 @@ import { Badge, Button, Input } from "@/shared/ui/primitives";
 isoCountries.registerLocale(zhLocale);
 const flag = (code: string) => String.fromCodePoint(...code.toUpperCase().split("").map((c) => 127397 + c.charCodeAt(0)));
 const specialNames: Record<string, string> = { HK: "中国香港", MO: "中国澳门", TW: "中国台湾" };
-const countries = Object.keys(isoCountries.getAlpha2Codes()).map((code) => ({ code, numericCode: isoCountries.getNumericCode(code) ?? "", name: specialNames[code] ?? isoCountries.getName(code, "zh") ?? code, flag: flag(code) })).sort((a,b) => a.name.localeCompare(b.name));
+const numericCodes = isoCountries.getNumericCodes();
+const numericByAlpha2 = Object.fromEntries(Object.entries(numericCodes).map(([numeric, alpha2]) => [alpha2, numeric]));
+const countries = Object.keys(isoCountries.getAlpha2Codes()).map((code) => ({ code, numericCode: numericByAlpha2[code] ?? "", name: specialNames[code] ?? isoCountries.getName(code, "zh") ?? code, flag: flag(code) })).sort((a,b) => a.name.localeCompare(b.name));
 const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json";
 export function CountryMapPicker({ value, onChange }: { value: string[]; onChange: (next: string[]) => void }) {
  const [search, setSearch] = useState("");
@@ -27,8 +29,8 @@ export function CountryMapPicker({ value, onChange }: { value: string[]; onChang
   <div className="overflow-hidden rounded-xl border bg-slate-50 dark:bg-slate-950">
    <div className="flex items-center justify-between px-3 pt-3"><div><p className="text-sm font-medium">全球目标市场</p><p className="text-xs text-muted-foreground">点击地图领土即可选择 / 取消</p></div><Badge variant="outline">{value.length} 已选</Badge></div>
    <ComposableMap projectionConfig={{ scale: 145 }} width={800} height={380} style={{ width: "100%", height: "auto" }}><ZoomableGroup><Geographies geography={geoUrl}>{({ geographies }) => geographies.map((geo) => {
-    const numeric = String(geo.id).padStart(3, "0"); const code = Object.keys(isoCountries.getAlpha2Codes()).find((alpha) => isoCountries.getNumericCode(alpha) === numeric); const active = !!code && selected.has(code);
-    return <Geography key={geo.rsmKey} geography={geo} onClick={() => code && toggle(code)} style={{ default: { fill: active ? "#2563eb" : "#dbe3ed", stroke: "#fff", strokeWidth: 0.65, outline: "none" }, hover: { fill: active ? "#1d4ed8" : "#93c5fd", stroke: "#fff", strokeWidth: 0.65, outline: "none", cursor: code ? "pointer" : "default" }, pressed: { fill: "#1d4ed8", outline: "none" } }} />;
+    const numeric = String(geo.id).padStart(3, "0"); const code = numericCodes[numeric]; const active = !!code && selected.has(code);
+    return <Geography key={geo.rsmKey} geography={geo} onClick={() => code && toggle(code)} className={code ? "cursor-pointer transition-opacity hover:opacity-80" : ""} style={{ fill: active ? "#2563eb" : "#dbe3ed", stroke: "#fff", strokeWidth: 0.65, outline: "none" }} />;
    })}</Geographies></ZoomableGroup></ComposableMap>
    <div className="flex items-center gap-2 px-3 pb-3 text-xs text-muted-foreground"><span className="h-2.5 w-2.5 rounded-sm bg-blue-600" /> 已选择领土 <span className="ml-3 h-2.5 w-2.5 rounded-sm bg-slate-300" /> 未选择</div>
   </div>
