@@ -20,5 +20,10 @@
       "binding": "LEAD_DISCOVERY_WORKFLOW",
       "class_name": "LeadDiscoveryWorkflow"
     }
-  ]
+  ],
+  "account_id": "ea4e98dce9c478d7dd5c07f10e5c722d",
+  "vars": {
+    "SUPABASE_URL": "https://nlklnkkcwapwerkahoyb.supabase.co",
+    "SUPABASE_ANON_KEY": "sb_publishable_9jPg2Sv0VmMho3vOvxU00Q_-kWg8xw_"
+  }
 }
