@@ -4,6 +4,10 @@ import worker, { type WorkerEnv } from "../src/index";
 
 const env: WorkerEnv = {
   ASSETS: { fetch: async () => new Response("asset") },
+  SUPABASE_URL: "https://example.supabase.co",
+  SUPABASE_ANON_KEY: "test-anon-key",
+  SUPABASE_SERVICE_ROLE_KEY: "test-service-role-key",
+  LEAD_DISCOVERY_WORKFLOW: { create: async () => ({ id: "workflow-test" }) },
 };
 
 describe("Worker API routes", () => {
