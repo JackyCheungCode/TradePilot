@@ -9,7 +9,7 @@ export interface DiscoveryEnv {
   LEAD_DISCOVERY_WORKFLOW: { create(options: { id: string; params: { runId: string; ownerId: string; input: DiscoveryRunInput } }): Promise<{ id: string }> };
   OVERPASS_API_URL?: string;
 }
-export interface DiscoveryRunInput { countries: string[]; query: string; limitPerCountry: number; state?: string; city?: string; }
+export type DiscoveryProvider = "google_maps" | "openstreetmap";\nexport interface DiscoveryRunInput { countries: string[]; query: string; limitPerCountry: number; providers: DiscoveryProvider[]; state?: string; city?: string; }
 interface OSMElement { type: string; id: number; lat?: number; lon?: number; center?: { lat: number; lon: number }; tags?: Record<string, string>; }
 interface GooglePlace { id?: string; displayName?: { text?: string }; location?: { latitude?: number; longitude?: number }; }
 type ProviderResult<T> = { ok: true; value: T } | { ok: false; error: unknown };
@@ -108,107 +108,193 @@ export async function markRunFailed(env: DiscoveryEnv, runId: string, ownerId: s
   await log(env, runId, ownerId, "error", "任务异常终止：" + String(error).slice(0, 300));
 }
 
+
+async function persistDiscoveryRecord(
+  env: DiscoveryEnv,
+  ownerId: string,
+  runId: string,
+  input: DiscoveryRunInput,
+  item: { provider: DiscoveryProvider; externalId: string; name: string; countryCode: string; address?: string | null; phone?: string | null; website?: string | null; latitude?: number | null; longitude?: number | null; sourceUrl?: string | null; license?: string | null; attribution?: string | null; rawData: Record<string, unknown>; dedupeKey: string },
+): Promise<string> {
+  const rows = await db<Array<{ id: string }>>(env, "discovery_records?on_conflict=owner_id,channel,dedupe_key", {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+    body: JSON.stringify({
+      owner_id: ownerId, channel: "map_local_businesses", record_type: "business",
+      name: item.name, country_code: item.countryCode, address: item.address ?? null,
+      phone: item.phone ?? null, website: item.website ?? null,
+      latitude: item.latitude ?? null, longitude: item.longitude ?? null,
+      dedupe_key: item.dedupeKey, raw_data: item.rawData,
+    }),
+  });
+  let recordId = rows?.[0]?.id;
+  if (!recordId) {
+    const existing = await db<Array<{ id: string }>>(env, "discovery_records?owner_id=eq." + ownerId + "&channel=eq.map_local_businesses&dedupe_key=eq." + encodeURIComponent(item.dedupeKey) + "&select=id");
+    recordId = existing[0]?.id;
+  }
+  if (!recordId) throw new Error("DISCOVERY_RECORD_UPSERT_FAILED");
+  await db(env, "discovery_record_occurrences?on_conflict=owner_id,run_id,provider,external_id", {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify({
+      owner_id: ownerId, record_id: recordId, run_id: runId, provider: item.provider,
+      keyword: input.query, external_id: item.externalId, source_url: item.sourceUrl ?? null,
+      license: item.license ?? null, attribution: item.attribution ?? null, raw_data: item.rawData,
+    }),
+  });
+  return recordId;
+}
+
 export async function processRun(env: DiscoveryEnv, runId: string, ownerId: string, input: DiscoveryRunInput) {
-  const totalUnits = input.countries.length * 2;
+  const providers = input.providers?.length ? input.providers : ["google_maps", "openstreetmap"];
+  const totalUnits = input.countries.length * providers.length;
   let doneUnits = 0, discovered = 0, created = 0, googleCount = 0, osmCount = 0, failures = 0;
-  await updateRun(env, runId, { status: "running", message: "正在并行查询 Google Maps 与 OpenStreetMap" });
-  await log(env, runId, ownerId, "info", "双数据源并行发现任务开始");
+  await updateRun(env, runId, { status: "running", message: "正在执行所选数据源：" + providers.join("、") });
+  await log(env, runId, ownerId, "info", "任务开始；关键词：" + input.query + "；数据源：" + providers.join("、"));
   for (const code of input.countries) {
     const scope = [input.city, input.state, countryName(code)].filter(Boolean).join(" · ");
-    const updateProgress = async () => updateRun(env, runId, {
-      progress: Math.round(doneUnits / totalUnits * 100),
-      discovered_count: discovered,
-      created_lead_count: created,
-      message: "正在处理 " + scope + " · 双源并行查询",
-    });
-    const osmPromise: Promise<ProviderResult<OSMElement[]>> = searchOSM(code, input.query, input.limitPerCountry, env, input.state, input.city)
-      .then(async (value) => { osmCount += value.length; discovered += value.length; doneUnits++; await log(env, runId, ownerId, "success", scope + " · OpenStreetMap 返回 " + value.length + " 条候选"); await updateProgress(); return { ok: true as const, value }; })
-      .catch(async (error) => { failures++; doneUnits++; await log(env, runId, ownerId, "warning", scope + " · OpenStreetMap 查询失败：" + String(error).slice(0, 180)); await updateProgress(); return { ok: false as const, error }; });
-    const googlePromise: Promise<ProviderResult<GooglePlace[]>> = searchGoogle(code, input.query, input.limitPerCountry, env, input.state, input.city)
-      .then(async (value) => { googleCount += value.length; discovered += value.length; doneUnits++; await log(env, runId, ownerId, "success", scope + " · Google Maps 返回 " + value.length + " 条候选（仅持久化允许保留的 Place ID）"); await updateProgress(); return { ok: true as const, value }; })
-      .catch(async (error) => { failures++; doneUnits++; await log(env, runId, ownerId, "warning", scope + " · Google Maps 查询失败：" + String(error).slice(0, 180)); await updateProgress(); return { ok: false as const, error }; });
-    const [osmResult, googleResult] = await Promise.all([osmPromise, googlePromise]);
-    const osm = osmResult.ok ? osmResult.value : [];
-    const google = googleResult.ok ? googleResult.value : [];
-    const googleMatches = google.filter((place) => place.id && place.displayName?.text && place.location?.latitude != null && place.location?.longitude != null);
-    for (const item of osm) {
-      const tags = item.tags ?? {};
-      const name = tags.name;
+    const osmResult: ProviderResult<OSMElement[]> | null = providers.includes("openstreetmap")
+      ? await searchOSM(code, input.query, input.limitPerCountry, env, input.state, input.city).then(value => ({ok:true as const,value})).catch(error => ({ok:false as const,error}))
+      : null;
+    const googleResult: ProviderResult<GooglePlace[]> | null = providers.includes("google_maps")
+      ? await searchGoogle(code, input.query, input.limitPerCountry, env, input.state, input.city).then(value => ({ok:true as const,value})).catch(error => ({ok:false as const,error}))
+      : null;
+    const osm = osmResult?.ok ? osmResult.value : [];
+    const google = googleResult?.ok ? googleResult.value : [];
+    if (osmResult) {
+      doneUnits++; if (osmResult.ok) osmCount += osm.length; else { failures++; await log(env, runId, ownerId, "warning", scope + " · OpenStreetMap 查询失败：" + String(osmResult.error).slice(0,180)); }
+      await log(env, runId, ownerId, osmResult.ok ? "success" : "warning", scope + " · OpenStreetMap " + (osmResult.ok ? "返回 " + osm.length + " 条候选" : "查询失败"));
+    }
+    if (googleResult) {
+      doneUnits++; if (googleResult.ok) googleCount += google.length; else { failures++; await log(env, runId, ownerId, "warning", scope + " · Google Maps 查询失败：" + String(googleResult.error).slice(0,180)); }
+      await log(env, runId, ownerId, googleResult.ok ? "success" : "warning", scope + " · Google Maps " + (googleResult.ok ? "返回 " + google.length + " 条候选" : "查询失败"));
+    }
+    const osmByName = new Map<string, { dedupeKey: string; lat: number | null; lon: number | null }>();
+    for (const element of osm) {
+      const tags = element.tags ?? {};
+      const name = tags.name?.trim();
       if (!name) continue;
-      const lat = item.lat ?? item.center?.lat;
-      const lon = item.lon ?? item.center?.lon;
+      const lat = element.lat ?? element.center?.lat ?? null;
+      const lon = element.lon ?? element.center?.lon ?? null;
       const website = tags.website ?? tags["contact:website"] ?? null;
       const phone = tags.phone ?? tags["contact:phone"] ?? null;
-      const dedupeKey = buildLeadDedupeKey({ countryCode: code, name, website, phone, latitude: lat, longitude: lon });
-      const address = [tags["addr:housenumber"], tags["addr:street"], tags["addr:city"], tags["addr:state"], tags["addr:postcode"]].filter(Boolean).join(", ") || null;
-      const matchedGoogle = googleMatches.find((place) =>
-        normalizeBusinessName(place.displayName?.text ?? "") === normalizeBusinessName(name) &&
-        lat != null && lon != null &&
-        Math.abs((place.location?.latitude ?? 99) - lat) < 0.001 &&
-        Math.abs((place.location?.longitude ?? 99) - lon) < 0.001
-      );
-      const insertedLeads = await db<Array<{ id: string }>>(env, "leads?on_conflict=owner_id,dedupe_key", {
-        method: "POST",
-        headers: { Prefer: "resolution=ignore-duplicates,return=representation" },
-        body: JSON.stringify({ owner_id: ownerId, name, country_code: code, address, phone, website, latitude: lat ?? null, longitude: lon ?? null, status: "draft", dedupe_key: dedupeKey }),
+      const dedupeKey = buildLeadDedupeKey({countryCode:code,name,website,phone,latitude:lat,longitude:lon});
+      const address = [tags["addr:housenumber"],tags["addr:street"],tags["addr:city"],tags["addr:state"],tags["addr:postcode"]].filter(Boolean).join(", ") || null;
+      await persistDiscoveryRecord(env,ownerId,runId,input,{
+        provider:"openstreetmap", externalId:element.type+"/"+element.id, name, countryCode:code,
+        address,phone,website,latitude:lat,longitude:lon,
+        sourceUrl:"https://www.openstreetmap.org/"+element.type+"/"+element.id,
+        license:"ODbL-1.0",attribution:"© OpenStreetMap contributors",
+        rawData:{osm_type:element.type,osm_id:element.id,tags},dedupeKey,
       });
-      const existingLeads = insertedLeads.length ? [] : await db<Array<{ id: string }>>(env, "leads?owner_id=eq." + ownerId + "&dedupe_key=eq." + encodeURIComponent(dedupeKey) + "&select=id");
-      const leadId = insertedLeads[0]?.id ?? existingLeads[0]?.id;
-      if (!leadId) continue;
-      if (insertedLeads.length) created++;
-      await db(env, "lead_sources?on_conflict=owner_id,provider,external_id", {
-        method: "POST",
-        headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
-        body: JSON.stringify({ lead_id: leadId, owner_id: ownerId, provider: "openstreetmap", external_id: item.type + "/" + item.id, source_url: "https://www.openstreetmap.org/" + item.type + "/" + item.id, license: "ODbL-1.0", attribution: "© OpenStreetMap contributors", metadata: { osm_type: item.type, osm_id: item.id, tags } }),
-      });
-      if (matchedGoogle?.id) await db(env, "lead_sources?on_conflict=owner_id,provider,external_id", {
-        method: "POST",
-        headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
-        body: JSON.stringify({ lead_id: leadId, owner_id: ownerId, provider: "google_maps", external_id: matchedGoogle.id, source_url: "https://www.google.com/maps/search/?api=1&query_place_id=" + encodeURIComponent(matchedGoogle.id), license: "Google Maps Platform Place ID", attribution: "Google Maps", metadata: {} }),
-      });
+      osmByName.set(normalizeBusinessName(name),{dedupeKey,lat,lon});
+      created++;
     }
-    await updateRun(env, runId, { discovered_count: discovered, created_lead_count: created, message: "已完成 " + scope + " 的候选归并与草稿线索写入" });
+    for (const place of google) {
+      if (!place.id || !place.displayName?.text) continue;
+      const name = place.displayName.text.trim();
+      const lat = place.location?.latitude ?? null, lon = place.location?.longitude ?? null;
+      const match = osmByName.get(normalizeBusinessName(name));
+      const matched = !!match && lat != null && lon != null && match.lat != null && match.lon != null && Math.abs(match.lat-lat)<0.001 && Math.abs(match.lon-lon)<0.001;
+      const dedupeKey = matched && match ? match.dedupeKey : buildLeadDedupeKey({countryCode:code,name,latitude:lat,longitude:lon});
+      await persistDiscoveryRecord(env,ownerId,runId,input,{
+        provider:"google_maps",externalId:place.id,name,countryCode:code,latitude:lat,longitude:lon,
+        sourceUrl:"https://www.google.com/maps/search/?api=1&query_place_id="+encodeURIComponent(place.id),
+        license:"Google Maps Platform Place ID",attribution:"Google Maps",
+        rawData:{place_id:place.id},dedupeKey,
+      });
+      if (!matched) created++;
+    }
+    discovered = osmCount + googleCount;
+    await updateRun(env,runId,{progress:Math.round(doneUnits/totalUnits*100),discovered_count:discovered,created_lead_count:created,message:"已处理 "+scope+" · 发现记录已保存"});
   }
-  const status = failures === 0 ? "completed" : failures < totalUnits ? "partial" : "failed";
-  await updateRun(env, runId, { status, progress: 100, discovered_count: discovered, created_lead_count: created, message: "任务结束：OSM " + osmCount + " 条，Google " + googleCount + " 条，草稿线索 " + created + " 条" });
-  await log(env, runId, ownerId, status === "completed" ? "success" : "warning", "任务结束。OSM " + osmCount + " 条；Google " + googleCount + " 条；草稿线索 " + created + " 条。Google 独有记录不持久化。");
-  return { status, discovered, created, googleCount, osmCount };
+  const status = failures===0 ? "completed" : failures<totalUnits ? "partial" : "failed";
+  await updateRun(env,runId,{status,progress:100,discovered_count:discovered,created_lead_count:created,message:"任务结束：OSM "+osmCount+" 条，Google "+googleCount+" 条；发现记录已归档"});
+  await log(env,runId,ownerId,status==="completed"?"success":"warning","任务结束。所有发现记录及关键词、来源已保存。");
+  return {status,discovered,created,googleCount,osmCount};
 }
+
 export async function handleDiscovery(request: Request, env: DiscoveryEnv): Promise<Response> {
   const url = new URL(request.url);
   const userId = await authenticate(request, env);
   if (!userId) return errorResponse(request, "UNAUTHORIZED", "请先登录后再执行潜客发现。", 401);
+
   if (request.method === "POST" && url.pathname === "/api/v1/discovery-runs") {
     let input: DiscoveryRunInput;
     try { input = await request.json() as DiscoveryRunInput; } catch { return errorResponse(request, "VALIDATION_ERROR", "请求内容不是有效 JSON。", 400); }
-    if (!Array.isArray(input.countries) || input.countries.length !== 1 || input.countries.some((code) => !/^[A-Z]{2}$/.test(code)) || !input.query?.trim() || !Number.isInteger(input.limitPerCountry) || input.limitPerCountry < 1 || input.limitPerCountry > 500 || (input.state !== undefined && (typeof input.state !== "string" || !input.state.trim())) || (input.city !== undefined && (typeof input.city !== "string" || !input.city.trim()))) {
-      return errorResponse(request, "VALIDATION_ERROR", "请选择一个国家；省州与城市必须按层级选择，关键词或数量参数也必须有效。", 400);
+    const providers = Array.isArray(input.providers) ? [...new Set(input.providers)] : ["google_maps","openstreetmap"];
+    if (!Array.isArray(input.countries) || input.countries.length !== 1 || input.countries.some(code => !/^[A-Z]{2}$/.test(code)) ||
+      !input.query?.trim() || !Number.isInteger(input.limitPerCountry) || input.limitPerCountry < 1 || input.limitPerCountry > 500 ||
+      providers.length < 1 || providers.some(provider => !["google_maps","openstreetmap"].includes(provider)) ||
+      (input.state !== undefined && (typeof input.state !== "string" || !input.state.trim())) ||
+      (input.city !== undefined && (typeof input.city !== "string" || !input.city.trim()))) {
+      return errorResponse(request,"VALIDATION_ERROR","请选择一个国家和至少一个数据源；关键词、地区或数量参数无效。",400);
     }
-    const code = input.countries[0];
-    const scope = [input.city, input.state, countryName(code)].filter(Boolean).join(" · ");
-    const rows = await db<Array<{ id: string }>>(env, "discovery_runs", {
-      method: "POST",
-      headers: { Prefer: "return=representation" },
-      body: JSON.stringify({ owner_id: userId, query: input.query, countries: input.countries, limit_per_country: input.limitPerCountry, status: "queued", progress: 0, discovered_count: 0, created_lead_count: 0, message: "任务已排队 · " + scope }),
+    input.providers = providers as DiscoveryProvider[];
+    const code=input.countries[0], scope=[input.city,input.state,countryName(code)].filter(Boolean).join(" · ");
+    const rows=await db<Array<{id:string;task_code:string}>>(env,"discovery_runs",{
+      method:"POST",headers:{Prefer:"return=representation"},
+      body:JSON.stringify({owner_id:userId,query:input.query.trim(),countries:input.countries,limit_per_country:input.limitPerCountry,state:input.state??null,city:input.city??null,providers,channel:"map_local_businesses",status:"queued",progress:0,discovered_count:0,created_lead_count:0,message:"任务已排队 · "+scope,task_code:"MAP-"+code+"-"+new Date().toISOString().slice(0,10).replace(/-/g,"")+"-"+crypto.randomUUID().replace(/-/g,"").slice(0,6).toUpperCase()})
     });
-    const run = rows?.[0];
-    if (!run?.id) throw new Error("DISCOVERY_RUN_CREATE_FAILED: Supabase did not return the created run.");
-    await log(env, run.id, userId, "info", "任务已创建，目标市场：" + scope + "，准备启动两个数据源");
-    try {
-      await env.LEAD_DISCOVERY_WORKFLOW.create({ id: run.id, params: { runId: run.id, ownerId: userId, input } });
-    } catch (error) {
-      await markRunFailed(env, run.id, userId, error);
-      return errorResponse(request, "WORKFLOW_START_FAILED", "任务创建成功，但后台工作流启动失败。", 503);
+    const run=rows?.[0]; if(!run?.id) throw new Error("DISCOVERY_RUN_CREATE_FAILED");
+    await log(env,run.id,userId,"info","任务编号："+run.task_code+"；关键词："+input.query+"；数据源："+providers.join("、"));
+    try { await env.LEAD_DISCOVERY_WORKFLOW.create({id:run.id,params:{runId:run.id,ownerId:userId,input}}); }
+    catch(error){await markRunFailed(env,run.id,userId,error);return errorResponse(request,"WORKFLOW_START_FAILED","任务创建成功，但后台工作流启动失败。",503);}
+    return successResponse(request,{id:run.id,taskCode:run.task_code,channel:"map_local_businesses",query:input.query,countries:input.countries,providers,status:"queued",progress:0,discoveredCount:0,createdLeadCount:0,message:"任务已排队 · "+scope},202);
+  }
+
+  if(request.method==="GET" && url.pathname==="/api/v1/discovery-runs"){
+    const rows=await db<Array<Record<string,unknown>>>(env,"discovery_runs?owner_id=eq."+userId+"&select=*&order=created_at.desc&limit=200");
+    return successResponse(request,(rows??[]).map(row=>({id:row.id,taskCode:row.task_code,channel:row.channel,query:row.query,countries:row.countries,state:row.state,city:row.city,providers:row.providers,status:row.status,progress:row.progress,discoveredCount:row.discovered_count,createdLeadCount:row.created_lead_count,message:row.message,createdAt:row.created_at})));
+  }
+
+  const runMatch=url.pathname.match(/^\/api\/v1\/discovery-runs\/([0-9a-f-]+)$/i);
+  if(request.method==="GET" && runMatch){
+    const rows=await db<Array<Record<string,unknown>>>(env,"discovery_runs?id=eq."+runMatch[1]+"&owner_id=eq."+userId+"&select=*");
+    if(!rows[0]) return errorResponse(request,"NOT_FOUND","找不到该发现任务。",404);
+    const logs=await db<Array<Record<string,unknown>>>(env,"discovery_run_logs?run_id=eq."+runMatch[1]+"&owner_id=eq."+userId+"&select=id,level,message,created_at&order=created_at.asc");
+    const row=rows[0];
+    return successResponse(request,{id:row.id,taskCode:row.task_code,channel:row.channel,query:row.query,countries:row.countries,state:row.state,city:row.city,providers:row.providers,status:row.status,progress:row.progress,discoveredCount:row.discovered_count,createdLeadCount:row.created_lead_count,message:row.message,createdAt:row.created_at,logs:(logs??[]).map(item=>({id:item.id,level:item.level,message:item.message,createdAt:item.created_at}))});
+  }
+
+  if(request.method==="GET" && url.pathname==="/api/v1/discovery-records"){
+    const runId=url.searchParams.get("runId"),status=url.searchParams.get("status"),limit=Math.min(500,Math.max(1,Number(url.searchParams.get("limit"))||250));
+    const filters=["owner_id=eq."+userId,"channel=eq.map_local_businesses","select=*,discovery_record_occurrences(id,run_id,provider,keyword,external_id,source_url,captured_at)","order=created_at.desc","limit="+limit];
+    if(runId) filters.push("discovery_record_occurrences.run_id=eq."+runId);
+    if(status) filters.push("status=eq."+encodeURIComponent(status));
+    else filters.push("status=neq.removed");
+    const rows=await db<Array<Record<string,unknown>>>(env,"discovery_records?"+filters.join("&"));
+    return successResponse(request,rows??[]);
+  }
+
+  const actionMatch=url.pathname.match(/^\/api\/v1\/discovery-records\/([0-9a-f-]+)\/action$/i);
+  if(request.method==="POST" && actionMatch){
+    let body:{action?:string};try{body=await request.json() as {action?:string};}catch{return errorResponse(request,"VALIDATION_ERROR","请求内容不是有效 JSON。",400);}
+    const rows=await db<Array<Record<string,unknown>>>(env,"discovery_records?id=eq."+actionMatch[1]+"&owner_id=eq."+userId+"&select=*");
+    const record=rows?.[0];if(!record)return errorResponse(request,"NOT_FOUND","找不到该搜索结果。",404);
+    if(body.action==="remove" || body.action==="discard"){
+      const status=body.action==="remove"?"removed":"discarded";
+      await db(env,"discovery_records?id=eq."+actionMatch[1]+"&owner_id=eq."+userId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status,updated_at:new Date().toISOString()})});
+      return successResponse(request,{id:record.id,status});
     }
-    return successResponse(request, { id: run.id, status: "queued", progress: 0, discoveredCount: 0, createdLeadCount: 0, message: "任务已排队 · " + scope }, 202);
+    if(body.action==="promote"){
+      if(record.status==="promoted" && record.lead_id)return successResponse(request,{id:record.id,status:"promoted",leadId:record.lead_id});
+      const existing=await db<Array<{id:string}>>(env,"leads?owner_id=eq."+userId+"&discovery_record_id=eq."+record.id+"&select=id");
+      let leadId=existing?.[0]?.id;
+      if(!leadId){
+        const created=await db<Array<{id:string}>>(env,"leads",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({owner_id:userId,name:record.name,country_code:record.country_code??"ZZ",address:record.address,phone:record.phone,website:record.website,latitude:record.latitude,longitude:record.longitude,status:"qualified",dedupe_key:"discovery:"+record.id,discovery_record_id:record.id,is_formal:true})});
+        leadId=created?.[0]?.id;
+      }
+      if(!leadId)throw new Error("LEAD_PROMOTION_FAILED");
+      await db(env,"discovery_records?id=eq."+record.id+"&owner_id=eq."+userId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"promoted",lead_id:leadId,updated_at:new Date().toISOString()})});
+      return successResponse(request,{id:record.id,status:"promoted",leadId});
+    }
+    return errorResponse(request,"VALIDATION_ERROR","不支持的操作。",400);
   }
-  const match = url.pathname.match(/^\/api\/v1\/discovery-runs\/([0-9a-f-]+)$/i);
-  if (request.method === "GET" && match) {
-    const rows = await db<Array<Record<string, unknown>>>(env, "discovery_runs?id=eq." + match[1] + "&owner_id=eq." + userId + "&select=*");
-    if (!rows[0]) return errorResponse(request, "NOT_FOUND", "找不到该发现任务。", 404);
-    const logs = await db<Array<Record<string, unknown>>>(env, "discovery_run_logs?run_id=eq." + match[1] + "&owner_id=eq." + userId + "&select=id,level,message,created_at&order=created_at.asc");
-    const row = rows[0];
-    return successResponse(request, { id: row.id, status: row.status, progress: row.progress, discoveredCount: row.discovered_count, createdLeadCount: row.created_lead_count, message: row.message, logs: (logs ?? []).map((item) => ({ id: item.id, level: item.level, message: item.message, createdAt: item.created_at })) });
+
+  if(request.method==="GET" && url.pathname==="/api/v1/leads"){
+    const rows=await db<Array<Record<string,unknown>>>(env,"leads?owner_id=eq."+userId+"&is_formal=eq.true&select=*,discovery_record:discovery_records(id,channel,name,raw_data)&order=created_at.desc&limit=500");
+    return successResponse(request,rows??[]);
   }
-  return errorResponse(request, "NOT_FOUND", "The requested discovery endpoint does not exist.", 404);
+  return errorResponse(request,"NOT_FOUND","The requested discovery endpoint does not exist.",404);
 }
