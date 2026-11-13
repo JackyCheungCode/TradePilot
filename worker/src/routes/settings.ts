@@ -178,10 +178,11 @@ async function runAIProviderTest(id:string,env:SettingsEnv){
  const fallback=id==="openrouter"?"https://openrouter.ai/api/v1":p.protocol==="anthropic"?"https://api.anthropic.com/v1":p.protocol==="gemini"?"https://generativelanguage.googleapis.com/v1beta":"https://api.openai.com/v1";
  const base=safeAIBaseUrl(p.baseUrl,fallback);
  let r:Response;
- if(p.protocol==="anthropic")r=await fetch(base+"/messages",{method:"POST",redirect:"error",headers:{"x-api-key":key,"anthropic-version":"2023-06-01","content-type":"application/json"},body:JSON.stringify({model:p.model,max_tokens:12,messages:[{role:"user",content:"Reply with OK"}]})});
- else if(p.protocol==="gemini")r=await fetch(base+"/models/"+encodeURIComponent(p.model)+":generateContent?key="+encodeURIComponent(key),{method:"POST",redirect:"error",headers:{"content-type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:"Reply with OK"}]}],generationConfig:{maxOutputTokens:12}})});
- else {const headers:Record<string,string>={Authorization:"Bearer "+key,"content-type":"application/json"};if(id==="openrouter"){headers["HTTP-Referer"]="https://tradepilot.xg-y.workers.dev";headers["X-Title"]="TradePilot";}r=await fetch(base+"/chat/completions",{method:"POST",redirect:"error",headers,body:JSON.stringify({model:p.model||"gpt-4o-mini",messages:[{role:"user",content:"Reply with OK"}],max_tokens:12})});}
- if(!r.ok){const body=await r.text();return {ok:false,message:"模型接口返回 HTTP "+r.status+"："+body.slice(0,120)};}
+ if(p.protocol==="anthropic")r=await fetch(base+"/messages",{method:"POST",redirect:"manual",headers:{"x-api-key":key,"anthropic-version":"2023-06-01","content-type":"application/json"},body:JSON.stringify({model:p.model,max_tokens:12,messages:[{role:"user",content:"Reply with OK"}]})});
+ else if(p.protocol==="gemini")r=await fetch(base+"/models/"+encodeURIComponent(p.model)+":generateContent?key="+encodeURIComponent(key),{method:"POST",redirect:"manual",headers:{"content-type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:"Reply with OK"}]}],generationConfig:{maxOutputTokens:12}})});
+ else {const headers:Record<string,string>={Authorization:"Bearer "+key,"content-type":"application/json"};if(id==="openrouter"){headers["HTTP-Referer"]="https://tradepilot.xg-y.workers.dev";headers["X-Title"]="TradePilot";}r=await fetch(base+"/chat/completions",{method:"POST",redirect:"manual",headers,body:JSON.stringify({model:p.model||"gpt-4o-mini",messages:[{role:"user",content:"Reply with OK"}],max_tokens:12})});}
+ if(r.status>=300&&r.status<400)return {ok:false,message:"模型服务返回 HTTP "+r.status+" 重定向。边缘运行环境不自动跟随此类请求，请检查 Base URL 是否为服务商的最终 API 地址。"};
+ if(!r.ok){const body=await r.text();return {ok:false,message:"模型接口返回 HTTP "+r.status+"："+body.slice(0,180)};}
  return {ok:true,message:"模型服务连接成功，已收到测试响应"};
  }catch(error){const detail=error instanceof Error?error.message:String(error);return {ok:false,message:"模型连接异常："+detail.slice(0,180)};}
 }
