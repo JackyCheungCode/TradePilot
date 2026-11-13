@@ -15,6 +15,7 @@ const RULES: Array<{ terms: string[]; rules: OsmTagRule[] }> = [
   ] },
   { terms: ["electronics distributor", "electronic components", "electronics", "consumer electronics"], rules: [
     { key: "shop", value: "electronics", label: "电子产品商店", match: "primary", reason: "电子产品零售分类" },
+    { key: "shop", value: "radiotechnics", label: "电子元件与无线电技术商店", match: "related", reason: "覆盖电子元件、电子产品及无线电测量设备" },
     { key: "shop", value: "computer", label: "电脑商店", match: "related", reason: "覆盖电脑及相关电子设备" },
     { key: "shop", value: "hifi", label: "音响商店", match: "related", reason: "覆盖音频设备销售" },
   ] },
@@ -22,7 +23,6 @@ const RULES: Array<{ terms: string[]; rules: OsmTagRule[] }> = [
     { key: "shop", value: "computer", label: "电脑商店", match: "primary", reason: "电脑及周边设备销售" },
     { key: "shop", value: "telecommunication", label: "通信设备商店", match: "primary", reason: "通信设备销售" },
     { key: "shop", value: "mobile_phone", label: "手机商店", match: "related", reason: "移动通信终端销售" },
-    { key: "office", value: "it", label: "IT 办公室", match: "related", reason: "可能是 IT 服务企业，不一定销售设备" },
   ] },
   { terms: ["electrical contractor", "electrician", "electrical installation"], rules: [
     { key: "craft", value: "electrician", label: "电工服务", match: "primary", reason: "工程安装与电工服务，不代表设备经销商" },
@@ -33,7 +33,6 @@ const RULES: Array<{ terms: string[]; rules: OsmTagRule[] }> = [
     { key: "shop", value: "hardware", label: "五金商店", match: "related", reason: "可能销售工业工具和配件" },
   ] },
   { terms: ["solar panel installer", "solar installer", "solar energy"], rules: [
-    { key: "craft", value: "solar_panel_installer", label: "太阳能安装商", match: "primary", reason: "太阳能设备安装服务" },
     { key: "shop", value: "energy", label: "能源商店", match: "related", reason: "能源相关零售，覆盖有限且需核验" },
   ] },
 ];
