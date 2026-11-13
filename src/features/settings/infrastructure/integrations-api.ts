@@ -1,47 +1,8 @@
 import { getSupabaseClient } from "@/shared/lib/supabase";
-
-export type IntegrationService = "cloudflare" | "supabase" | "googleMaps" | "deepl" | "serper" | "serpapi";
-export interface IntegrationStatus {
-  cloudflare: boolean;
-  supabase: boolean;
-  googleMaps: boolean;
-  deepl: boolean;
-  serper: boolean;
-  serpapi: boolean;
-}
-export interface IntegrationTestResult {
-  ok: boolean;
-  message: string;
-}
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const { data: { session } } = await getSupabaseClient().auth.getSession();
-  if (!session?.access_token) throw new Error("请先登录 TradePilot，再管理集成密钥。");
-  const response = await fetch(path, {
-    ...init,
-    headers: { "Content-Type": "application/json", Authorization: "Bearer " + session.access_token, ...init?.headers },
-  });
-  const body = await response.json() as { data?: T; error?: { message?: string } };
-  if (!response.ok) throw new Error(body.error?.message ?? "请求失败，请稍后重试。");
-  return body.data as T;
-}
-export const integrationsApi = {
-  getStatus: () => request<IntegrationStatus>("/api/v1/settings/integrations"),
-  save: (service: IntegrationService, value: string) => {
-    const fields = {
-      cloudflare: { cloudflareApiToken: value },
-      supabase: { supabaseServiceRoleKey: value },
-      googleMaps: { googleMapsApiKey: value },
-      deepl: { deeplApiKey: value },
-      serper: { serperApiKey: value },
-      serpapi: { serpapiApiKey: value },
-    };
-    return request<{ saved: boolean; service: IntegrationService; message: string }>("/api/v1/settings/integrations", {
-      method: "POST",
-      body: JSON.stringify(fields[service]),
-    });
-  },
-  test: (service: IntegrationService) => request<IntegrationTestResult & { service: IntegrationService }>(
-    "/api/v1/settings/integrations/test",
-    { method: "POST", body: JSON.stringify({ service }) },
-  ),
-};
+export type IntegrationService="cloudflare"|"supabase"|"googleMaps"|"deepl"|"serper"|"serpapi";
+export interface IntegrationStatus {cloudflare:boolean;supabase:boolean;googleMaps:boolean;deepl:boolean;serper:boolean;serpapi:boolean}
+export interface IntegrationTestResult {ok:boolean;message:string}
+export interface AIProvider {id:string;name:string;protocol:"openai"|"anthropic"|"gemini"|"workers-ai";baseUrl:string;model:string;configured:boolean}
+export interface AIConfig {defaultModel:string;taskModels:Record<string,string>;providers:AIProvider[]}
+async function request<T>(path:string,init?:RequestInit):Promise<T>{const {data:{session}}=await getSupabaseClient().auth.getSession();if(!session?.access_token)throw new Error("请先登录 TradePilot。");const r=await fetch(path,{...init,headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token,...init?.headers}});const b=await r.json() as {data?:T;error?:{message?:string}};if(!r.ok)throw new Error(b.error?.message??"请求失败");return b.data as T}
+export const integrationsApi={getStatus:()=>request<IntegrationStatus>("/api/v1/settings/integrations"),save:(service:IntegrationService,value:string)=>{const f={cloudflare:{cloudflareApiToken:value},supabase:{supabaseServiceRoleKey:value},googleMaps:{googleMapsApiKey:value},deepl:{deeplApiKey:value},serper:{serperApiKey:value},serpapi:{serpapiApiKey:value}};return request<{message:string}>("/api/v1/settings/integrations",{method:"POST",body:JSON.stringify(f[service])})},test:(service:IntegrationService)=>request<IntegrationTestResult>("/api/v1/settings/integrations/test",{method:"POST",body:JSON.stringify({service})}),getAIConfig:()=>request<AIConfig>("/api/v1/settings/ai-config"),saveAIConfig:(config:AIConfig)=>request<{saved:boolean}>("/api/v1/settings/ai-config",{method:"PUT",body:JSON.stringify(config)}),saveAIProvider:(id:string,apiKey:string)=>request<{saved:boolean}>("/api/v1/settings/ai-providers",{method:"POST",body:JSON.stringify({id,apiKey})}),testAIProvider:(providerId:string)=>request<IntegrationTestResult>("/api/v1/settings/ai-providers/test",{method:"POST",body:JSON.stringify({providerId})})};

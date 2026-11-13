@@ -1,115 +1,54 @@
-import { useEffect, useState } from "react";
-import { AlertCircle, CheckCircle2, Cloud, Database, Eye, EyeOff, KeyRound, Languages, LoaderCircle, LockKeyhole, Save, Search, ShieldCheck, TestTube2 } from "lucide-react";
-import { toast } from "sonner";
-import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input } from "@/shared/ui/primitives";
-import { integrationsApi, type IntegrationService, type IntegrationStatus, type IntegrationTestResult } from "../../infrastructure/integrations-api";
-
-const services: Array<{
-  key: IntegrationService;
-  title: string;
-  description: string;
-  secretName: string;
-  placeholder: string;
-  hint: string;
-  icon: typeof Cloud;
-}> = [
-  { key: "cloudflare", title: "Cloudflare", description: "Worker 部署与服务端密钥托管", secretName: "CLOUDFLARE_API_TOKEN", placeholder: "粘贴 Cloudflare API Token", hint: "需要 Workers Scripts Write 权限。请先配置此密钥，后续服务密钥由它安全写入 Worker Secrets。", icon: Cloud },
-  { key: "supabase", title: "Supabase", description: "后台数据库访问与线索持久化", secretName: "SUPABASE_SERVICE_ROLE_KEY", placeholder: "粘贴 Supabase Service Role Key", hint: "仅在 Worker 服务端使用，拥有高权限，请勿将其用于浏览器客户端。", icon: Database },
-  { key: "googleMaps", title: "Google Maps Platform", description: "Google Places 本地商家搜索", secretName: "GOOGLE_MAPS_API_KEY", placeholder: "粘贴 Google Maps API Key", hint: "请启用 Places API (New)，并配置账单和 API 限制。", icon: KeyRound },
-  { key: "deepl", title: "DeepL", description: "搜索关键词目标国家语言翻译", secretName: "DEEPL_API_KEY", placeholder: "粘贴 DeepL API Key", hint: "支持 DeepL API Free（:fx）和 Pro。密钥只保存在 Worker Secrets，翻译请求由 Worker 后端代理。", icon: Languages },
-  { key: "serper", title: "Serper", description: "Google 搜索结果 · Web、Shopping、News 等", secretName: "SERPER_API_KEY", placeholder: "粘贴 Serper API Key", hint: "密钥只保存在 Worker Secrets。连接测试会执行 1 次搜索并消耗 1 次额度。", icon: Search },
-  { key: "serpapi", title: "SerpApi", description: "Google 搜索结果 · 多搜索类型与参数", secretName: "SERPAPI_API_KEY", placeholder: "粘贴 SerpApi API Key", hint: "密钥只保存在 Worker Secrets。连接测试会执行 1 次搜索并消耗 1 次额度。", icon: Search },
-];
-
-export function IntegrationsSettingsPage() {
-  const [status, setStatus] = useState<IntegrationStatus | null>(null);
-  const [credentials, setCredentials] = useState<Record<IntegrationService, string>>({ cloudflare: "", supabase: "", googleMaps: "", deepl: "", serper: "", serpapi: "" });
-  const [visible, setVisible] = useState<Record<IntegrationService, boolean>>({ cloudflare: false, supabase: false, googleMaps: false, deepl: false, serper: false, serpapi: false });
-  const [tests, setTests] = useState<Partial<Record<IntegrationService, IntegrationTestResult>>>({});
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState<Partial<Record<IntegrationService, boolean>>>({});
-  const [testing, setTesting] = useState<Partial<Record<IntegrationService, boolean>>>({});
-
-  const refreshStatus = async () => {
-    try { setStatus(await integrationsApi.getStatus()); }
-    catch (error) { toast.error(error instanceof Error ? error.message : "无法读取集成状态"); }
-    finally { setLoading(false); }
-  };
-  useEffect(() => { void refreshStatus(); }, []);
-
-  const save = async (service: IntegrationService) => {
-    const value = credentials[service].trim();
-    if (!value) { toast.error("请先输入要保存的新密钥。"); return; }
-    setSaving((current) => ({ ...current, [service]: true }));
-    try {
-      const result = await integrationsApi.save(service, value);
-      setCredentials((current) => ({ ...current, [service]: "" }));
-      setTests((current) => ({ ...current, [service]: undefined }));
-      toast.success(result.message);
-      await refreshStatus();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "密钥保存失败");
-    } finally {
-      setSaving((current) => ({ ...current, [service]: false }));
-    }
-  };
-
-  const test = async (service: IntegrationService) => {
-    setTesting((current) => ({ ...current, [service]: true }));
-    try {
-      const result = await integrationsApi.test(service);
-      setTests((current) => ({ ...current, [service]: result }));
-      toast[result.ok ? "success" : "error"](`${services.find((item) => item.key === service)?.title}：${result.message}`);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "连接测试失败");
-    } finally {
-      setTesting((current) => ({ ...current, [service]: false }));
-    }
-  };
-
-  return <div className="min-h-screen bg-background">
-    <header className="border-b bg-card/70 px-4 py-5 sm:px-6">
-      <div className="mx-auto flex max-w-5xl items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground"><KeyRound className="h-5 w-5" /></div>
-        <div><h1 className="text-xl font-semibold tracking-tight">设置与集成</h1><p className="text-sm text-muted-foreground">每项服务独立配置、保存和测试</p></div>
-      </div>
-    </header>
-    <main className="mx-auto max-w-5xl space-y-5 px-4 py-6 sm:px-6 sm:py-8">
-      <div className="flex items-start gap-2 rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" /><span>密钥只提交到登录态保护的 Worker 接口，并保存为 Cloudflare Worker Secrets。已保存的密钥不会回显，也不会存入浏览器本地存储。</span></div>
-      {services.map((service) => {
-        const Icon = service.icon;
-        const configured = status?.[service.key] ?? false;
-        const testResult = tests[service.key];
-        return <Card key={service.key}>
-          <CardHeader className="pb-3">
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted"><Icon className="h-5 w-5 text-muted-foreground" /></div>
-              <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><CardTitle>{service.title}</CardTitle>{loading ? <LoaderCircle className="h-4 w-4 animate-spin text-muted-foreground" /> : <Badge variant={configured ? "success" : "outline"}>{configured ? "已配置" : "未配置"}</Badge>}</div><CardDescription className="mt-1">{service.description} · {service.secretName}</CardDescription></div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor={`key-${service.key}`} className="text-sm font-medium">{service.title} API Key</label>
-              <div className="relative">
-                <Input id={`key-${service.key}`} type={visible[service.key] ? "text" : "password"} autoComplete="new-password" value={credentials[service.key]} onChange={(event) => setCredentials((current) => ({ ...current, [service.key]: event.target.value }))} placeholder={configured ? "已配置；输入新密钥可替换" : service.placeholder} className="pr-12 font-mono text-sm" />
-                <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1" onClick={() => setVisible((current) => ({ ...current, [service.key]: !current[service.key] }))} aria-label={visible[service.key] ? "隐藏密钥" : "显示密钥"}>{visible[service.key] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button>
-              </div>
-              <p className="text-xs text-muted-foreground">{service.hint}</p>
-              {service.key !== "cloudflare" && !status?.cloudflare && <p className="text-xs text-amber-700 dark:text-amber-400">需要先保存 Cloudflare API Token，才能安全写入此密钥。</p>}
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button type="button" onClick={() => void save(service.key)} disabled={loading || saving[service.key] || !credentials[service.key].trim()}>
-                {saving[service.key] ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}{saving[service.key] ? "正在保存…" : "单独保存"}
-              </Button>
-              <Button type="button" variant="outline" onClick={() => void test(service.key)} disabled={loading || testing[service.key] || !configured}>
-                {testing[service.key] ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <TestTube2 className="h-4 w-4" />}{testing[service.key] ? "正在测试…" : "连接测试"}
-              </Button>
-              {testResult && <div className="flex min-w-0 items-center gap-1.5 text-xs" role="status">{testResult.ok ? <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" /> : <AlertCircle className="h-4 w-4 shrink-0 text-destructive" />}<span className={testResult.ok ? "text-emerald-700 dark:text-emerald-400" : "text-destructive"}>{testResult.message}</span></div>}
-            </div>
-          </CardContent>
-        </Card>;
-      })}
-      <div className="flex items-center gap-2 text-xs text-muted-foreground"><LockKeyhole className="h-4 w-4" />每次操作只会修改当前服务，不会覆盖其他服务的密钥。</div>
-    </main>
-  </div>;
+import {useEffect,useMemo,useState} from "react";
+import {AlertCircle,BrainCircuit,CheckCircle2,Cloud,Database,Eye,EyeOff,Globe2,KeyRound,Languages,LoaderCircle,LockKeyhole,Save,Search,Settings2,ShieldCheck,TestTube2,Plus} from "lucide-react";
+import {toast} from "sonner";
+import {Badge,Button,Card,CardContent,CardDescription,CardHeader,CardTitle,Input} from "@/shared/ui/primitives";
+import {integrationsApi,type AIConfig,type AIProvider,type IntegrationService,type IntegrationStatus,type IntegrationTestResult} from "../../infrastructure/integrations-api";
+const apiServices:Array<{key:IntegrationService;title:string;description:string;secret:string;placeholder:string;hint:string;icon:typeof Cloud}>=[
+{key:"cloudflare",title:"Cloudflare",description:"Worker 部署与服务端密钥托管",secret:"CLOUDFLARE_API_TOKEN",placeholder:"Cloudflare API Token",hint:"需要 Workers Scripts Write 权限。",icon:Cloud},
+{key:"supabase",title:"Supabase",description:"后台数据库访问与线索持久化",secret:"SUPABASE_SERVICE_ROLE_KEY",placeholder:"Supabase Service Role Key",hint:"仅在 Worker 服务端使用。",icon:Database},
+{key:"googleMaps",title:"Google Maps Platform",description:"Google Places 本地商家搜索",secret:"GOOGLE_MAPS_API_KEY",placeholder:"Google Maps API Key",hint:"请启用 Places API (New) 并配置账单。",icon:KeyRound},
+{key:"deepl",title:"DeepL",description:"搜索关键词目标国家语言翻译",secret:"DEEPL_API_KEY",placeholder:"DeepL API Key",hint:"支持 Free（:fx）和 Pro。",icon:Languages},
+{key:"serper",title:"Serper",description:"Google 搜索结果 · Web、Shopping、News",secret:"SERPER_API_KEY",placeholder:"Serper API Key",hint:"连接测试会消耗 1 次搜索额度。",icon:Search},
+{key:"serpapi",title:"SerpApi",description:"Google 搜索结果 · 多搜索类型",secret:"SERPAPI_API_KEY",placeholder:"SerpApi API Key",hint:"连接测试会消耗 1 次搜索额度。",icon:Search}];
+const catalog=[
+{id:"workers-ai",name:"Cloudflare Workers AI",protocol:"workers-ai" as const,url:"",model:"@cf/google/gemma-4-26b-a4b-it",models:["@cf/google/gemma-4-26b-a4b-it","@cf/zai-org/glm-5.3","@cf/deepseek-ai/deepseek-v4.1-flash-1017","@cf/qwen/qwen3.8-27b","@cf/openai/gpt-oss-20b"]},
+{id:"openai",name:"OpenAI",protocol:"openai" as const,url:"https://api.openai.com/v1",model:"gpt-5.1",models:["gpt-5.1","gpt-5-mini"]},
+{id:"anthropic",name:"Anthropic Claude",protocol:"anthropic" as const,url:"https://api.anthropic.com/v1",model:"claude-sonnet-4-5",models:["claude-sonnet-4-5","claude-opus-4-1"]},
+{id:"gemini",name:"Google Gemini",protocol:"gemini" as const,url:"https://generativelanguage.googleapis.com/v1beta",model:"gemini-2.5-flash",models:["gemini-2.5-flash","gemini-2.5-pro"]},
+{id:"deepseek",name:"DeepSeek",protocol:"openai" as const,url:"https://api.deepseek.com/v1",model:"deepseek-chat",models:["deepseek-chat","deepseek-reasoner"]},
+{id:"qwen",name:"阿里云 Qwen",protocol:"openai" as const,url:"https://dashscope.aliyuncs.com/compatible-mode/v1",model:"qwen-plus",models:["qwen-plus","qwen-max"]},
+{id:"zhipu",name:"智谱 GLM",protocol:"openai" as const,url:"https://open.bigmodel.cn/api/paas/v4",model:"glm-4.7",models:["glm-4.7","glm-4.7-flash"]},
+{id:"kimi",name:"月之暗面 Kimi",protocol:"openai" as const,url:"https://api.moonshot.cn/v1",model:"kimi-k2-turbo-preview",models:["kimi-k2-turbo-preview","kimi-k2-thinking"]},
+{id:"minimax",name:"MiniMax",protocol:"openai" as const,url:"https://api.minimax.chat/v1",model:"MiniMax-M2",models:["MiniMax-M2"]},
+{id:"openrouter",name:"OpenRouter",protocol:"openai" as const,url:"https://openrouter.ai/api/v1",model:"openai/gpt-4.1-mini",models:["openai/gpt-4.1-mini"]},
+{id:"siliconflow",name:"SiliconFlow",protocol:"openai" as const,url:"https://api.siliconflow.cn/v1",model:"Qwen/Qwen3-32B",models:["Qwen/Qwen3-32B"]},
+{id:"custom",name:"自定义 OpenAI 兼容接口",protocol:"openai" as const,url:"",model:"",models:[]}];
+const tasks=[["website_extraction","官网信息提取"],["contact_extraction","联系人与联系方式识别"],["company_analysis","企业分析"],["multilingual","多语言内容理解"],["structured_json","结构化数据输出"]];
+const empty:AIConfig={defaultModel:"@cf/google/gemma-4-26b-a4b-it",taskModels:{},providers:[{id:"workers-ai",name:"Cloudflare Workers AI",protocol:"workers-ai",baseUrl:"",model:"@cf/google/gemma-4-26b-a4b-it",configured:true}]};
+export function IntegrationsSettingsPage(){
+const [tab,setTab]=useState<"ai"|"api">("ai"),[status,setStatus]=useState<IntegrationStatus|null>(null),[loading,setLoading]=useState(true),[keys,setKeys]=useState<Record<IntegrationService,string>>({cloudflare:"",supabase:"",googleMaps:"",deepl:"",serper:"",serpapi:""}),[show,setShow]=useState<Record<IntegrationService,boolean>>({cloudflare:false,supabase:false,googleMaps:false,deepl:false,serper:false,serpapi:false}),[apiTests,setApiTests]=useState<Partial<Record<IntegrationService,IntegrationTestResult>>>({}),[busy,setBusy]=useState<string|null>(null);
+const [config,setConfig]=useState<AIConfig>(empty),[aiLoading,setAiLoading]=useState(true),[selected,setSelected]=useState("workers-ai"),[providerKey,setProviderKey]=useState(""),[showProviderKey,setShowProviderKey]=useState(false),[customName,setCustomName]=useState(""),[customUrl,setCustomUrl]=useState(""),[customModel,setCustomModel]=useState("");
+const refresh=async()=>{try{setStatus(await integrationsApi.getStatus())}catch(e){toast.error(e instanceof Error?e.message:"读取 API 状态失败")}finally{setLoading(false)}};
+const refreshAI=async()=>{try{setConfig(await integrationsApi.getAIConfig())}catch(e){toast.error(e instanceof Error?e.message:"读取 AI 配置失败")}finally{setAiLoading(false)}};
+useEffect(()=>{void refresh();void refreshAI()},[]);
+const preset=catalog.find(p=>p.id===selected)??catalog[0],active=config.providers.find(p=>p.id===selected);
+const models=useMemo(()=>config.providers.filter(p=>p.model).map(p=>({value:p.model,label:p.name+" · "+p.model})),[config.providers]);
+const saveConfig=async(next:AIConfig)=>{setBusy("config");try{await integrationsApi.saveAIConfig(next);setConfig(next);toast.success("模型配置已保存")}catch(e){toast.error(e instanceof Error?e.message:"保存失败")}finally{setBusy(null)}};
+const addProvider=()=>{const p:AIProvider={id:preset.id,name:preset.name,protocol:preset.protocol,baseUrl:active?.baseUrl??preset.url,model:active?.model??preset.model,configured:preset.id==="workers-ai"||Boolean(active?.configured)};void saveConfig({...config,providers:[...config.providers.filter(x=>x.id!==p.id),p]})};
+const saveProviderKey=async()=>{setBusy("key");try{await integrationsApi.saveAIProvider(selected,providerKey.trim());setProviderKey("");toast.success("服务商密钥已保存至 Worker Secrets");await refreshAI()}catch(e){toast.error(e instanceof Error?e.message:"密钥保存失败")}finally{setBusy(null)}};
+const testProvider=async()=>{setBusy("test");try{const r=await integrationsApi.testAIProvider(selected);toast[r.ok?"success":"error"](r.message)}catch(e){toast.error(e instanceof Error?e.message:"连接测试失败")}finally{setBusy(null)}};
+const saveApi=async(s:IntegrationService)=>{setBusy(s);try{const r=await integrationsApi.save(s,keys[s]);setKeys(v=>({...v,[s]:""}));toast.success(r.message);await refresh()}catch(e){toast.error(e instanceof Error?e.message:"保存失败")}finally{setBusy(null)}};
+const testApi=async(s:IntegrationService)=>{setBusy("test-"+s);try{const r=await integrationsApi.test(s);setApiTests(v=>({...v,[s]:r}));toast[r.ok?"success":"error"](r.message)}catch(e){toast.error(e instanceof Error?e.message:"连接测试失败")}finally{setBusy(null)}};
+const addCustom=()=>{if(!customUrl.trim()||!customModel.trim()){toast.error("请填写 Base URL 和模型 ID");return}const p:AIProvider={id:"custom",name:customName.trim()||"自定义模型",protocol:"openai",baseUrl:customUrl.trim(),model:customModel.trim(),configured:Boolean(config.providers.find(x=>x.id==="custom")?.configured)};void saveConfig({...config,providers:[...config.providers.filter(x=>x.id!=="custom"),p]});setSelected("custom")};
+return <div className="min-h-screen bg-background"><header className="border-b bg-card/70 px-4 py-5 sm:px-6"><div className="mx-auto flex max-w-6xl items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground"><Settings2 className="h-5 w-5"/></div><div><h1 className="text-xl font-semibold tracking-tight">AI 与 API 集成</h1><p className="text-sm text-muted-foreground">统一管理 AI 模型、服务凭证与外部 API 连接</p></div></div></header><main className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
+<div className="flex gap-2 border-b pb-3" role="tablist" aria-label="集成类型"><Button variant={tab==="ai"?"secondary":"ghost"} role="tab" aria-selected={tab==="ai"} onClick={()=>setTab("ai")}><BrainCircuit className="h-4 w-4"/>AI 模型</Button><Button variant={tab==="api"?"secondary":"ghost"} role="tab" aria-selected={tab==="api"} onClick={()=>setTab("api")}><Globe2 className="h-4 w-4"/>API 服务</Button></div>
+{tab==="ai"?<div className="space-y-6">
+<div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground"><ShieldCheck className="mr-2 inline h-4 w-4 text-emerald-600"/>服务商密钥保存于 Worker Secrets；模型选择和任务分配保存在 Supabase 服务端配置表中，密钥不会回显。</div>
+<Card><CardHeader><CardTitle>默认模型与任务分配</CardTitle><CardDescription>每类任务可单独选择模型，留空时跟随系统默认模型</CardDescription></CardHeader><CardContent className="grid gap-4 md:grid-cols-2"><div className="space-y-2"><label className="text-sm font-medium">系统默认模型</label><select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={config.defaultModel} onChange={e=>setConfig(v=>({...v,defaultModel:e.target.value}))}>{models.map(m=><option key={m.value} value={m.value}>{m.label}</option>)}</select></div>{tasks.map(([k,label])=><div className="space-y-2" key={k}><label className="text-sm font-medium">{label}</label><select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={config.taskModels[k]??""} onChange={e=>setConfig(v=>({...v,taskModels:{...v.taskModels,[k]:e.target.value}}))}><option value="">跟随系统默认</option>{models.map(m=><option key={m.value} value={m.value}>{m.label}</option>)}</select></div>)}<div className="md:col-span-2 flex justify-end"><Button onClick={()=>void saveConfig(config)} disabled={busy==="config"||aiLoading}>{busy==="config"?<LoaderCircle className="h-4 w-4 animate-spin"/>:<Save className="h-4 w-4"/>}保存模型策略</Button></div></CardContent></Card>
+<div className="grid gap-5 lg:grid-cols-[260px_minmax(0,1fr)]"><Card><CardContent className="space-y-1 p-2">{catalog.map(p=><button key={p.id} type="button" onClick={()=>{setSelected(p.id);setProviderKey("")}} className={"flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm "+(selected===p.id?"bg-secondary font-medium":"hover:bg-muted")}><span className="flex-1">{p.name}</span>{(p.id==="workers-ai"||config.providers.some(x=>x.id===p.id&&x.configured))&&<CheckCircle2 className="h-4 w-4 text-emerald-600"/>}</button>)}</CardContent></Card><Card><CardHeader><div className="flex items-center justify-between gap-2"><div><CardTitle>{preset.name}</CardTitle><CardDescription>{selected==="workers-ai"?"Cloudflare AI Binding · 无需额外 API Key":"服务商密钥由 Worker 安全托管"}</CardDescription></div><Badge variant={selected==="workers-ai"||active?.configured?"success":"outline"}>{selected==="workers-ai"||active?.configured?"已配置":"待配置"}</Badge></div></CardHeader><CardContent className="space-y-4">{selected!=="workers-ai"&&<><div className="space-y-2"><label className="text-sm font-medium">API Key</label><div className="relative"><Input type={showProviderKey?"text":"password"} autoComplete="new-password" value={providerKey} onChange={e=>setProviderKey(e.target.value)} placeholder={active?.configured?"已配置；输入新 Key 可替换":"粘贴服务商 API Key"} className="pr-12 font-mono"/><Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1" onClick={()=>setShowProviderKey(v=>!v)} aria-label="切换密钥显示">{showProviderKey?<EyeOff className="h-4 w-4"/>:<Eye className="h-4 w-4"/>}</Button></div></div><div className="space-y-2"><label className="text-sm font-medium">API Base URL</label><Input value={active?.baseUrl??preset.url} readOnly={selected!=="custom"} onChange={e=>setConfig(v=>({...v,providers:v.providers.map(p=>p.id===selected?{...p,baseUrl:e.target.value}:p)}))}/></div></>}
+<div className="space-y-2"><label className="text-sm font-medium">模型 ID</label>{preset.models.length?<select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={active?.model??preset.model} onChange={e=>{const p:AIProvider={id:preset.id,name:preset.name,protocol:preset.protocol,baseUrl:active?.baseUrl??preset.url,model:e.target.value,configured:selected==="workers-ai"||Boolean(active?.configured)};setConfig(v=>({...v,providers:[...v.providers.filter(x=>x.id!==p.id),p]}))}}>{preset.models.map(m=><option key={m}>{m}</option>)}</select>:<Input value={active?.model??customModel} onChange={e=>setCustomModel(e.target.value)} placeholder="模型 ID"/>}</div>
+<div className="flex flex-wrap gap-2">{selected!=="workers-ai"&&<Button onClick={()=>void saveProviderKey()} disabled={busy==="key"||!providerKey.trim()}>{busy==="key"?<LoaderCircle className="h-4 w-4 animate-spin"/>:<Save className="h-4 w-4"/>}单独保存密钥</Button>}<Button variant="outline" onClick={()=>void testProvider()} disabled={busy==="test"||(selected!=="workers-ai"&&!active?.configured)}>{busy==="test"?<LoaderCircle className="h-4 w-4 animate-spin"/>:<TestTube2 className="h-4 w-4"/>}连接测试</Button><Button variant="secondary" onClick={addProvider}><Plus className="h-4 w-4"/>添加到模型列表</Button></div>{selected==="workers-ai"&&<p className="text-xs text-muted-foreground">Workers AI 按 Cloudflare 账户用量计费；部分模型需要 Workers Paid 或预付 AI Gateway credits。</p>}</CardContent></Card></div>
+<Card><CardHeader><CardTitle>添加自定义 OpenAI 兼容模型</CardTitle><CardDescription>支持其他国内外兼容服务商</CardDescription></CardHeader><CardContent className="grid gap-3 md:grid-cols-3"><Input value={customName} onChange={e=>setCustomName(e.target.value)} placeholder="服务商名称"/><Input value={customUrl} onChange={e=>setCustomUrl(e.target.value)} placeholder="API Base URL"/><div className="flex gap-2"><Input value={customModel} onChange={e=>setCustomModel(e.target.value)} placeholder="模型 ID"/><Button onClick={addCustom}><Plus className="h-4 w-4"/>添加</Button></div></CardContent></Card>
+</div>:<div className="space-y-5"><div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground"><ShieldCheck className="mr-2 inline h-4 w-4 text-emerald-600"/>每项 API 独立保存和连接测试，密钥只保存于 Worker Secrets。</div>{apiServices.map(s=>{const Icon=s.icon,configured=status?.[s.key]??false,result=apiTests[s.key];return <Card key={s.key}><CardHeader className="pb-3"><div className="flex items-start gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted"><Icon className="h-5 w-5"/></div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><CardTitle>{s.title}</CardTitle>{loading?<LoaderCircle className="h-4 w-4 animate-spin"/>:<Badge variant={configured?"success":"outline"}>{configured?"已配置":"未配置"}</Badge>}</div><CardDescription>{s.description} · {s.secret}</CardDescription></div></div></CardHeader><CardContent className="space-y-3"><div className="space-y-2"><label className="text-sm font-medium">{s.title} API Key</label><div className="relative"><Input type={show[s.key]?"text":"password"} autoComplete="new-password" value={keys[s.key]} onChange={e=>setKeys(v=>({...v,[s.key]:e.target.value}))} placeholder={configured?"已配置；输入新密钥可替换":s.placeholder} className="pr-12 font-mono"/><Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1" onClick={()=>setShow(v=>({...v,[s.key]:!v[s.key]}))} aria-label="显示或隐藏密钥">{show[s.key]?<EyeOff className="h-4 w-4"/>:<Eye className="h-4 w-4"/>}</Button></div><p className="text-xs text-muted-foreground">{s.hint}</p></div><div className="flex flex-wrap items-center gap-2"><Button onClick={()=>void saveApi(s.key)} disabled={busy===s.key||loading||!keys[s.key].trim()}>{busy===s.key?<LoaderCircle className="h-4 w-4 animate-spin"/>:<Save className="h-4 w-4"/>}单独保存</Button><Button variant="outline" onClick={()=>void testApi(s.key)} disabled={busy==="test-"+s.key||!configured}>{busy==="test-"+s.key?<LoaderCircle className="h-4 w-4 animate-spin"/>:<TestTube2 className="h-4 w-4"/>}连接测试</Button>{result&&<span className="text-xs text-muted-foreground">{result.ok?"✓ ":"! "}{result.message}</span>}</div></CardContent></Card>})}<div className="flex items-center gap-2 text-xs text-muted-foreground"><LockKeyhole className="h-4 w-4"/>每次操作只修改当前服务密钥。</div></div>}
+</main></div>
 }

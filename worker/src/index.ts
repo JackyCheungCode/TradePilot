@@ -18,6 +18,7 @@ export interface WorkerEnv {
  CLOUDFLARE_API_TOKEN?: string;
  CLOUDFLARE_ACCOUNT_ID?: string;
  CLOUDFLARE_WORKER_NAME?: string;
+ AI: { run(model:string,input:Record<string,unknown>): Promise<unknown> };
  OVERPASS_API_URL?: string;
  LEAD_DISCOVERY_WORKFLOW: { create(options: { id: string; params: { runId: string; ownerId: string; input: DiscoveryRunInput } }): Promise<{ id: string }> };
 }
