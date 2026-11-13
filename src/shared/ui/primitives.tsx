@@ -2,6 +2,7 @@ import * as React from "react";
 import * as Slot from "@radix-ui/react-slot";
 import * as ProgressPrimitive from "@radix-ui/react-progress";
 import * as SeparatorPrimitive from "@radix-ui/react-separator";
+import * as PopoverPrimitive from "@radix-ui/react-popover";
 import { cn } from "@/shared/lib/utils";
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & { asChild?: boolean; variant?: "default" | "outline" | "ghost" | "secondary"; size?: "default" | "sm" | "icon" };
 export function Button({ className, variant = "default", size = "default", asChild = false, ...props }: ButtonProps) {
@@ -17,3 +18,10 @@ export function Badge({ className, variant = "secondary", ...props }: React.HTML
 export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(function Input({ className, ...props }, ref) { return <input ref={ref} className={cn("flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50", className)} {...props} />; });
 export function Progress({ value, className }: { value: number; className?: string }) { return <ProgressPrimitive.Root value={value} className={cn("relative h-2 w-full overflow-hidden rounded-full bg-secondary", className)}><ProgressPrimitive.Indicator className="h-full w-full flex-1 bg-primary transition-transform duration-500 ease-out" style={{ transform: `translateX(-${100 - Math.max(0, Math.min(100, value))}%)` }} /></ProgressPrimitive.Root>; }
 export function Separator({ className }: { className?: string }) { return <SeparatorPrimitive.Root decorative className={cn("shrink-0 bg-border", className)} />; }
+
+export const Popover = PopoverPrimitive.Root;
+export const PopoverTrigger = PopoverPrimitive.Trigger;
+export const PopoverAnchor = PopoverPrimitive.Anchor;
+export const PopoverContent = React.forwardRef<React.ElementRef<typeof PopoverPrimitive.Content>, React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>>(function PopoverContent({ className, align = "center", sideOffset = 4, ...props }, ref) {
+ return <PopoverPrimitive.Portal><PopoverPrimitive.Content ref={ref} align={align} sideOffset={sideOffset} className={cn("z-50 w-72 rounded-md border bg-popover p-4 text-popover-foreground shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0", className)} {...props} /></PopoverPrimitive.Portal>;
+});
