@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { ChevronDown, ChevronRight, Compass, KeyRound, LogOut, MapPinned, Menu, PanelLeftClose, PanelLeftOpen, Radar, Settings, X, Users, ListChecks, ClipboardList } from "lucide-react";
+import { ChevronDown, ChevronRight, Compass, KeyRound, LogOut, MapPinned, Menu, PanelLeftClose, PanelLeftOpen, Radar, Settings, X, Users } from "lucide-react";
 import { Button } from "@/shared/ui/primitives";
 type AppPage = "discovery" | "discoveryTasks" | "discoveryResults" | "leads" | "integrations";
 export function AppShell({ children, activePage, onNavigate, userEmail, onSignOut }: { children: ReactNode; activePage: AppPage; onNavigate: (page: AppPage) => void; userEmail: string; onSignOut: () => void }) {
