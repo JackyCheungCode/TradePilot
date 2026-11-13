@@ -260,8 +260,9 @@ export async function handleDiscovery(request: Request, env: DiscoveryEnv): Prom
 
   if(request.method==="GET" && url.pathname==="/api/v1/discovery-records"){
     const runId=url.searchParams.get("runId"),status=url.searchParams.get("status"),limit=Math.min(500,Math.max(1,Number(url.searchParams.get("limit"))||250));
-    const filters=["owner_id=eq."+userId,"channel=eq.map_local_businesses","select=*,discovery_record_occurrences"+(runId?"!inner":"")+"(id,run_id,provider,keyword,external_id,source_url,license,attribution,raw_data,captured_at,run:discovery_runs!discovery_record_occurrences_run_id_owner_id_fkey(task_code,query))","order=created_at.desc","limit="+limit];
-    filters.push("discovery_record_occurrences.is_removed=eq.false");\n    if(runId) filters.push("discovery_record_occurrences.run_id=eq."+runId);
+    const filters=["owner_id=eq."+userId,"channel=eq.map_local_businesses","select=*,discovery_record_occurrences!inner(id,run_id,provider,keyword,external_id,source_url,license,attribution,raw_data,captured_at,is_removed,run:discovery_runs!discovery_record_occurrences_run_id_owner_id_fkey(task_code,query))","order=created_at.desc","limit="+limit];
+    filters.push("discovery_record_occurrences.is_removed=eq.false");
+    if(runId) filters.push("discovery_record_occurrences.run_id=eq."+runId);
     if(status) filters.push("status=eq."+encodeURIComponent(status));
     else filters.push("status=neq.removed");
     const rows=await db<Array<Record<string,unknown>>>(env,"discovery_records?"+filters.join("&"));
@@ -270,13 +271,22 @@ export async function handleDiscovery(request: Request, env: DiscoveryEnv): Prom
 
   const actionMatch=url.pathname.match(/^\/api\/v1\/discovery-records\/([0-9a-f-]+)\/action$/i);
   if(request.method==="POST" && actionMatch){
-    let body:{action?:string};try{body=await request.json() as {action?:string};}catch{return errorResponse(request,"VALIDATION_ERROR","请求内容不是有效 JSON。",400);}
+    let body:{action?:string;runId?:string};try{body=await request.json() as {action?:string;runId?:string};}catch{return errorResponse(request,"VALIDATION_ERROR","请求内容不是有效 JSON。",400);}
     const rows=await db<Array<Record<string,unknown>>>(env,"discovery_records?id=eq."+actionMatch[1]+"&owner_id=eq."+userId+"&select=*");
     const record=rows?.[0];if(!record)return errorResponse(request,"NOT_FOUND","找不到该搜索结果。",404);
-    if(body.action==="remove" || body.action==="discard"){
-      const status=body.action==="remove"?"removed":"discarded";
-      await db(env,"discovery_records?id=eq."+actionMatch[1]+"&owner_id=eq."+userId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status,updated_at:new Date().toISOString()})});
-      return successResponse(request,{id:record.id,status});
+    if(body.action==="remove"){
+      if(typeof body.runId==="string" && /^[0-9a-f-]{36}$/i.test(body.runId)){
+        const occurrences=await db<Array<{id:string}>>(env,"discovery_record_occurrences?owner_id=eq."+userId+"&record_id=eq."+record.id+"&run_id=eq."+body.runId+"&select=id");
+        if(!occurrences.length)return errorResponse(request,"NOT_FOUND","当前任务中找不到该客户的发现记录。",404);
+        await db(env,"discovery_record_occurrences?owner_id=eq."+userId+"&record_id=eq."+record.id+"&run_id=eq."+body.runId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({is_removed:true})});
+        return successResponse(request,{id:record.id,status:"removed",scope:"run"});
+      }
+      await db(env,"discovery_records?id=eq."+actionMatch[1]+"&owner_id=eq."+userId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"removed",updated_at:new Date().toISOString()})});
+      return successResponse(request,{id:record.id,status:"removed",scope:"channel"});
+    }
+    if(body.action==="discard"){
+      await db(env,"discovery_records?id=eq."+actionMatch[1]+"&owner_id=eq."+userId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"discarded",updated_at:new Date().toISOString()})});
+      return successResponse(request,{id:record.id,status:"discarded"});
     }
     if(body.action==="promote"){
       if(record.status==="promoted" && record.lead_id)return successResponse(request,{id:record.id,status:"promoted",leadId:record.lead_id});
