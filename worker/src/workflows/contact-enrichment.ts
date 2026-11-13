@@ -67,7 +67,7 @@ export class ContactEnrichmentWorkflow extends WorkflowEntrypoint<Env,Params>{
    try{await step.do("enrich-record-"+recordId,{retries:{limit:1,delay:"5 seconds",backoff:"exponential"},timeout:"2 minutes"},async()=>enrichOne(this.env,ownerId,recordId));completed++;}
    catch(error){failed++;}
    const progress=Math.round((index+1)/total*100);
-   await step.do("save-contact-progress-"+(index+1),async()=>{await db(this.env,"discovery_contact_enrichment_runs?id=eq."+jobId+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:index===total-1?(failed===0?"completed":completed===0?"failed":"partial"):"running",progress,completed_count:completed,failed_count:failed,message:"联系方式采集中 · "+completed+" 条完成 · "+failed+" 条失败"})});return progress;});
+   await step.do("save-contact-progress-"+(index+1),async()=>{await db(this.env,"discovery_contact_enrichment_runs?id=eq."+jobId+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:index===total-1?(failed===0?"completed":completed===0?"failed":"partial"):"running",progress,completed_count:completed,failed_count:failed,message:(index===total-1?(failed===0?"联系方式采集完成":completed===0?"联系方式采集失败":"联系方式采集部分完成"):"联系方式采集中")+" · "+completed+" 条完成 · "+failed+" 条失败"})});return progress;});
   }
   return {completed,failed,total};
  }
