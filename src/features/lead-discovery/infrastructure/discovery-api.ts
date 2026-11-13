@@ -28,7 +28,7 @@ export const discoveryWorkspaceApi = {
 export interface SearchDiscoveryInput {
  country:string; state?:string; city?:string; query:string; advancedQuery:string; limitPerCountry:number;
  searchEngines:Array<"serper"|"serpapi">; searchTypes:Array<"web"|"shopping"|"images"|"news"|"videos"|"scholar"|"patents">;
- searchLanguage:string; excludeCategories:string[]; originalQuery?:string; translatedQuery?:string; targetLanguage?:string;
+ searchLanguage:string; excludeCategories:string[]; businessTypes:string[]; originalQuery?:string; translatedQuery?:string; targetLanguage?:string;
 }
 export const searchDiscoveryApi = {
  start: async (input:SearchDiscoveryInput) => {

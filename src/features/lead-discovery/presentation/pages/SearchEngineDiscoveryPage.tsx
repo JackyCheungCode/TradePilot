@@ -20,7 +20,7 @@ export function SearchEngineDiscoveryPage(){
  const [categories,setCategories]=useState<SearchExclusionCategory[]>([]),[selectedExclusions,setSelectedExclusions]=useState<string[]>([]);
  const [loadingRules,setLoadingRules]=useState(true),[limit,setLimit]=useState("100"),[saving,setSaving]=useState(false);
  const [exact,setExact]=useState(false),[includeTerms,setIncludeTerms]=useState(""),[excludeTerms,setExcludeTerms]=useState(""),[titleTerms,setTitleTerms]=useState(""),[urlTerms,setUrlTerms]=useState(""),[site,setSite]=useState(""),[fileType,setFileType]=useState(""),[after,setAfter]=useState(""),[before,setBefore]=useState("");
- const [engineOpen,setEngineOpen]=useState(false),[typeOpen,setTypeOpen]=useState(false),[businessOpen,setBusinessOpen]=useState(false),[exclusionOpen,setExclusionOpen]=useState(false),[languageOpen,setLanguageOpen]=useState(false);
+ const [typeOpen,setTypeOpen]=useState(false),[businessOpen,setBusinessOpen]=useState(false),[exclusionOpen,setExclusionOpen]=useState(false),[languageOpen,setLanguageOpen]=useState(false);
  const [run,setRun]=useState<{id:string;taskCode?:string}|null>(null);
  useEffect(()=>{let active=true;void searchExclusionsApi.get().then(rows=>{if(active){setCategories(rows);setSelectedExclusions(rows.filter(x=>x.enabled).map(x=>x.key));}}).catch(e=>toast.error(e instanceof Error?e.message:"读取排除规则失败")).finally(()=>{if(active)setLoadingRules(false);});return()=>{active=false;};},[]);
  const generated=useMemo(()=>{
@@ -36,7 +36,7 @@ export function SearchEngineDiscoveryPage(){
   if(engines.includes("serper")&&engines.includes("serpapi")&&types.some(t=>!verticals.some(v=>v.id===t)))return;
   setSaving(true);
   try{
-   const input:SearchDiscoveryInput={country,state:state||undefined,city:city||undefined,query:query.trim(),advancedQuery:generated,limitPerCountry:Math.max(1,Math.min(500,Number(limit)||100)),searchEngines:engines,searchTypes:types,searchLanguage:languageFor(targetLanguage),excludeCategories:selectedExclusions,originalQuery:applied&&translation?translation.source:undefined,translatedQuery:applied&&translation?translation.translated:undefined,targetLanguage:applied?targetLanguage:undefined};
+   const input:SearchDiscoveryInput={country,state:state||undefined,city:city||undefined,query:query.trim(),advancedQuery:generated,limitPerCountry:Math.max(1,Math.min(500,Number(limit)||100)),searchEngines:engines,searchTypes:types,searchLanguage:languageFor(targetLanguage),excludeCategories:selectedExclusions,businessTypes,originalQuery:applied&&translation?translation.source:undefined,translatedQuery:applied&&translation?translation.translated:undefined,targetLanguage:applied?targetLanguage:undefined};
    const created=await searchDiscoveryApi.start(input);setRun(created);toast.success("搜索任务已创建："+(created.taskCode??created.id));
   }catch(e){toast.error(e instanceof Error?e.message:"搜索任务创建失败");}finally{setSaving(false);}
  };
