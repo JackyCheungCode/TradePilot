@@ -162,15 +162,25 @@ async function saveAISecret(id:string,value:string,env:SettingsEnv){
  await cloudflareRequest(token,"/user/tokens/verify");
  await cloudflareRequest(token,"/accounts/"+account+"/workers/scripts/"+worker+"/secrets",{method:"PUT",body:JSON.stringify({name:secret,type:"secret_text",text:value})});
 }
+function safeAIBaseUrl(raw:string,fallback:string):string{
+ const value=(raw||fallback).trim();
+ let url:URL;try{url=new URL(value)}catch{throw new Error('模型 Base URL 格式无效')}
+ const host=url.hostname.toLowerCase();
+ if(url.protocol!=='https:'||url.username||url.password||url.search||url.hash)throw new Error('模型接口只允许 HTTPS 公网地址');
+ if(!host||host==='localhost'||host.endsWith('.localhost')||host.endsWith('.local')||host.endsWith('.internal')||host.endsWith('.test')||host.endsWith('.invalid')||host.endsWith('.example')||host.startsWith('[')||/^\d{1,3}(\.\d{1,3}){3}$/.test(host))throw new Error('模型 Base URL 不允许使用本地地址或 IP 地址');
+ return url.toString().replace(/\/$/,'');
+}
 async function runAIProviderTest(id:string,env:SettingsEnv){
  if(id==="workers-ai"){if(!env.AI)return {ok:false,message:"Workers AI Binding 尚未启用"};try{await env.AI.run("@cf/google/gemma-4-26b-a4b-it",{messages:[{role:"user",content:"Reply with OK"}]});return {ok:true,message:"Workers AI 连接成功"};}catch{return {ok:false,message:"Workers AI 调用失败，请检查 AI Binding、模型状态与账户额度"};}}
  const config=await readAIConfig(env),p=config.providers.find(x=>x.id===id),secret=aiSecretNames[id],key=secret?(env as unknown as Record<string,unknown>)[secret] as string|undefined:undefined;
  if(!p||!key)return {ok:false,message:"请先添加服务商并保存 API Key"};
  try{
+ const fallback=p.protocol==="anthropic"?"https://api.anthropic.com/v1":p.protocol==="gemini"?"https://generativelanguage.googleapis.com/v1beta":"https://api.openai.com/v1";
+ const base=safeAIBaseUrl(p.baseUrl,fallback);
  let r:Response;
- if(p.protocol==="anthropic")r=await fetch((p.baseUrl||"https://api.anthropic.com/v1")+"/messages",{method:"POST",headers:{"x-api-key":key,"anthropic-version":"2023-06-01","content-type":"application/json"},body:JSON.stringify({model:p.model,max_tokens:12,messages:[{role:"user",content:"Reply with OK"}]})});
- else if(p.protocol==="gemini")r=await fetch((p.baseUrl||"https://generativelanguage.googleapis.com/v1beta")+"/models/"+encodeURIComponent(p.model)+":generateContent?key="+encodeURIComponent(key),{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:"Reply with OK"}]}],generationConfig:{maxOutputTokens:12}})});
- else r=await fetch((p.baseUrl||"https://api.openai.com/v1").replace(/\/$/,"")+"/chat/completions",{method:"POST",headers:{Authorization:"Bearer "+key,"content-type":"application/json"},body:JSON.stringify({model:p.model||"gpt-4o-mini",messages:[{role:"user",content:"Reply with OK"}],max_tokens:12})});
+ if(p.protocol==="anthropic")r=await fetch(base+"/messages",{method:"POST",redirect:"error",headers:{"x-api-key":key,"anthropic-version":"2023-06-01","content-type":"application/json"},body:JSON.stringify({model:p.model,max_tokens:12,messages:[{role:"user",content:"Reply with OK"}]})});
+ else if(p.protocol==="gemini")r=await fetch(base+"/models/"+encodeURIComponent(p.model)+":generateContent?key="+encodeURIComponent(key),{method:"POST",redirect:"error",headers:{"content-type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:"Reply with OK"}]}],generationConfig:{maxOutputTokens:12}})});
+ else r=await fetch(base+"/chat/completions",{method:"POST",redirect:"error",headers:{Authorization:"Bearer "+key,"content-type":"application/json"},body:JSON.stringify({model:p.model||"gpt-4o-mini",messages:[{role:"user",content:"Reply with OK"}],max_tokens:12})});
  if(!r.ok){const body=await r.text();return {ok:false,message:"模型接口返回 HTTP "+r.status+"："+body.slice(0,120)};}
  return {ok:true,message:"模型服务连接成功，已收到测试响应"};
  }catch{return {ok:false,message:"无法连接模型服务，请检查 API Key、Base URL 和网络状态"};}
