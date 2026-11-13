@@ -1,6 +1,8 @@
 export type DiscoveryProvider = "google_maps" | "openstreetmap";
 export type DiscoveryStatus = "queued" | "running" | "completed" | "partial" | "failed" | "cancelled";
-export interface DiscoveryRunInput { countries: string[]; query: string; limitPerCountry: number; providers: DiscoveryProvider[]; state?: string; city?: string; osmTags?: Array<{key:string;value:string}>; businessTypes?: string[]; filters?: {minRating?:number;openNow?:boolean;requireWebsite?:boolean;requirePhone?:boolean}; originalQuery?:string; translatedQuery?:string; targetLanguage?:string; }
+export type SearchEngine = "serper" | "serpapi";
+export type SearchType = "web" | "shopping" | "images" | "news" | "videos" | "scholar" | "patents";
+export interface DiscoveryRunInput { countries: string[]; query: string; limitPerCountry: number; providers: DiscoveryProvider[]; state?: string; city?: string; osmTags?: Array<{key:string;value:string}>; businessTypes?: string[]; filters?: {minRating?:number;openNow?:boolean;requireWebsite?:boolean;requirePhone?:boolean}; originalQuery?:string; translatedQuery?:string; targetLanguage?:string; channel?:"map_local_businesses"|"search_engine"; searchEngines?:SearchEngine[]; searchTypes?:SearchType[]; searchLanguage?:string; advancedQuery?:string; excludeCategories?:string[]; }
 export interface DiscoveryRun {
   id: string; taskCode?: string; channel?: string; query?: string; countries?: string[];
   state?: string | null; city?: string | null; providers?: DiscoveryProvider[];
