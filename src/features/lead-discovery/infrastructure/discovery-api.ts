@@ -22,6 +22,8 @@ export const discoveryWorkspaceApi = {
  listRuns: () => request<DiscoveryRun[]>("/api/v1/discovery-runs"),
  listRecords: (runId?: string) => request<DiscoveryRecord[]>(`/api/v1/discovery-records${runId ? "?runId="+encodeURIComponent(runId) : ""}`),
  action: (id: string, action: "remove" | "discard" | "promote", runId?: string) => request<{id:string;status:string;leadId?:string}>(`/api/v1/discovery-records/${encodeURIComponent(id)}/action`, {method:"POST",body:JSON.stringify({action,runId})}),
+ startContactEnrichment: (recordIds:string[]) => request<{id:string;status:string;progress:number;completedCount:number;failedCount:number;message:string}>("/api/v1/discovery-contact-enrichments",{method:"POST",body:JSON.stringify({recordIds})}),
+ getContactEnrichment: (id:string) => request<{id:string;status:string;progress:number;completedCount:number;failedCount:number;message:string}>(`/api/v1/discovery-contact-enrichments/${encodeURIComponent(id)}`),
  listLeads: () => request<FormalLead[]>("/api/v1/leads"),
 };
 

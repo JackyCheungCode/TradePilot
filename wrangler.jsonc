@@ -21,6 +21,11 @@
       "name": "tradepilot-lead-discovery",
       "binding": "LEAD_DISCOVERY_WORKFLOW",
       "class_name": "LeadDiscoveryWorkflow"
+    },
+    {
+      "name": "tradepilot-contact-enrichment",
+      "binding": "CONTACT_ENRICHMENT_WORKFLOW",
+      "class_name": "ContactEnrichmentWorkflow"
     }
   ],
   "account_id": "ea4e98dce9c478d7dd5c07f10e5c722d",

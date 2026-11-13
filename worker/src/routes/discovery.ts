@@ -9,6 +9,7 @@ export interface DiscoveryEnv {
   SERPER_API_KEY?: string;
   SERPAPI_API_KEY?: string;
   LEAD_DISCOVERY_WORKFLOW: { create(options: { id: string; params: { runId: string; ownerId: string; input: DiscoveryRunInput } }): Promise<{ id: string }> };
+  CONTACT_ENRICHMENT_WORKFLOW: { create(options:{id:string;params:{jobId:string;ownerId:string;recordIds:string[]}}):Promise<{id:string}> };
   OVERPASS_API_URL?: string;
 }
 export type DiscoveryProvider = "google_maps" | "openstreetmap";
@@ -384,6 +385,25 @@ export async function handleDiscovery(request: Request, env: DiscoveryEnv): Prom
     const logs=await db<Array<Record<string,unknown>>>(env,"discovery_run_logs?run_id=eq."+runMatch[1]+"&owner_id=eq."+userId+"&select=id,level,message,created_at&order=created_at.asc");
     const row=rows[0];
     return successResponse(request,{id:row.id,taskCode:row.task_code,channel:row.channel,query:row.query,countries:row.countries,state:row.state,city:row.city,providers:row.providers,status:row.status,progress:row.progress,discoveredCount:row.discovered_count,createdLeadCount:row.created_lead_count,message:row.message,searchConfig:row.search_config??{},createdAt:row.created_at,logs:(logs??[]).map(item=>({id:item.id,level:item.level,message:item.message,createdAt:item.created_at}))});
+  }
+
+  if(request.method==="POST" && url.pathname==="/api/v1/discovery-contact-enrichments"){
+    let body:{recordIds?:string[]};try{body=await request.json() as {recordIds?:string[]};}catch{return errorResponse(request,"VALIDATION_ERROR","请求内容不是有效 JSON。",400);}
+    const recordIds=[...new Set(Array.isArray(body.recordIds)?body.recordIds:[])];
+    if(recordIds.length<1||recordIds.length>50||recordIds.some(id=>!/^[0-9a-f-]{36}$/i.test(id)))return errorResponse(request,"VALIDATION_ERROR","请选择 1 到 50 条有效搜索结果。",400);
+    const records=await db<Array<{id:string;channel:string;website:string|null}>>(env,"discovery_records?owner_id=eq."+userId+"&id=in.("+recordIds.join(",")+")&select=id,channel,website");
+    if(records.length!==recordIds.length)return errorResponse(request,"NOT_FOUND","部分所选记录不存在或无权访问。",404);
+    if(records.some(record=>!record.website))return errorResponse(request,"VALIDATION_ERROR","所选记录中存在没有官网地址的项目，请先筛选有官网的记录。",400);
+    const created=await db<Array<{id:string}>>(env,"discovery_contact_enrichment_runs",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({owner_id:userId,record_ids:recordIds,status:"queued",progress:0,completed_count:0,failed_count:0,message:"联系方式采集任务已排队"})});
+    const job=created?.[0];if(!job?.id)throw new Error("CONTACT_ENRICHMENT_JOB_CREATE_FAILED");
+    try{await env.CONTACT_ENRICHMENT_WORKFLOW.create({id:job.id,params:{jobId:job.id,ownerId:userId,recordIds}});}catch(error){await db(env,"discovery_contact_enrichment_runs?id=eq."+job.id,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"failed",message:"工作流启动失败："+String(error).slice(0,180)})});return errorResponse(request,"WORKFLOW_START_FAILED","任务已创建，但后台工作流启动失败。",503);}
+    return successResponse(request,{id:job.id,status:"queued",progress:0,completedCount:0,failedCount:0,message:"联系方式采集工作流已启动"},202);
+  }
+  const contactJobMatch=url.pathname.match(/^\\/api\\/v1\\/discovery-contact-enrichments\\/([0-9a-f-]+)$/i);
+  if(request.method==="GET"&&contactJobMatch){
+    const jobs=await db<Array<Record<string,unknown>>>(env,"discovery_contact_enrichment_runs?id=eq."+contactJobMatch[1]+"&owner_id=eq."+userId+"&select=id,status,progress,completed_count,failed_count,message");
+    const job=jobs?.[0];if(!job)return errorResponse(request,"NOT_FOUND","找不到联系方式采集任务。",404);
+    return successResponse(request,{id:job.id,status:job.status,progress:job.progress,completedCount:job.completed_count,failedCount:job.failed_count,message:job.message});
   }
 
   if(request.method==="GET" && url.pathname==="/api/v1/discovery-records"){

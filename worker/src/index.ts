@@ -5,6 +5,7 @@ import { handleSettings } from "./routes/settings";
 import { handleTranslation } from "./routes/translation";
 import { handleSearchExclusions } from "./routes/search-exclusions";
 import { LeadDiscoveryWorkflow } from "./workflows/lead-discovery";
+import { ContactEnrichmentWorkflow } from "./workflows/contact-enrichment";
 
 export interface WorkerEnv {
  ASSETS: { fetch(request: Request): Promise<Response> };
@@ -21,9 +22,10 @@ export interface WorkerEnv {
  AI: { run(model:string,input:Record<string,unknown>): Promise<unknown> };
  OVERPASS_API_URL?: string;
  LEAD_DISCOVERY_WORKFLOW: { create(options: { id: string; params: { runId: string; ownerId: string; input: DiscoveryRunInput } }): Promise<{ id: string }> };
+ CONTACT_ENRICHMENT_WORKFLOW: { create(options:{id:string;params:{jobId:string;ownerId:string;recordIds:string[]}}):Promise<{id:string}> };
 }
 
-export { LeadDiscoveryWorkflow };
+export { LeadDiscoveryWorkflow, ContactEnrichmentWorkflow };
 
 export default {
  async fetch(request: Request, env: WorkerEnv): Promise<Response> {
