@@ -3,6 +3,7 @@ import { handleHealth } from "./routes/health";
 import { handleDiscovery, type DiscoveryRunInput } from "./routes/discovery";
 import { handleSettings } from "./routes/settings";
 import { handleTranslation } from "./routes/translation";
+import { handleSearchExclusions } from "./routes/search-exclusions";
 import { LeadDiscoveryWorkflow } from "./workflows/lead-discovery";
 
 export interface WorkerEnv {
@@ -28,6 +29,7 @@ export default {
   const url = new URL(request.url);
   try {
    if (url.pathname === "/api/v1/health" && request.method === "GET") return handleHealth(request);
+   if (url.pathname === "/api/v1/settings/search-exclusions") return await handleSearchExclusions(request, env);
    if (url.pathname.startsWith("/api/v1/settings/")) return await handleSettings(request, env);
    if (url.pathname.startsWith("/api/v1/discovery/translate")) return await handleTranslation(request, env);
    if (url.pathname.startsWith("/api/v1/discovery-runs") || url.pathname.startsWith("/api/v1/discovery-records") || url.pathname === "/api/v1/leads") return await handleDiscovery(request, env);

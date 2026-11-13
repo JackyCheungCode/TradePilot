@@ -8,15 +8,17 @@ import { DiscoveryTasksPage } from "@/features/lead-discovery/presentation/pages
 import { DiscoveryResultsPage } from "@/features/lead-discovery/presentation/pages/DiscoveryResultsPage";
 import { LeadsPage } from "@/features/crm/presentation/pages/LeadsPage";
 import { IntegrationsSettingsPage } from "@/features/settings/presentation/pages/IntegrationsSettingsPage";
+import { SearchExclusionRulesPage } from "@/features/settings/presentation/pages/SearchExclusionRulesPage";
 import { getSupabaseClient } from "@/shared/lib/supabase";
 
-type AppPage = "discovery" | "discoveryTasks" | "discoveryResults" | "leads" | "integrations";
+type AppPage = "discovery" | "discoveryTasks" | "discoveryResults" | "leads" | "integrations" | "searchExclusions";
 const ROUTES: Record<AppPage, string> = {
   discovery: "/lead-discovery/map-local-businesses",
   discoveryTasks: "/lead-discovery/map-local-businesses/tasks",
   discoveryResults: "/lead-discovery/map-local-businesses/results",
   leads: "/crm/leads",
   integrations: "/settings/integrations",
+  searchExclusions: "/settings/search-exclusions",
 };
 const getPath = () => window.location.pathname;
 const getPage = (path: string): AppPage | null => {
@@ -25,6 +27,7 @@ const getPage = (path: string): AppPage | null => {
   if (path === ROUTES.discoveryResults) return "discoveryResults";
   if (path === ROUTES.leads) return "leads";
   if (path === ROUTES.integrations) return "integrations";
+  if (path === ROUTES.searchExclusions) return "searchExclusions";
   return null;
 };
 export function App() {
@@ -82,7 +85,7 @@ export function App() {
   if (checkingSession) return <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">正在检查登录状态…</div>;
   if (!session || path === "/login") return <><LoginPage /><Toaster richColors position="top-right" /></>;
   return <AppShell activePage={activePage ?? "discovery"} onNavigate={navigate} userEmail={session.user.email ?? ""} onSignOut={() => void getSupabaseClient().auth.signOut()}>
-    {activePage === "integrations" ? <IntegrationsSettingsPage /> : activePage === "discoveryTasks" ? <DiscoveryTasksPage /> : activePage === "discoveryResults" ? <DiscoveryResultsPage /> : activePage === "leads" ? <LeadsPage /> : <MapLocalDiscoveryPage />}
+    {activePage === "integrations" ? <IntegrationsSettingsPage /> : activePage === "searchExclusions" ? <SearchExclusionRulesPage /> : activePage === "discoveryTasks" ? <DiscoveryTasksPage /> : activePage === "discoveryResults" ? <DiscoveryResultsPage /> : activePage === "leads" ? <LeadsPage /> : <MapLocalDiscoveryPage />}
     <Toaster richColors position="top-right" />
   </AppShell>;
 }
