@@ -152,15 +152,21 @@ async function persistDiscoveryRecord(
     entityId=existingEntity[0]?.id;
   }
   if(!entityId)throw new Error("DISCOVERY_ENTITY_UPSERT_FAILED");
+  const previous = await db<Array<Record<string,unknown>>>(env,"discovery_records?owner_id=eq."+ownerId+"&channel=eq.map_local_businesses&dedupe_key=eq."+encodeURIComponent(item.dedupeKey)+"&select=id,address,phone,email,website,business_type,confidence_score,raw_data");
+  const prior = previous[0] ?? {};
+  const mergedRawData = {...(prior.raw_data && typeof prior.raw_data==="object" ? prior.raw_data as Record<string,unknown> : {}),...item.rawData};
   const rows = await db<Array<{ id: string }>>(env, "discovery_records?on_conflict=owner_id,channel,dedupe_key", {
     method: "POST",
     headers: { Prefer: "resolution=merge-duplicates,return=representation" },
     body: JSON.stringify({
       owner_id: ownerId, channel: "map_local_businesses", record_type: "business", entity_id: entityId,
-      name: item.name, country_code: item.countryCode, address: item.address ?? null,
-      phone: item.phone ?? null, website: item.website ?? null,
+      name: item.name, country_code: item.countryCode,
+      address: item.address ?? prior.address ?? null, phone: item.phone ?? prior.phone ?? null,
+      email: item.email ?? prior.email ?? null, website: item.website ?? prior.website ?? null,
+      business_type: item.businessType ?? prior.business_type ?? null,
+      confidence_score: Math.max(item.confidenceScore ?? 0, Number(prior.confidence_score ?? 0)) || null,
       latitude: item.latitude ?? null, longitude: item.longitude ?? null,
-      dedupe_key: item.dedupeKey, raw_data: item.rawData,
+      dedupe_key: item.dedupeKey, raw_data: mergedRawData,
     }),
   });
   let recordId = rows?.[0]?.id;
