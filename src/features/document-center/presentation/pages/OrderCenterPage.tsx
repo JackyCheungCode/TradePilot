@@ -1,8 +1,9 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ArrowDown, ArrowUp, ArrowUpDown, ArrowUpRight, CheckCircle2, FileText, Pencil, RefreshCw, Search, ShoppingCart, Truck } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, ArrowUpRight, CheckCircle2, FileText, Pencil, RefreshCw, ShoppingCart, Truck } from "lucide-react";
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Combobox, Checkbox } from "@/shared/ui/primitives";
 import { PageControlPanel } from "@/shared/ui/page-layout";
+import { SearchControlPanel } from "@/shared/ui/data-views";
 import { tradeApi, type TradeDocument, type TradeOrder } from "@/features/document-center/infrastructure/trade-api";
 
 type View = "all" | "quotations" | "sales" | "purchase";
@@ -165,13 +166,9 @@ export function OrderCenterPage({ onCreateQuotation, initialView = "quotations" 
 
     <Card>
       <CardHeader className="space-y-3">
-        <div className="tp-filter-toolbar w-full flex flex-wrap items-center justify-between gap-3">
+        <div className="space-y-2">
           <div><CardTitle>业务单据</CardTitle><CardDescription>报价单确认后会同步激活其关联订单；历史版本与模板快照保留在单据中心。</CardDescription></div>
-          <div className="relative w-full min-w-0 sm:w-[300px] sm:flex-none"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input className="pl-9 w-full" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="搜索编号、名称或客户" /></div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Combobox value={statusFilter} onValueChange={setStatusFilter} placeholder="全部状态" className="w-full sm:w-[150px] shrink-0" options={[{value:"",label:"全部状态"},...Object.entries(statusLabels).map(([value,label])=>({value,label}))]}/>
-            <span className="text-xs text-muted-foreground">点击表头可排序</span>
-          </div>
+          <SearchControlPanel search={search} onSearchChange={setSearch} searchPlaceholder="搜索编号、名称或客户" filters={<Combobox value={statusFilter} onValueChange={setStatusFilter} placeholder="全部状态" className="w-full sm:w-[150px] shrink-0" options={[{value:"",label:"全部状态"},...Object.entries(statusLabels).map(([value,label])=>({value,label}))]}/>} activeFilters={Boolean(search||statusFilter)} onClear={()=>{setSearch("");setStatusFilter("");}} resultCount={`${currentRows.length} 条`} />
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
