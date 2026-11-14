@@ -97,7 +97,7 @@ export function Badge({
 export const Input = React.forwardRef<
   HTMLInputElement,
   React.InputHTMLAttributes<HTMLInputElement>
->(function Input({ className, id, defaultValue, value, onClick, ...props }, ref) {
+>(function Input({ className, id, defaultValue, value, onClick, size: _nativeSize, ...props }, ref) {
   const generatedId = React.useId();
   return (
     <CarbonTextInput
