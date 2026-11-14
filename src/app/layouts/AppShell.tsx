@@ -339,7 +339,7 @@ export function AppShell({
             </HeaderGlobalAction>
           </HeaderGlobalBar>
         </Header>
-        <Content id="main-content" className="tp-page-canvas">
+        <Content id="main-content" tagName="div" className="tp-page-canvas">
           <div className="tp-page-root">{children}</div>
         </Content>
       </main>
