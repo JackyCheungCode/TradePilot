@@ -6,5 +6,5 @@ export const masterDataApi={
  list:(resource:string,query?:Record<string,string>)=>request<MasterRecord[]>(base+resource+(query?"?"+new URLSearchParams(query).toString():"")),
  create:(resource:string,input:Record<string,unknown>)=>request<MasterRecord>(base+resource,{method:"POST",body:JSON.stringify(input)}),
  update:(resource:string,id:string,input:Record<string,unknown>)=>request<MasterRecord>(base+resource+"/"+encodeURIComponent(id),{method:"PATCH",body:JSON.stringify(input)}),
- remove:(resource:string,id:string)=>request<{deleted:boolean;id:string}>(base+resource+"/"+encodeURIComponent(id),{method:"DELETE"})
+ remove:(resource:string,id:string)=>request<{deleted:boolean;archived?:boolean;id:string}>(base+resource+"/"+encodeURIComponent(id),{method:"DELETE"})
 };
