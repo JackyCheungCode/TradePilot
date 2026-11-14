@@ -89,3 +89,10 @@
 .tp-agent-workspace-choice{min-width:0}
 @media(max-width:1055px){.tp-agent-workspace-layout{grid-template-columns:minmax(0,1fr) 16rem}}
 @media(max-width:767px){.tp-agent-workbench-page{padding-inline:var(--cds-spacing-05)}.tp-agent-workspace-layout{grid-template-columns:minmax(0,1fr);gap:var(--cds-spacing-05);min-height:0}.tp-agent-workspace-chat{min-height:calc(100dvh - 15rem)}.tp-agent-workspace-layout>aside{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--cds-spacing-03)}}
+
+/* Agent Workbench — Carbon surfaces and spacing for the conversation flow. */
+.tp-agent-workspace-messages{background:var(--cds-layer)}
+.tp-agent-workspace-composer{background:var(--cds-layer-01);border-top:1px solid var(--cds-border-subtle)}
+.tp-agent-task-confirmation{background:var(--cds-layer-01);border-inline-start:3px solid var(--cds-border-interactive)}
+.tp-agent-task-goal{display:grid;gap:var(--cds-spacing-02);min-width:0;padding:var(--cds-spacing-05);background:var(--cds-layer-02);color:var(--cds-text-primary)}
+.tp-agent-task-goal p{margin:0;overflow-wrap:anywhere}
