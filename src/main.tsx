@@ -4,6 +4,8 @@ import { Theme } from "@carbon/react";
 
 import { App } from "./app/App";
 import "./styles/globals.css";
+import "./styles/design-tokens.css";
+import "./styles/reset.css";
 import "./styles/carbon.scss";
 import "@aora-bot/react/styles.css";
 
