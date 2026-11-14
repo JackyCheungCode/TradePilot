@@ -10,6 +10,7 @@ import { FacebookDiscoveryWorkflow } from "./workflows/facebook-discovery";
 import { handleFacebookDiscovery } from "./routes/facebook-discovery";
 import { InstagramDiscoveryWorkflow } from "./workflows/instagram-discovery";
 import { handleInstagramDiscovery } from "./routes/instagram-discovery";
+import { handleAgentCenter } from "./routes/agent-center";
 
 export interface WorkerEnv {
  ASSETS: { fetch(request: Request): Promise<Response> };
@@ -24,6 +25,7 @@ export interface WorkerEnv {
  CLOUDFLARE_API_TOKEN?: string;
  CLOUDFLARE_ACCOUNT_ID?: string;
  CLOUDFLARE_WORKER_NAME?: string;
+ AGENT_ENCRYPTION_KEY?: string;
  AI: { run(model:string,input:Record<string,unknown>): Promise<unknown> };
  OVERPASS_API_URL?: string;
  LEAD_DISCOVERY_WORKFLOW: { create(options: { id: string; params: { runId: string; ownerId: string; input: DiscoveryRunInput } }): Promise<{ id: string }> };
@@ -39,6 +41,7 @@ export default {
   const url = new URL(request.url);
   try {
    if (url.pathname === "/api/v1/health" && request.method === "GET") return handleHealth(request);
+   if (url.pathname.startsWith("/api/v1/agent/")) return await handleAgentCenter(request, env);
    if (url.pathname === "/api/v1/settings/search-exclusions") return await handleSearchExclusions(request, env);
    if (url.pathname.startsWith("/api/v1/settings/")) return await handleSettings(request, env);
    if (url.pathname.startsWith("/api/v1/discovery/translate")) return await handleTranslation(request, env);
