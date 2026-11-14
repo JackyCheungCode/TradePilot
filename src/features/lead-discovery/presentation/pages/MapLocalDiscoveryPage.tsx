@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Activity, ArrowRight, Building2, CheckCircle2, ChevronDown, Clock3, Globe2, Languages, LoaderCircle, MapPinned, Play, Search, SlidersHorizontal, Sparkles, Terminal, Users } from "lucide-react";
+import { Activity, ArrowRight, Building2, CheckCircle2, ChevronDown, Clock3, Languages, LoaderCircle, MapPinned, Play, Search, SlidersHorizontal, Sparkles, Terminal, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Popover, PopoverContent, PopoverTrigger, Progress, Separator } from "@/shared/ui/primitives";
 import { PageControlPanel } from "@/shared/ui/page-layout";
