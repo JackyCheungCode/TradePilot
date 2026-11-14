@@ -1,10 +1,10 @@
 import { useState, type ReactNode } from "react";
-import { Compass, Facebook, Instagram, KeyRound, LogOut, MapPinned, Menu, PanelLeftClose, PanelLeftOpen, Radar, Search, Settings, Settings2, ShieldBan, Users, X, ChevronDown, ChevronRight, ListTodo, Files, ContactRound, Building2, Handshake, Package } from "lucide-react";
+import { Compass, Facebook, Instagram, KeyRound, LogOut, MapPinned, Menu, PanelLeftClose, PanelLeftOpen, Radar, Search, Settings, Settings2, ShieldBan, Users, X, ChevronDown, ChevronRight, ListTodo, Files, ContactRound, Building2, Handshake, Package, ClipboardList } from "lucide-react";
 import { Button } from "@/shared/ui/primitives";
 import { AgentOrbIcon } from "@/features/agent-center/presentation/components/AgentOrbIcon";
 import { Sparkles, Workflow, PlugZap, ClipboardCheck, Bot, Activity, FileStack, FilePlus2, Archive, LayoutTemplate } from "lucide-react";
 
-type AppPage = "agentWorkbench" | "agentMarket" | "agentOrchestration" | "agentConnections" | "agentRuns" | "agentApprovals" | "agentSettings" | "discovery" | "discoveryTasks" | "discoveryResults" | "searchDiscovery" | "facebookDiscovery" | "instagramDiscovery" | "leads" | "crmAccounts" | "crmContacts" | "crmOpportunities" | "enterpriseConfig" | "productConfig" | "productCatalog" | "integrations" | "searchExclusions" | "agentAppearance" | "documentWorkbench" | "documentCreate" | "documentRecords" | "documentTemplates";
+type AppPage = "agentWorkbench" | "agentMarket" | "agentOrchestration" | "agentConnections" | "agentRuns" | "agentApprovals" | "agentSettings" | "discovery" | "discoveryTasks" | "discoveryResults" | "searchDiscovery" | "facebookDiscovery" | "instagramDiscovery" | "leads" | "crmAccounts" | "crmContacts" | "crmOpportunities" | "enterpriseConfig" | "productConfig" | "productCatalog" | "integrations" | "searchExclusions" | "agentAppearance" | "orderCenter" | "documentWorkbench" | "documentCreate" | "documentRecords" | "documentTemplates";
 
 export function AppShell({ children, activePage, onNavigate, userEmail, onSignOut }: { children: ReactNode; activePage: AppPage; onNavigate: (page: AppPage) => void; userEmail: string; onSignOut: () => void }) {
  const [collapsed,setCollapsed]=useState(false),[mobileOpen,setMobileOpen]=useState(false);
@@ -14,6 +14,9 @@ export function AppShell({ children, activePage, onNavigate, userEmail, onSignOu
  const sidebar=<div className="flex h-full min-h-0 flex-col bg-card text-foreground">
   <div className="flex h-16 shrink-0 items-center gap-3 border-b px-4"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground"><Radar className="h-5 w-5"/></div>{(!collapsed||mobileOpen)&&<div className="min-w-0"><p className="font-semibold tracking-tight">TradePilot</p><p className="text-[11px] text-muted-foreground">Market intelligence</p></div>}<div className="ml-auto hidden md:block"><Button variant="ghost" size="icon" onClick={()=>setCollapsed(!collapsed)} aria-label={collapsed?"展开侧边栏":"收起侧边栏"}>{collapsed?<PanelLeftOpen className="h-4 w-4"/>:<PanelLeftClose className="h-4 w-4"/>}</Button></div><div className="ml-auto md:hidden"><Button variant="ghost" size="icon" onClick={()=>setMobileOpen(false)} aria-label="关闭菜单"><X className="h-5 w-5"/></Button></div></div>
   <nav className="flex-1 space-y-2 overflow-y-auto p-3">
+   <div>
+    <Button variant={activePage==="orderCenter"?"secondary":"ghost"} onClick={()=>{onNavigate("orderCenter");setMobileOpen(false);}} className={navClass}><ClipboardList className="h-5 w-5 shrink-0"/>{(!collapsed||mobileOpen)&&<span className="font-semibold">订单中心</span>}</Button>
+   </div>
    <div>
     <Button variant={activePage.startsWith("agent")?"secondary":"ghost"} onClick={()=>{setAgentExpanded(!agentExpanded);if(!agentExpanded){onNavigate("agentWorkbench");setMobileOpen(false);}}} className={navClass}><Bot className="h-5 w-5 shrink-0"/>{(!collapsed||mobileOpen)&&<><span className="flex-1 text-left font-semibold">TradePilot Agent 智能体</span>{agentExpanded?<ChevronDown className="ml-auto h-4 w-4"/>:<ChevronRight className="ml-auto h-4 w-4"/>}</>}</Button>
     {agentExpanded&&<div className={`ml-5 space-y-1 pl-3 ${collapsed&&!mobileOpen?"":"border-l"}`}>
