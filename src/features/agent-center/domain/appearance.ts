@@ -1,4 +1,4 @@
-export type AgentAppearance = { shape:string; color:string; styleId:"vector"|"pixel"|"kaomoji"; variant:string; face:"cute"|"eyes"|"line" };
+export type AgentAppearance = { shape:string; color:string; styleId:"vector"|"pixel"|"kaomoji"; variant:string; face:"cute"|"eyes"|"line"|"symbol"|"button"|"capsule"|"brow"|"glossy"|"sparkle"|"shades"|"droopy"|"bigmouth"|"pie"|"screen"|"teardrop"|"specs" };
 export type AgentAppearanceConfig = { default:AgentAppearance; agents:Record<string,AgentAppearance> };
 export const DEFAULT_AGENT_APPEARANCE:AgentAppearance={shape:"mochi",color:"cream",styleId:"vector",variant:"soft",face:"cute"};
 export const DEFAULT_AGENT_APPEARANCE_CONFIG:AgentAppearanceConfig={default:DEFAULT_AGENT_APPEARANCE,agents:{}};

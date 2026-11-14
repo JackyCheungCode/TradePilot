@@ -126,7 +126,7 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
         if(!value||typeof value!=="object"||Array.isArray(value))return null;
         const item=value as Record<string,unknown>;
         const styleId=typeof item.styleId==="string"?item.styleId:"vector";
-        if(!variants[styleId]||typeof item.shape!=="string"||!/^[a-z0-9-]{2,40}$/.test(item.shape)||typeof item.color!=="string"||!allowedColors.has(item.color)||typeof item.variant!=="string"||!variants[styleId].has(item.variant)||!["cute","eyes","line"].includes(String(item.face)))return null;
+        if(!variants[styleId]||typeof item.shape!=="string"||!/^[a-z0-9-]{2,40}$/.test(item.shape)||typeof item.color!=="string"||!allowedColors.has(item.color)||typeof item.variant!=="string"||!variants[styleId].has(item.variant)||!["cute","eyes","line","symbol","button","capsule","brow","glossy","sparkle","shades","droopy","bigmouth","pie","screen","teardrop","specs"].includes(String(item.face)))return null;
         return {shape:item.shape,color:item.color,styleId,variant:item.variant,face:item.face};
       };
       const defaultAppearance=normalizeAppearance(input.default);
