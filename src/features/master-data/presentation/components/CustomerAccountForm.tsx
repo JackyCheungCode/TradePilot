@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Add as Plus, TrashCan as Trash2, UserFollow as UserRoundPlus, Close as X } from "@carbon/icons-react";
-import { FileUploaderButton } from "@carbon/react";
+import { ContentSwitcher, FileUploaderButton, Switch } from "@carbon/react";
 import { toast } from "sonner";
 import { Badge, Button, Combobox, Input, Textarea } from "@/shared/ui/primitives";
 import { FormField, FormSection } from "@/shared/ui/data-views";
@@ -273,9 +273,13 @@ export function CustomerAccountForm({
       </section>
 
       <section className="overflow-hidden rounded-lg bg-card">
-        <div role="tablist" aria-label="客户附加资料" className="flex gap-1 overflow-x-auto border-b px-3 pt-2 sm:px-5">
-          {tabs.map((tab) => <button key={tab.key} type="button" role="tab" aria-selected={activeTab === tab.key} onClick={() => setActiveTab(tab.key)} className={"shrink-0 border-b-2 px-4 py-3 text-sm transition-colors " + (activeTab === tab.key ? "border-primary font-semibold text-foreground" : "border-transparent text-muted-foreground hover:text-foreground")}>{tab.label}</button>)}
-        </div>
+        <ContentSwitcher
+          className="tp-carbon-content-switcher"
+          selectedIndex={Math.max(0, tabs.findIndex((tab) => tab.key === activeTab))}
+          onChange={({ name }) => setActiveTab(name as CustomerTab)}
+        >
+          {tabs.map((tab) => <Switch key={tab.key} name={tab.key} text={tab.label} />)}
+        </ContentSwitcher>
         <div role="tabpanel" className="min-h-[220px] p-4 sm:p-6">
           {activeTab === "contacts" && <div className="space-y-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-semibold">联系人</h2><p className="mt-1 text-sm text-muted-foreground">一个客户可以关联多位联系人。</p></div><Button onClick={() => setShowContactsFullScreen(true)}><UserRoundPlus className="h-4 w-4" />全屏管理联系人 <Badge className="ml-1">{contacts.length}</Badge></Button></div>{contactsLoading ? <p className="py-5 text-sm text-muted-foreground">正在读取联系人…</p> : contacts.length ? <div className="space-y-2">{contacts.map((contact) => <div key={contact.draftId} className="flex min-w-0 items-center justify-between gap-3 rounded-md bg-muted/30 px-3 py-2.5"><div className="min-w-0"><p className="truncate text-sm font-medium">{contact.name || "未命名联系人"}</p><p className="truncate text-xs text-muted-foreground">{[contact.job_title, contact.email, contact.phone].filter(Boolean).join(" · ") || "尚未填写联系方式"}</p></div><Badge variant="outline">{contact.id ? "已保存" : "待创建"}</Badge></div>)}</div> : <div className="rounded-md bg-muted/25 px-4 py-7 text-center text-sm text-muted-foreground">暂未添加联系人，可进入全屏窗口创建多位联系人。</div>}</div>}
           {activeTab === "sales" && <FormSection title="销售" description="设置客户负责人及默认交易条件。"><div className="grid gap-4 sm:grid-cols-2"><FormField label="销售员"><Input value={form.sales_person} onChange={(event) => update("sales_person", event.target.value)} placeholder="销售负责人" /></FormField><FormField label="付款条件"><Input value={form.payment_terms} onChange={(event) => update("payment_terms", event.target.value)} placeholder="例如：预付 30%，余款发货前支付" /></FormField><FormField label="付款方式"><Input value={form.payment_method} onChange={(event) => update("payment_method", event.target.value)} placeholder="T/T、L/C、信用卡等" /></FormField><FormField label="国际贸易术语"><Combobox value={form.incoterms_code} onValueChange={(value) => update("incoterms_code", value)} placeholder="选择 Incoterms" options={["EXW","FCA","CPT","CIP","DAP","DPU","DDP","FAS","FOB","CFR","CIF"].map((value) => ({ value, label: value }))} /></FormField></div></FormSection>}
