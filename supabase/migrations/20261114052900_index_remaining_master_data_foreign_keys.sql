@@ -1,0 +1,15 @@
+create index if not exists idx_agent_chat_messages_conversation on public.agent_chat_messages(conversation_id, created_at);
+create index if not exists idx_agent_run_events_owner on public.agent_run_events(owner_id);
+create index if not exists idx_agent_runs_connection on public.agent_runs(connection_id);
+create index if not exists idx_crm_addresses_account on public.crm_account_addresses(account_id);
+create index if not exists idx_crm_addresses_contact on public.crm_account_addresses(contact_id);
+create index if not exists idx_crm_activities_account on public.crm_activities(account_id);
+create index if not exists idx_crm_activities_contact on public.crm_activities(contact_id);
+create index if not exists idx_crm_activities_opportunity on public.crm_activities(opportunity_id);
+create index if not exists idx_enterprise_profiles_parent on public.enterprise_profiles(parent_enterprise_id);
+create index if not exists idx_product_attribute_values_attribute on public.trade_product_attribute_values(attribute_id);
+create index if not exists idx_product_categories_parent on public.trade_product_categories(parent_id);
+create index if not exists idx_product_attribute_lines_attribute on public.trade_product_template_attribute_lines(attribute_id);
+create index if not exists idx_product_attribute_lines_product on public.trade_product_template_attribute_lines(product_id);
+create index if not exists idx_product_variants_product on public.trade_product_variants(product_id);
+create index if not exists idx_trade_products_category on public.trade_products(category_id);
