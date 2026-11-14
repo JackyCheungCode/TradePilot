@@ -322,3 +322,18 @@ main { background: var(--tp-canvas); }
   .tp-page-canvas { min-height: calc(100vh - 48px); }
   .tp-page-canvas .tp-page-heading { padding-block: 14px 12px; }
 }
+
+
+.tp-page-canvas .tp-filter-toolbar.w-auto {
+  width: auto;
+  max-width: 100%;
+  flex: 1 1 480px;
+  justify-content: flex-end;
+}
+@media (max-width: 639px) {
+  .tp-page-canvas .tp-filter-toolbar.w-auto {
+    width: 100%;
+    flex-basis: 100%;
+    justify-content: flex-start;
+  }
+}
