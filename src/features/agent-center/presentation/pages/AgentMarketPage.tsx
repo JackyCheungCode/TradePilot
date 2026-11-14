@@ -68,8 +68,8 @@ export function AgentMarketPage() {
   }, []);
 
   const isEnabled = (id: string) => profiles.find((row) => row.agent_key === id)?.enabled ?? false;
-  const enabledCount = profilesLoaded ? agentCatalog.filter((agent) => isEnabled(agent.id)).length : null;
-  const activeConnectionCount = connectionsLoaded ? connections.filter((connection) => connection.status === "active").length : null;
+  const enabledCount = profilesLoaded && !profileLoadError ? agentCatalog.filter((agent) => isEnabled(agent.id)).length : null;
+  const activeConnectionCount = connectionsLoaded && !connectionLoadError ? connections.filter((connection) => connection.status === "active").length : null;
   const visibleAgents = useMemo(() => agentCatalog.filter((agent) => {
     const enabled = profiles.find((row) => row.agent_key === agent.id)?.enabled ?? false;
     const matchesStatus = !statusFilter || (statusFilter === "enabled" ? enabled : !enabled);
@@ -149,14 +149,14 @@ export function AgentMarketPage() {
         </Column>
         <Column sm={4} md={4} lg={5}>
           <Tile className="tp-agent-market-metric">
-            <p className="tp-agent-market-metric__value">{profilesLoaded ? enabledCount : "—"}</p>
-            <p className="tp-agent-market-metric__label cds--type-body-compact-01">{profilesLoaded ? "已启用" : "正在读取启用状态"}</p>
+            <p className="tp-agent-market-metric__value">{enabledCount ?? "—"}</p>
+            <p className="tp-agent-market-metric__label cds--type-body-compact-01">{profileLoadError ? "启用状态暂不可用" : profilesLoaded ? "已启用" : "正在读取启用状态"}</p>
           </Tile>
         </Column>
         <Column sm={4} md={4} lg={6}>
           <Tile className="tp-agent-market-metric">
-            <p className="tp-agent-market-metric__value">{connectionsLoaded ? activeConnectionCount : "—"}</p>
-            <p className="tp-agent-market-metric__label cds--type-body-compact-01">已验证的外部 Agent 连接</p>
+            <p className="tp-agent-market-metric__value">{activeConnectionCount ?? "—"}</p>
+            <p className="tp-agent-market-metric__label cds--type-body-compact-01">{connectionLoadError ? "外部连接状态暂不可用" : "已验证的外部 Agent 连接"}</p>
           </Tile>
         </Column>
       </Grid>
