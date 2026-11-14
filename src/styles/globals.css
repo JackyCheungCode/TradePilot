@@ -591,3 +591,27 @@ main h1, .tp-page-canvas h1 {
   .tp-page-canvas > main { padding: 12px; }
   .tp-page-canvas > main > .tp-control-panel { margin: -12px -12px 14px; }
 }
+
+.tp-page-canvas input[type="date"],
+.tp-page-canvas input[type="time"],
+.tp-page-canvas input[type="datetime-local"] {
+  min-height: var(--tp-control-height);
+  padding: 6px 10px;
+  color: var(--tp-text);
+  background: #f5f6f7;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  font-size: 13px;
+}
+.tp-page-canvas input[type="date"]:focus,
+.tp-page-canvas input[type="time"]:focus,
+.tp-page-canvas input[type="datetime-local"]:focus {
+  background: #fff;
+  border-color: var(--ring);
+  outline: 0;
+}
+.tp-page-canvas input[type="date"]::-webkit-calendar-picker-indicator,
+.tp-page-canvas input[type="time"]::-webkit-calendar-picker-indicator {
+  opacity: .65;
+  cursor: pointer;
+}
