@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@/shared/lib/utils";
+import "./page-layout.css";
 
 type PageControlPanelProps = {
   title: string;
