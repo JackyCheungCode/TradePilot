@@ -1,3 +1,5 @@
-// Carbon v11 React styles, including Carbon's design tokens, typography and controls.
-// Import after the existing stylesheet while legacy screens are migrated incrementally.
-@use "@carbon/react";
+// Carbon v11 React styles and locally served IBM Plex font assets.
+// Per-family Plex assets avoid depending on a third-party font CDN.
+@use "@carbon/react" with (
+  $use-per-family-plex: true
+);
