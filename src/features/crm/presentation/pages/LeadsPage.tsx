@@ -11,24 +11,15 @@ export function LeadsPage(){
  useEffect(()=>{void load();},[]);
  const openConversion=(lead:FormalLead)=>{setActiveLead(lead);setAccountChoice("new");setCreateContact(true);setContactName("");setContactEmail(lead.email??"");setContactPhone(lead.phone??"");setCreateOpportunity(false);setOpportunityName(lead.name+" - 新商机");};
  const convert=async()=>{if(!activeLead)return;setSaving(true);try{
-  let account:MasterRecord|undefined;
-  if(accountChoice==="new"){
-   account=await masterDataApi.create("crm/accounts",{account_name:activeLead.name,legal_name:activeLead.name,company_type:"company",account_type:"customer",status:"qualified",country_code:activeLead.country_code,billing_address:{street:activeLead.address??"",country_code:activeLead.country_code},shipping_address:{street:activeLead.address??"",country_code:activeLead.country_code},phone:activeLead.phone,email:activeLead.email,website:activeLead.website,source_lead_id:activeLead.id,notes:"由潜客发现线索转入 CRM"});
-  }else{
-   account=accounts.find(item=>item.id===accountChoice);
-   if(!account)throw new Error("请选择有效的客户档案。");
-   if(account.source_lead_id&&account.source_lead_id!==activeLead.id)throw new Error("该客户档案已关联其他来源线索，不能覆盖来源关系。");
-   await masterDataApi.update("crm/accounts",account.id,{source_lead_id:activeLead.id});
-  }
-  if(!account)throw new Error("客户档案创建失败。");
-  if(createContact&&contactName.trim()){
-   const parts=contactName.trim().split(/\s+/);
-   await masterDataApi.create("crm/contacts",{account_id:account.id,first_name:parts[0],last_name:parts.slice(1).join(" "),full_name:contactName.trim(),email:contactEmail.trim()||activeLead.email||undefined,phone:contactPhone.trim()||activeLead.phone||undefined,is_primary:true,contact_type:"business"});
-  }
-  if(createOpportunity&&opportunityName.trim()){
-   await masterDataApi.create("crm/opportunities",{account_id:account.id,name:opportunityName.trim(),stage:"prospecting",status:"open",source:"lead_discovery",lead_source_detail:activeLead.discovery_record?.channel??"discovery",currency_code:"USD",probability:10,description:"由潜客发现线索转化建立"});
-  }
-  toast.success("线索已关联客户档案"+(createContact&&contactName.trim()?"，联系人已建立":"")+(createOpportunity&&opportunityName.trim()?"，商机已建立":""));
+  const parts=contactName.trim().split(/\\s+/);
+  await masterDataApi.convertLead({
+   lead_id:activeLead.id,
+   create_account:accountChoice==="new",
+   account_id:accountChoice==="new"?null:accountChoice,
+   contact:createContact&&contactName.trim()?{first_name:parts[0],last_name:parts.slice(1).join(" "),full_name:contactName.trim(),email:contactEmail.trim()||activeLead.email||null,phone:contactPhone.trim()||activeLead.phone||null,contact_type:"business"}:null,
+   opportunity:createOpportunity&&opportunityName.trim()?{name:opportunityName.trim(),lead_source_detail:activeLead.discovery_record?.channel??"discovery",currency_code:"USD"}:null
+  });
+  toast.success("线索已完成转化，客户、联系人和商机已在同一事务中保存。");
   setActiveLead(null);await load();
  }catch(e){toast.error(e instanceof Error?e.message:"线索转化失败");}finally{setSaving(false);}};
  const isConverted=(lead:FormalLead)=>accounts.some(a=>a.source_lead_id===lead.id);
