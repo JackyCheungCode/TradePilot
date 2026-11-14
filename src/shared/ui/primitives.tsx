@@ -9,6 +9,8 @@ import {
   TextArea as CarbonTextArea,
   Tag as CarbonTag,
   ComboBox as CarbonComboBox,
+  Tile as CarbonTile,
+  ProgressBar as CarbonProgressBar,
 } from "@carbon/react";
 import { cn } from "@/shared/lib/utils";
 
@@ -61,7 +63,7 @@ export function Button({
 }
 
 export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("rounded-md border border-transparent bg-layer text-text-primary shadow-none", className)} {...props} />;
+  return <CarbonTile className={cn("rounded-md border-0 bg-layer text-text-primary shadow-none", className)} {...props} />;
 }
 export function CardHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return <div className={cn("flex flex-col gap-1.5 p-4", className)} {...props} />;
@@ -154,13 +156,16 @@ export const Textarea = React.forwardRef<
 });
 
 export function Progress({ value, className }: { value: number; className?: string }) {
+  const normalized = Math.max(0, Math.min(100, value));
   return (
-    <ProgressPrimitive.Root value={value} className={cn("relative h-2 w-full overflow-hidden rounded-full bg-layer", className)}>
-      <ProgressPrimitive.Indicator
-        className="h-full w-full flex-1 bg-interactive transition-transform duration-500 ease-out"
-        style={{ transform: `translateX(-${100 - Math.max(0, Math.min(100, value))}%)` }}
-      />
-    </ProgressPrimitive.Root>
+    <CarbonProgressBar
+      label="任务进度"
+      value={normalized}
+      max={100}
+      size="small"
+      hideLabel
+      className={className}
+    />
   );
 }
 export function Separator({ className }: { className?: string }) {
