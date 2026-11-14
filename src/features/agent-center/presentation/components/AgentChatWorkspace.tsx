@@ -54,7 +54,8 @@ export function AgentChatWorkspace({connections,onNotice}:{connections:AgentConn
     const message=result.status==="awaiting_approval"?"任务已提交审批中心。批准后才会执行外部写操作。":result.status==="succeeded"?"外部工具已执行，结果已写入执行记录。":"外部工具状态："+result.status;
     setMessages(old=>[...old,{id:Date.now()+2,role:"assistant",content:message,kind:"result"}]);
    }else{
-    const run=await agentApi.createRun((selectedAgent==="auto"?"":("@"+selectedAgent+" "))+planGoal,{mode:mode==="planner"?"planner":"internal_discovery",country:country.toUpperCase(),searchEngine:"serper",limitPerCountry:50});
+    const run=await agentApi.createRun(planGoal,{mode:mode==="planner"?"planner":"internal_discovery",country:country.toUpperCase(),searchEngine:"serper",limitPerCountry:50,...(selectedAgent!=="auto"?{agentKey:selectedAgent}:{})});
+    if(["queued","running"].includes(run.status))setActiveRunId(run.id);
     const planner=run.plan?.planner as {summary?:string;steps?:string[]}|undefined;
     const status=run.status==="awaiting_approval"?"等待人工审批":run.status==="planned"?"等待补充执行条件":run.status==="failed"?"执行失败":"已进入统一任务执行中心";
     const detail=[planner?.summary??run.message??"小雅已接收任务。",status,"任务编号："+(run.taskCode??run.id),...(planner?.steps??[]).map((s,i)=>(i+1)+". "+s)].join("\n");

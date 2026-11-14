@@ -484,6 +484,7 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
       const goal=typeof body.goal==="string"?body.goal.trim():"";
       if(goal.length<2||goal.length>10000)return errorResponse(request,"VALIDATION_ERROR","任务目标长度必须为 2–10000 个字符。",400);
       const execution=asRecord(body.execution);
+      const requestedAgentKey=typeof execution.agentKey==="string"&&["buyer_development","market_research","company_research","lead_scoring","multilingual_sales","follow_up","trade_compliance"].includes(execution.agentKey)?execution.agentKey:"";
       const plannerMode=execution.mode==="planner";
       const explicitInternal=execution.mode==="internal_discovery";
       const engine:"serper"|"serpapi"=execution.searchEngine==="serpapi"?"serpapi":"serper";
@@ -496,6 +497,7 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
         if(!/^[A-Z]{2}$/.test(country))return errorResponse(request,"VALIDATION_ERROR","请选择有效的目标国家。",400);
         const available=await db<ConnectionRow[]>(env,"agent_connections?owner_id=eq."+ownerId+"&select=id,owner_id,name,protocol,endpoint_url,auth_mode,encrypted_credentials,capabilities,protocol_tools,protocol_metadata,status,last_tested_at,last_error,created_at,updated_at&order=created_at.desc&limit=100");
         planner=await generateAgentPlan(env,ownerId,goal,country,engine,available??[]);
+        if(requestedAgentKey)planner.agentKey=requestedAgentKey;
         if(planner.action.type==="internal_discovery"){country=planner.action.country;limit=planner.action.limitPerCountry;}
         if(planner.action.type==="external_tool"){
           const externalAction=planner.action;
@@ -516,7 +518,7 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
       const runId=crypto.randomUUID();
       const taskCode="AGENT-"+new Date().toISOString().slice(0,10).replace(/-/g,"")+"-"+runId.replace(/-/g,"").slice(0,6).toUpperCase();
       const initialStatus=internalSearch||actionType==="external_tool"?"queued":"planned";
-      const agentKey=planner?.agentKey??"buyer_development";
+      const agentKey=requestedAgentKey||planner?.agentKey||"buyer_development";
       const plan={planner:{summary:planner?.summary??"直接执行用户指定的买家发现任务。",steps:planner?.steps??["启动 TradePilot 原生买家发现搜索"],model:planner?.model??"manual",fallback:planner?.fallback??false},execution_state:initialStatus,action:planner?.action??{type:"internal_discovery",country,searchEngine:engine,limitPerCountry:limit},policy:{search_and_analysis:"automatic",send_email:"approval_required",bulk_import:"approval_required"}};
       const rows=await db<Array<{id:string;agent_key:string;goal:string;status:string;created_at:string}>>(env,"agent_runs",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({id:runId,owner_id:ownerId,agent_key:agentKey,goal,status:initialStatus,plan,connection_id:connection?.id??null})});
       const run=rows?.[0];if(!run)return errorResponse(request,"RUN_CREATE_FAILED","Agent 任务创建失败。",500);
