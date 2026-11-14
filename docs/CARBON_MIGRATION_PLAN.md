@@ -195,7 +195,7 @@ The first change must be the dependency/lockfile and theme foundation, not broad
 - [x] Carbon ProgressBar wrapper now renders Carbon ProgressBar.
 - [x] SearchControlPanel continues to use the Carbon-backed shared Button and TextInput wrappers.
 - [x] StatusBadge and Carbon Icons changes passed CI.
-- [ ] Existing page-local icon usage (Lucide/Material Symbols) remains to be inventoried and replaced; this migration is not yet globally icon-complete.
+- [x] User-facing page icons migrated to Carbon Icons; GitHub code search on the updated default branch found no remaining lucide-react imports.
 - [x] Audited user-facing routes: no native `<select>` or native radio input remains; custom country/region, language, model, search-type and business-type pickers were migrated to Carbon ComboBox/MultiSelect. Date fields use Carbon DatePicker; customer logo upload uses Carbon FileUploaderButton.
 
 
@@ -212,8 +212,8 @@ The first change must be the dependency/lockfile and theme foundation, not broad
 - [x] Removed Radix Popover, Progress, Separator and Slot dependencies; no Radix UI dependency remains in package.json.
 - [x] Migrated customer logo upload to Carbon FileUploaderButton.
 - [x] Migrated date inputs through the shared Carbon DatePicker adapter while preserving the existing `onChange(event.target.value)` contract.
-- [ ] Complete feature-page Lucide icon replacement and visual consistency review.
-- [ ] Migrate and verify all remaining page-local data tables, pagination, menus, drawers/dialogs and notification surfaces.
+- [x] Feature-page icon imports migrated to Carbon Icons and unused Lucide dependency removed. Visual consistency review remains outstanding.
+- [x] Migrated all identified page-local tables to Carbon Table components and native archive/delete confirmations to Carbon Modal. Remaining notification surfaces and visual verification are still outstanding.
 - [ ] Add route-by-route authenticated desktop/mobile visual smoke evidence for every nested and conditional state.
 - [ ] Review reproducible dependency lockfile strategy before release.
 
@@ -223,6 +223,17 @@ The first change must be the dependency/lockfile and theme foundation, not broad
 - [x] Replaced native `window.confirm` archive/delete prompts in Contacts and Master Data with Carbon Modal confirmation flows.
 - [x] Corrected the shared Carbon Checkbox adapter to preserve the previous React ChangeEvent contract for existing `event.target.checked` call sites.
 - [x] The table migration and Carbon Modal changes passed CI runs `43597066406` and `43597006249` respectively (typecheck, tests, lint, frontend build and Worker build).
-- [ ] Current Checkbox event-contract fix is awaiting its own CI result.
-- [ ] Customer Account Form's full-screen contact-management mode and its internal tab panel still need review against Carbon layout/navigation patterns.
+- [x] Shared Carbon Checkbox event adapter now matches Carbon v11 event-first callback signature and preserves the legacy React ChangeEvent contract; follow-up CI run passed.
+- [x] Customer Account Form internal tab panel now uses Carbon ContentSwitcher. Full-screen contact-management layout still needs visual review.
 - [ ] Continue auditing all page-local conditional controls, inline actions, responsive states, and the remaining Carbon Table variants; the presence of Carbon primitives does not by itself constitute a completed visual acceptance pass.
+
+
+### Carbon component coverage update (2026-11-14)
+- [x] Carbon Table migration includes the Agent Chat result table in addition to Leads, Document Center, Order Center, Discovery Results, Discovery Tasks and Master Data.
+- [x] AI/API settings and Customer Account Form use Carbon ContentSwitcher.
+- [x] AI provider selector, lead/order sort controls, chat history items, chip/tag removal actions, sidebar actions and document preview close action use Carbon Buttons or HeaderGlobalAction.
+- [x] Mobile navigation backdrop uses Carbon Button while preserving backdrop dismissal behavior.
+- [x] No remaining lucide-react imports were found by repository code search; removed the unused direct dependency.
+- [ ] The document-template brand-color input remains a specialized native color control because Carbon React has no directly equivalent color picker component in this pinned version. Revisit only if a Carbon-compatible replacement can preserve arbitrary color selection.
+- [ ] Browser-based desktop/mobile visual acceptance, keyboard/focus review, screen-reader review, and nested/conditional-state smoke tests remain required before calling the migration fully complete.
+- [ ] PR #18 was merged to develop at 679a27597f6bbe42600080f5862f00fd1a42fed7. A provider-selector JSX fix was then pushed to develop at 4dd5687127b7e0ed5cd3d29000be17d001c2e6a2; the separate draft PR #19 carries that fix plus the Carbon mobile-backdrop refinement. Do not merge PR #19 or deploy without explicit approval.
