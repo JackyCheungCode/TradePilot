@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { Activity, ArrowRight, Building2, CheckCircle2, ChevronDown, Clock3, Globe2, Languages, LoaderCircle, MapPinned, Play, Search, SlidersHorizontal, Sparkles, Terminal, Users } from "lucide-react";
+import { Activity, ArrowRight, Building2, CheckCircle2, ChevronDown, Clock3, Languages, LoaderCircle, MapPinned, Play, Search, SlidersHorizontal, Sparkles, Terminal, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Popover, PopoverContent, PopoverTrigger, Progress, Separator } from "@/shared/ui/primitives";
+import { PageControlPanel } from "@/shared/ui/page-layout";
 import { CountrySelect } from "../components/CountrySelect";
 import { RegionCityPicker } from "../components/RegionCityPicker";
 import { discoveryApi } from "../../infrastructure/discovery-api";
@@ -48,7 +49,7 @@ export function MapLocalDiscoveryPage() {
  const updateOsmTag = (index: number, raw: string) => { const [key = "", value = ""] = raw.split("=", 2); setOsmTags((current) => current.map((tag, i) => i === index ? { ...tag, key: key.trim(), value: (value ?? "").trim() } : tag)); };
  const addOsmTag = () => setOsmTags((current) => [...current, { key: "shop", value: "", label: "自定义标签", match: "related", reason: "用户自定义 OSM 标签" }]);
  return <div className="mx-auto w-full max-w-[1500px] space-y-5 p-3 sm:p-4 lg:p-6">
-  <div className="tp-page-heading flex flex-col justify-between gap-4 xl:flex-row xl:items-end"><div><div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground"><Globe2 className="h-4 w-4" /> 潜客发现 <span>/</span> 地图与本地商家</div><h1 className="text-2xl font-semibold tracking-tight">地图与本地商家</h1><p className="mt-1 text-sm text-muted-foreground">配置目标市场、关键词和数据源后创建搜索任务；所有发现结果进入搜索结果中心统一管理。</p></div><div className="flex flex-wrap gap-2"><Badge variant="outline" className="gap-1.5 py-1.5"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Google Maps</Badge><Badge variant="outline" className="gap-1.5 py-1.5"><span className="h-2 w-2 rounded-full bg-sky-500" /> OpenStreetMap</Badge></div></div>
+  <PageControlPanel eyebrow="潜客发现 / 地图与本地商家" title="地图与本地商家" description="配置目标市场、关键词和数据源后创建搜索任务；所有发现结果进入搜索结果中心统一管理。" actions={<div className="flex flex-wrap gap-2"><Badge variant="outline" className="gap-1.5 py-1.5"><span className="h-2 w-2 rounded-full bg-emerald-500"/>Google Maps</Badge><Badge variant="outline" className="gap-1.5 py-1.5"><span className="h-2 w-2 rounded-full bg-sky-500"/>OpenStreetMap</Badge></div>}/>
   {run && <Card className="border-primary/30 bg-primary/5"><CardContent className="flex flex-wrap items-center justify-between gap-3 p-4"><div className="min-w-0"><p className="text-xs font-medium text-muted-foreground">本次搜索任务编号</p><a href={"/lead-discovery/results?runId=" + encodeURIComponent(run.id)} className="mt-1 inline-flex items-center gap-2 font-mono text-sm font-semibold text-primary hover:underline">{run.taskCode ?? run.id}<ArrowRight className="h-4 w-4" /></a></div><Button variant="outline" size="sm" onClick={() => { window.location.href = "/lead-discovery/results?runId=" + encodeURIComponent(run.id); }}>查看任务详情<ArrowRight className="h-4 w-4" /></Button></CardContent></Card>}
   <div className="space-y-5">
    <Card><CardHeader><div className="flex items-center gap-2"><Search className="h-5 w-5" /><CardTitle>发现条件</CardTitle></div></CardHeader><CardContent className="space-y-6">
