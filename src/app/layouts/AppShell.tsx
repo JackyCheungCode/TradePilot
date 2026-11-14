@@ -27,15 +27,11 @@ export function AppShell({ children, activePage, onNavigate, userEmail, onSignOu
     </div>}
    </div>
    <div>
-    <Button variant={activePage.startsWith("agent")?"secondary":"ghost"} onClick={()=>{setAgentExpanded(!agentExpanded);if(!agentExpanded){onNavigate("agentWorkbench");setMobileOpen(false);}}} className={navClass}><Bot className="h-5 w-5 shrink-0"/>{(!collapsed||mobileOpen)&&<><span className="flex-1 text-left font-semibold">TradePilot Agent 智能体</span>{agentExpanded?<ChevronDown className="ml-auto h-4 w-4"/>:<ChevronRight className="ml-auto h-4 w-4"/>}</>}</Button>
-    {agentExpanded&&<div className={`ml-5 space-y-1 pl-3 ${collapsed&&!mobileOpen?"":"border-l"}`}>
-     <Button variant={activePage==="agentWorkbench"?"secondary":"ghost"} onClick={()=>{onNavigate("agentWorkbench");setMobileOpen(false);}} className={childNavClass}><Sparkles className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>Agent 工作台</span>}</Button>
-     <Button variant={activePage==="agentMarket"?"secondary":"ghost"} onClick={()=>{onNavigate("agentMarket");setMobileOpen(false);}} className={childNavClass}><Bot className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>Agent 市场</span>}</Button>
-     <Button variant={activePage==="agentOrchestration"?"secondary":"ghost"} onClick={()=>{onNavigate("agentOrchestration");setMobileOpen(false);}} className={childNavClass}><Workflow className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>Agent 编排</span>}</Button>
-     <Button variant={activePage==="agentConnections"?"secondary":"ghost"} onClick={()=>{onNavigate("agentConnections");setMobileOpen(false);}} className={childNavClass}><PlugZap className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>外部 Agent 接入</span>}</Button>
-     <Button variant={activePage==="agentRuns"?"secondary":"ghost"} onClick={()=>{onNavigate("agentRuns");setMobileOpen(false);}} className={childNavClass}><Activity className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>执行记录</span>}</Button>
-     <Button variant={activePage==="agentApprovals"?"secondary":"ghost"} onClick={()=>{onNavigate("agentApprovals");setMobileOpen(false);}} className={childNavClass}><ClipboardCheck className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>审批中心</span>}</Button>
-     <Button variant={activePage==="agentSettings"?"secondary":"ghost"} onClick={()=>{onNavigate("agentSettings");setMobileOpen(false);}} className={childNavClass}><Settings2 className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>Agent 设置</span>}</Button>
+    <Button variant={activePage.startsWith("order")?"secondary":"ghost"} onClick={()=>{setOrdersExpanded(!ordersExpanded);if(!ordersExpanded){onNavigate("orderQuotations");setMobileOpen(false);}}} className={navClass}><ClipboardList className="h-5 w-5 shrink-0"/>{(!collapsed||mobileOpen)&&<><span className="flex-1 text-left font-semibold">订单中心</span>{ordersExpanded?<ChevronDown className="ml-auto h-4 w-4"/>:<ChevronRight className="ml-auto h-4 w-4"/>}</>}</Button>
+    {ordersExpanded&&<div className={`ml-5 space-y-1 pl-3 ${collapsed&&!mobileOpen?"":"border-l"}`}>
+     <Button variant={activePage==="orderQuotations"?"secondary":"ghost"} onClick={()=>{onNavigate("orderQuotations");setMobileOpen(false);}} className={childNavClass}><FileText className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>报价与询价</span>}</Button>
+     <Button variant={activePage==="orderSales"?"secondary":"ghost"} onClick={()=>{onNavigate("orderSales");setMobileOpen(false);}} className={childNavClass}><ShoppingCart className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>销售业务</span>}</Button>
+     <Button variant={activePage==="orderPurchase"?"secondary":"ghost"} onClick={()=>{onNavigate("orderPurchase");setMobileOpen(false);}} className={childNavClass}><Truck className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>采购业务</span>}</Button>
     </div>}
    </div>
    <div>
