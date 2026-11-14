@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowRight, Boxes, ClipboardCheck, FilePlus2, FileText, Languages, LayoutTemplate, Package, Search, Settings2, Users, Wallet } from "lucide-react";
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input } from "@/shared/ui/primitives";
 
@@ -20,6 +20,7 @@ const groups = [
 ];
 export function DocumentCenterPage({ initialSection = "workbench" }: { initialSection?: Section }) {
   const [section, setSection] = useState<Section>(initialSection);
+  useEffect(() => setSection(initialSection), [initialSection]);
   const [query, setQuery] = useState("");
   const current = sections.find((item) => item.key === section) ?? sections[0];
   return <div className="min-h-full space-y-6 p-4 md:p-6">
