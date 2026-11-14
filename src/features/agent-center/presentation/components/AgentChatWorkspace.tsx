@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowUp, Bot, Globe2, Wrench, CheckCircle2, Clock3, History, MessageSquarePlus } from "lucide-react";
+import { ArrowUp, Bot, Earth as Globe2, Tools as Wrench, CheckmarkFilled as CheckCircle2, Time as Clock3, History, Chat as MessageSquarePlus } from "@carbon/icons-react";
 import { AgentOrbIcon } from "./AgentOrbIcon";
 import { Badge, Button, Card, CardContent, Input, Combobox, Textarea } from "@/shared/ui/primitives";
 import { agentApi, type AgentConnection } from "../../infrastructure/agent-api";
