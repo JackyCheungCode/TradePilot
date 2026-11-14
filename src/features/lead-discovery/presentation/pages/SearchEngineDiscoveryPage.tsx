@@ -1,5 +1,5 @@
 import { useEffect,useMemo,useState } from "react";
-import { Activity,ArrowRight,Building2,Check,CheckCircle2,ChevronDown,Globe2,Languages,LoaderCircle,Search,SlidersHorizontal,Sparkles,Terminal,Users } from "lucide-react";
+import { Activity,ArrowRight,Building2,Check,CheckCircle2,Globe2,Languages,LoaderCircle,Search,SlidersHorizontal,Sparkles,Terminal,Users } from "lucide-react";
 import { toast } from "sonner";
 import { Badge,Button,Card,CardContent,CardDescription,CardHeader,CardTitle,Input,MultiSelect,Combobox } from "@/shared/ui/primitives";
 import { PageControlPanel } from "@/shared/ui/page-layout";
@@ -25,7 +25,6 @@ export function SearchEngineDiscoveryPage(){
  const [categories,setCategories]=useState<SearchExclusionCategory[]>([]),[selectedExclusions,setSelectedExclusions]=useState<string[]>([]);
  const [loadingRules,setLoadingRules]=useState(true),[limit,setLimit]=useState("100"),[saving,setSaving]=useState(false);
  const [exact,setExact]=useState(false),[includeTerms,setIncludeTerms]=useState(""),[excludeTerms,setExcludeTerms]=useState(""),[titleTerms,setTitleTerms]=useState(""),[urlTerms,setUrlTerms]=useState(""),[site,setSite]=useState(""),[fileType,setFileType]=useState(""),[after,setAfter]=useState(""),[before,setBefore]=useState("");
- const [typeOpen,setTypeOpen]=useState(false),[businessOpen,setBusinessOpen]=useState(false),[exclusionOpen,setExclusionOpen]=useState(false),[languageOpen,setLanguageOpen]=useState(false);
  const [run,setRun]=useState<DiscoveryRun|null>(null),[logs,setLogs]=useState<DiscoveryLog[]>([]);
  const running=run!==null&&(run.status==="queued"||run.status==="running");
  useEffect(()=>{let active=true;void searchExclusionsApi.get().then(rows=>{if(active){setCategories(rows);setSelectedExclusions(rows.filter(x=>x.enabled).map(x=>x.key));}}).catch(e=>toast.error(e instanceof Error?e.message:"读取排除规则失败")).finally(()=>{if(active)setLoadingRules(false);});void integrationsApi.getStatus().then(status=>{if(active){setEngineStatus({serper:status.serper,serpapi:status.serpapi});setEngines((["serper","serpapi"] as Engine[]).filter(key=>status[key]));}}).catch(e=>toast.error(e instanceof Error?e.message:"读取搜索引擎连接状态失败"));return()=>{active=false;};},[]);
