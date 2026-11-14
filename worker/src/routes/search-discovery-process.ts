@@ -1,12 +1,13 @@
 import type { DiscoveryEnv, DiscoveryRunInput } from "./discovery";
 import { DEFAULT_SEARCH_EXCLUSIONS } from "./search-exclusions";
+import { discoveryRunQuery } from "../lib/owner-scoped-query";
 type Engine="serper"|"serpapi"; type Vertical="web"|"shopping"|"images"|"news"|"videos"|"scholar"|"patents";
 type Result={title:string;url:string;snippet:string;raw:Record<string,unknown>};
 const serper:Record<Vertical,string>={web:"search",shopping:"shopping",images:"images",news:"news",videos:"videos",scholar:"scholar",patents:"patents"};
 const serp:Record<Vertical,string>={web:"google",shopping:"google_shopping",images:"google_images",news:"google_news",videos:"google_videos",scholar:"google_scholar",patents:"google_patents"};
 async function db<T>(env:DiscoveryEnv,path:string,init:RequestInit={}):Promise<T>{const r=await fetch(env.SUPABASE_URL+"/rest/v1/"+path,{...init,headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:"Bearer "+env.SUPABASE_SERVICE_ROLE_KEY,"Content-Type":"application/json",...init.headers}});const s=await r.text();if(!r.ok)throw new Error("DATABASE_"+r.status+": "+s.slice(0,300));return s?JSON.parse(s) as T:undefined as T;}
 async function log(env:DiscoveryEnv,id:string,owner:string,level:string,message:string){await db(env,"discovery_run_logs",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({run_id:id,owner_id:owner,level,message})});}
-async function update(env:DiscoveryEnv,id:string,patch:Record<string,unknown>){await db(env,"discovery_runs?id=eq."+id,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({...patch,updated_at:new Date().toISOString()})});}
+async function update(env:DiscoveryEnv,id:string,owner:string,patch:Record<string,unknown>){await db(env,discoveryRunQuery(id,owner),{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({...patch,updated_at:new Date().toISOString()})});}
 function pick(row:Record<string,unknown>):Result|null{const url=String(row.link??row.product_link??row.url??"");const title=String(row.title??row.name??row.product_title??"");if(!url||!title)return null;try{const u=new URL(url);if(u.protocol!=="http:"&&u.protocol!=="https:")return null;return{title,url:u.toString(),snippet:String(row.snippet??row.description??""),raw:row};}catch{return null;}}
 async function search(engine:Engine,type:Vertical,q:string,country:string,hl:string,limit:number,location:string,env:DiscoveryEnv):Promise<Result[]>{
  const out:Result[]=[];let start=0;
@@ -42,7 +43,7 @@ export async function processSearchRun(env:DiscoveryEnv,run:string,owner:string,
  const rules=[...new Set(effective.filter(x=>x.enabled&&selected.has(x.category_key)).flatMap(x=>x.domains??[]))];
  const q=input.advancedQuery?.trim()||input.query;
  const jobs=engines.flatMap(engine=>types.map(type=>({engine,type})));let done=0,failed=0,raw=0;const all:Array<{engine:Engine;type:Vertical;item:Result}>=[];
- await update(env,run,{status:"running",progress:1,message:"正在连接搜索引擎并执行查询"});
+ await update(env,run,owner,{status:"running",progress:1,message:"正在连接搜索引擎并执行查询"});
  await log(env,run,owner,"info","关键词："+input.query+"；实际搜索语法："+q+"；国家："+country+"；搜索类型："+types.join("、")+"；搜索引擎："+engines.join("、"));
  for(const job of jobs){try{const found=await search(job.engine,job.type,q,country,hl,input.limitPerCountry,location,env);raw+=found.length;all.push(...found.map(item=>({...job,item})));await log(env,run,owner,found.length?"success":"warning",job.engine+" · "+job.type+" 返回 "+found.length+" 条");}catch(e){failed++;await log(env,run,owner,"warning",job.engine+" · "+job.type+" 失败："+String(e).slice(0,180));}done++;await update(env,run,{progress:Math.max(1,Math.round(done/jobs.length*85)),message:"搜索中 · "+done+"/"+jobs.length+" 个引擎/类型组合"});}
  const unique=new Map<string,{engine:Engine;type:Vertical;item:Result}>();for(const row of all){if(excluded(row.item.url,rules))continue;const domain=new URL(row.item.url).hostname.replace(/^www\./,"").toLowerCase();if(!unique.has(domain))unique.set(domain,row);}
