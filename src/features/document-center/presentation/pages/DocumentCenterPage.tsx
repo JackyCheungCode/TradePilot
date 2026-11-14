@@ -37,8 +37,8 @@ export function DocumentCenterPage({initialSection="workbench"}:{initialSection?
  const removeOrderItem=async(id:string)=>{try{await tradeApi.deleteOrderItem(orderId,id);setOrderItems(items=>items.filter(item=>item.id!==id));toast.success("产品明细已删除");}catch(e){toast.error(e instanceof Error?e.message:"删除明细失败");}};
  const saveDoc=async()=>{try{
  const order=orders.find(x=>x.id===orderId),isPurchase=order?.order_type==="purchase";
- const account=crmAccounts.find(x=>x.id===selectedCrmAccountId),contact=crmContacts.find(x=>x.id===selectedCrmContactId),enterprise=enterpriseProfiles.find(x=>x.id===selectedEnterpriseId);
- const bankRows=!isPurchase?enterpriseBanks.filter(x=>x.enterprise_id===selectedEnterpriseId&&x.is_active!==false).sort((a,b)=>Number(Boolean(b.is_default))-Number(Boolean(a.is_default))):[];
+ const account=crmAccounts.find(x=>x.id===(order?.crm_account_id??selectedCrmAccountId)),contact=crmContacts.find(x=>x.id===(order?.crm_contact_id??selectedCrmContactId)),enterprise=enterpriseProfiles.find(x=>x.id===(order?.enterprise_profile_id??selectedEnterpriseId));
+ const bankRows=!isPurchase?enterpriseBanks.filter(x=>x.enterprise_id===(order?.enterprise_profile_id??selectedEnterpriseId)&&x.is_active!==false).sort((a,b)=>Number(Boolean(b.is_default))-Number(Boolean(a.is_default))):[];
  const fullName=(x:MasterRecord|undefined)=>x?String(x.legal_name??x.account_name??x.trade_name??x.short_name??""):"";
  const seller=isPurchase?account:enterprise,buyer=isPurchase?enterprise:account;
  const sellerAddress=isPurchase?(account?.billing_address??account?.shipping_address??{}):(enterprise?.registered_address??enterprise?.headquarters_address??{});
