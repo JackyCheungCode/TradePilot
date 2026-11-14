@@ -14,10 +14,10 @@ const money = (value: number, currency: string) => {
   catch { return currency + " " + value.toFixed(2); }
 };
 
-export function OrderCenterPage({ onCreateQuotation }: { onCreateQuotation: () => void }) {
+export function OrderCenterPage({ onCreateQuotation, initialView = "quotations" }: { onCreateQuotation: () => void; initialView?: Exclude<View, "all"> }) {
   const [orders, setOrders] = useState<TradeOrder[]>([]);
   const [documents, setDocuments] = useState<TradeDocument[]>([]);
-  const [view, setView] = useState<View>("all");
+  const [view, setView] = useState<View>(initialView);\n  useEffect(() => { setView(initialView); }, [initialView]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [busyId, setBusyId] = useState("");
@@ -162,7 +162,7 @@ export function OrderCenterPage({ onCreateQuotation }: { onCreateQuotation: () =
           <div className="relative w-full sm:w-72"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input className="pl-9" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="搜索编号、名称或客户" /></div>
         </div>
         <div className="flex flex-wrap gap-2">
-          {([{ key: "all", label: "全部" }, { key: "quotations", label: "报价与询价" }, { key: "sales", label: "销售业务" }, { key: "purchase", label: "采购业务" }] as const).map((item) => <Button key={item.key} size="sm" variant={view === item.key ? "default" : "outline"} onClick={() => setView(item.key)}>{item.label}</Button>)}
+          {([{ key: "quotations", label: "报价与询价" }, { key: "sales", label: "销售业务" }, { key: "purchase", label: "采购业务" }] as const).map((item) => <Button key={item.key} size="sm" variant={view === item.key ? "default" : "outline"} onClick={() => setView(item.key)}>{item.label}</Button>)}
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
