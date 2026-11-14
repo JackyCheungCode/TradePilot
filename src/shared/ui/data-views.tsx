@@ -98,6 +98,12 @@ export function FormField({ label, required = false, description, error, childre
 
 const statusTone: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
+  planned: "bg-muted text-muted-foreground",
+  queued: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200",
+  running: "bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-200",
+  partial: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200",
+  succeeded: "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200",
+  awaiting_approval: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200",
   pending: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200",
   review: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200",
   approved: "bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-200",
