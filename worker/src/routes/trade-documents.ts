@@ -22,7 +22,7 @@ async function createNumber(env:Env,ownerId:string,key:string):Promise<string>{
 }
 async function list(env:Env,table:string,ownerId:string,url:URL,select:string,order="updated_at.desc"):Promise<unknown>{
  const params=new URLSearchParams({select,owner_id:"eq."+ownerId,order,limit:"100"});
- const search=url.searchParams.get("search");if(search){params.set("or","(legal_name.ilike.*"+search.replace(/[(),]/g,"")+"*,name.ilike.*"+search.replace(/[(),]/g,"")+"*,title.ilike.*"+search.replace(/[(),]/g,"")+"*)");}
+
  return db(env,table+"?"+params.toString());
 }
 export async function handleTradeDocuments(request:Request,env:Env):Promise<Response>{
