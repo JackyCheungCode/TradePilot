@@ -36,7 +36,6 @@ export function SearchControlPanel({
               id={searchId}
               size="md"
               labelText={searchPlaceholder}
-              hideLabel
               placeholder={searchPlaceholder}
               value={search ?? ""}
               onChange={(event) => onSearchChange(event.currentTarget.value)}
