@@ -10,10 +10,10 @@ interface Env {
 }
 type ConnectionRow = {
   id:string; owner_id:string; name:string; protocol:Protocol; endpoint_url:string;
-  auth_mode:AuthMode; capabilities:string[]; status:string; last_tested_at:string|null;
+  auth_mode:AuthMode; encrypted_credentials:string|null; capabilities:string[]; protocol_tools:Array<Record<string,unknown>>; protocol_metadata:Record<string,unknown>; status:string; last_tested_at:string|null;
   last_error:string|null; created_at:string; updated_at:string;
 };
-const publicConnectionFields = "id,name,protocol,endpoint_url,auth_mode,capabilities,status,last_tested_at,last_error,created_at,updated_at";
+const publicConnectionFields = "id,name,protocol,endpoint_url,auth_mode,capabilities,protocol_tools,protocol_metadata,status,last_tested_at,last_error,created_at,updated_at";
 
 async function ownerFromRequest(request:Request,env:Env):Promise<string|null>{
   const token=request.headers.get("Authorization")?.match(/^Bearer\s+(\S+)$/i)?.[1];
@@ -42,6 +42,42 @@ async function encryptCredentials(value:unknown,ownerId:string,secret:string):Pr
   const plaintext=new TextEncoder().encode(JSON.stringify(value));
   const ciphertext=await crypto.subtle.encrypt({name:"AES-GCM",iv,additionalData:new TextEncoder().encode(ownerId)},key,plaintext);
   return "v1."+base64(iv)+"."+base64(new Uint8Array(ciphertext));
+}
+async function decryptCredentials(value:string|null,ownerId:string,secret:string):Promise<Record<string,unknown>>{
+  if(!value)return {};
+  const parts=value.split(".");if(parts.length!==3||parts[0]!=="v1")throw new Error("连接凭据密文格式无效。");
+  const decode=(text:string)=>Uint8Array.from(atob(text),ch=>ch.charCodeAt(0));
+  const keyBytes=decodeKey(secret);const keyBuffer=new ArrayBuffer(keyBytes.length);new Uint8Array(keyBuffer).set(keyBytes);
+  const key=await crypto.subtle.importKey("raw",keyBuffer,{name:"AES-GCM"},false,["decrypt"]);
+  const iv=decode(parts[1]);const cipher=decode(parts[2]);
+  const ivBuffer=new ArrayBuffer(iv.length);new Uint8Array(ivBuffer).set(iv);
+  const cipherBuffer=new ArrayBuffer(cipher.length);new Uint8Array(cipherBuffer).set(cipher);
+  const plaintext=await crypto.subtle.decrypt({name:"AES-GCM",iv:ivBuffer,additionalData:new TextEncoder().encode(ownerId)},key,cipherBuffer);
+  const parsed=JSON.parse(new TextDecoder().decode(plaintext)) as unknown;
+  return parsed&&typeof parsed==="object"&&!Array.isArray(parsed)?parsed as Record<string,unknown>:{};
+}
+function credentialHeaders(authMode:AuthMode,credentials:Record<string,unknown>):Record<string,string>{
+  if(authMode==="bearer"&&typeof credentials.token==="string")return {Authorization:"Bearer "+credentials.token};
+  if(authMode==="header"&&typeof credentials.headerName==="string"&&typeof credentials.headerValue==="string"&&/^[A-Za-z0-9-]{1,80}$/.test(credentials.headerName))return {[credentials.headerName]:credentials.headerValue};
+  if(authMode==="webhook_secret"&&typeof credentials.token==="string")return {"X-Webhook-Secret":credentials.token};
+  if(authMode==="oauth2")throw new Error("OAuth2 连接暂未支持自动刷新 Token，请先使用 Bearer Token。");
+  return {};
+}
+async function parseMcpBody(response:Response):Promise<Record<string,unknown>>{
+  const raw=await response.text();if(!response.ok)throw new Error("MCP_HTTP_"+response.status+": "+raw.slice(0,240));
+  let parsed:unknown;
+  if(response.headers.get("content-type")?.includes("text/event-stream")){
+    const data=raw.split(/\r?\n/).filter(line=>line.startsWith("data:")).map(line=>line.slice(5).trim()).filter(Boolean).at(-1);
+    if(!data)throw new Error("MCP_RESPONSE_EMPTY");parsed=JSON.parse(data);
+  }else parsed=JSON.parse(raw);
+  if(!parsed||typeof parsed!=="object")throw new Error("MCP_RESPONSE_INVALID");
+  const result=parsed as Record<string,unknown>;
+  if(result.error)throw new Error("MCP_RPC_ERROR: "+JSON.stringify(result.error).slice(0,240));
+  return result;
+}
+async function mcpRequest(endpoint:string,headers:Record<string,string>,payload:Record<string,unknown>,sessionId?:string):Promise<{body:Record<string,unknown>;sessionId:string|null}>{
+  const response=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json, text/event-stream",...headers,...(sessionId?{"Mcp-Session-Id":sessionId}:{})},body:JSON.stringify(payload),signal:AbortSignal.timeout(20000)});
+  return {body:await parseMcpBody(response),sessionId:response.headers.get("Mcp-Session-Id")??sessionId??null};
 }
 function isPublicHttpsEndpoint(value:string):boolean{
   try{
@@ -99,6 +135,49 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
       const rows=await db<ConnectionRow[]>(env,"agent_connections?select="+publicConnectionFields,{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({owner_id:ownerId,name,protocol,endpoint_url:endpoint,auth_mode:authMode,encrypted_credentials:encryptedCredentials,capabilities,status:"pending"})});
       const created=rows?.[0];if(!created)return errorResponse(request,"CONNECTION_CREATE_FAILED","连接登记失败。",500);
       return successResponse(request,created,201);
+    }
+    const discoverMatch=path.match(/^\/api\/v1\/agent\/connections\/([0-9a-f-]{36})\/discover$/i);
+    if(discoverMatch&&request.method==="POST"){
+      const rows=await db<ConnectionRow[]>(env,"agent_connections?id=eq."+discoverMatch[1]+"&owner_id=eq."+ownerId+"&select=id,owner_id,name,protocol,endpoint_url,auth_mode,encrypted_credentials,capabilities,protocol_tools,protocol_metadata,status,last_tested_at,last_error,created_at,updated_at&limit=1");
+      const connection=rows?.[0];if(!connection)return errorResponse(request,"CONNECTION_NOT_FOUND","外部 Agent 连接不存在。",404);
+      let credentials:Record<string,unknown>={};
+      if(connection.encrypted_credentials){
+        if(!env.AGENT_ENCRYPTION_KEY)return errorResponse(request,"AGENT_ENCRYPTION_KEY_MISSING","Agent 加密密钥未配置。",503);
+        credentials=await decryptCredentials(connection.encrypted_credentials,ownerId,env.AGENT_ENCRYPTION_KEY);
+      }
+      const headers=credentialHeaders(connection.auth_mode,credentials);
+      let tools:Array<Record<string,unknown>>=[];let metadata:Record<string,unknown>={};
+      if(connection.protocol==="mcp"){
+        const init=await mcpRequest(connection.endpoint_url,headers,{jsonrpc:"2.0",id:1,method:"initialize",params:{protocolVersion:"2025-03-26",capabilities:{},clientInfo:{name:"TradePilot",version:"0.1.0"}}});
+        const initResult=init.body.result as Record<string,unknown>|undefined;
+        if(!initResult)throw new Error("MCP_INITIALIZE_FAILED");
+        await fetch(connection.endpoint_url,{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json, text/event-stream",...headers,...(init.sessionId?{"Mcp-Session-Id":init.sessionId}:{})},body:JSON.stringify({jsonrpc:"2.0",method:"notifications/initialized"}),signal:AbortSignal.timeout(15000)});
+        const listed=await mcpRequest(connection.endpoint_url,headers,{jsonrpc:"2.0",id:2,method:"tools/list",params:{}},init.sessionId??undefined);
+        const result=listed.body.result as {tools?:Array<Record<string,unknown>>}|undefined;
+        tools=(result?.tools??[]).slice(0,100).map(tool=>({name:String(tool.name??"").slice(0,120),description:String(tool.description??"").slice(0,1000),inputSchema:tool.inputSchema??{},risk:"approval_required",protocol:"mcp"})).filter(tool=>tool.name);
+        metadata={serverInfo:initResult.serverInfo??{},protocolVersion:initResult.protocolVersion??"2025-03-26",toolCount:tools.length};
+      }else if(connection.protocol==="rest_api"){
+        const response=await fetch(connection.endpoint_url,{method:"GET",headers:{Accept:"application/json",...headers},signal:AbortSignal.timeout(20000)});
+        if(!response.ok)throw new Error("OPENAPI_HTTP_"+response.status);
+        const spec=await response.json() as {openapi?:string;info?:{title?:string;version?:string};paths?:Record<string,Record<string,Record<string,unknown>>>};
+        if(!spec.openapi?.startsWith("3.")||!spec.paths)throw new Error("REST_API_REQUIRES_OPENAPI3: 请将端点设置为 OpenAPI 3.x JSON 文档地址。");
+        for(const [routePath,operations] of Object.entries(spec.paths)){
+          for(const [method,operation] of Object.entries(operations)){
+            if(!["get","post","put","patch","delete"].includes(method)||!operation||typeof operation!=="object")continue;
+            const op=operation as Record<string,unknown>;
+            const name=String(op.operationId??(method+"_"+routePath.replace(/[^a-z0-9]+/gi,"_"))).slice(0,120);
+            tools.push({name,description:String(op.summary??op.description??name).slice(0,1000),method:method.toUpperCase(),path:routePath,parameters:op.parameters??[],requestBody:op.requestBody??null,risk:method==="get"?"read_only":"approval_required",protocol:"rest_api"});
+          }
+        }
+        tools=tools.slice(0,150);metadata={title:spec.info?.title??connection.name,version:spec.info?.version??"",openapi:spec.openapi,toolCount:tools.length};
+      }else{
+        const capabilityList=connection.capabilities??[];
+        tools=[{name:"trigger_webhook",description:"向已登记的 Webhook 发送任务请求",risk:capabilityList.some(x=>["buyer_discovery","market_research","company_research"].includes(x))?"read_only":"approval_required",protocol:"webhook"}];
+        metadata={toolCount:1,mode:"outbound_webhook"};
+      }
+      if(!tools.length)throw new Error("AGENT_NO_TOOLS_DISCOVERED: 该端点没有发现可用工具。");
+      const updated=await db<ConnectionRow[]>(env,"agent_connections?id=eq."+connection.id+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=representation"},body:JSON.stringify({protocol_tools:tools,protocol_metadata:metadata,status:"active",last_tested_at:new Date().toISOString(),last_error:null,updated_at:new Date().toISOString()})});
+      return successResponse(request,{connectionId:connection.id,status:"active",tools,metadata},200);
     }
     const connectionMatch=path.match(/^\/api\/v1\/agent\/connections\/([0-9a-f-]{36})$/i);
     if(connectionMatch&&request.method==="DELETE"){
