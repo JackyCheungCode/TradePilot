@@ -1,6 +1,5 @@
 import * as React from "react";
 import * as Slot from "@radix-ui/react-slot";
-import * as SeparatorPrimitive from "@radix-ui/react-separator";
 import {
   Button as CarbonButton,
   Checkbox as CarbonCheckbox,
@@ -207,7 +206,7 @@ export function Progress({ value, className }: { value: number; className?: stri
   );
 }
 export function Separator({ className }: { className?: string }) {
-  return <SeparatorPrimitive.Root decorative className={cn("shrink-0 bg-border-subtle", className)} />;
+  return <div aria-hidden="true" className={cn("h-px shrink-0 bg-border-subtle", className)} />;
 }
 
 export type ComboboxOption = { value: string; label: string; description?: string; icon?: React.ReactNode };
