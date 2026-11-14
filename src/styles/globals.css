@@ -95,15 +95,14 @@
 
 * { box-sizing: border-box; border-color: var(--border); }
 html, body, #root { min-height: 100%; }
-html { font-size: 14px; }
+/* Carbon v11 uses a 16px root for its rem-based productive type scale.
+   Do not shrink the root or force a smaller body size: Carbon owns type styles. */
+html { font-size: 100%; }
 body {
   margin: 0;
   background: var(--background);
   color: var(--foreground);
   font-family: "IBM Plex Sans", "Noto Sans TC", "Noto Sans SC", ui-sans-serif, system-ui, sans-serif;
-  font-size: 13px;
-  line-height: 1.45;
-  letter-spacing: 0;
   text-rendering: optimizeLegibility;
 }
 button, input, textarea, select { font: inherit; }
@@ -153,16 +152,8 @@ button { -webkit-tap-highlight-color: transparent; }
 }
 .tp-page-canvas > * { max-width: 100%; }
 main { min-width: 0; background: var(--tp-canvas); }
-main h1:not([class*="cds--type-"]), .tp-page-canvas h1:not([class*="cds--type-"]) {
-  color: var(--tp-text);
-  font-size: 21px;
-  font-weight: 600;
-  line-height: 1.3;
-  letter-spacing: -.025em;
-}
-.tp-page-canvas h2:not([class*="cds--type-"]) { font-size: 17px; line-height: 1.35; font-weight: 600; letter-spacing: -.015em; }
-.tp-page-canvas h3:not([class*="cds--type-"]) { font-size: 14px; line-height: 1.4; font-weight: 600; letter-spacing: -.015em; }
-.tp-page-canvas p:not([class*="cds--type-"]) { line-height: 1.5; }
+/* Heading and body typography are supplied by Carbon v11 default type styles
+   or explicit cds--type-* classes in page components. */
 
 /* Surface, form controls and data views */
 .tp-page-canvas .rounded-xl,
@@ -222,8 +213,6 @@ main h1:not([class*="cds--type-"]), .tp-page-canvas h1:not([class*="cds--type-"]
   border-color: var(--tp-line);
   box-shadow: 0 12px 36px rgba(16,24,40,.16);
 }
-.tp-page-canvas .text-sm { font-size: 13px; }
-.tp-page-canvas .text-xs { font-size: 11px; }
 
 /* Google Material Symbols used by the app shell. */
 
