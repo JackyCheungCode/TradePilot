@@ -96,3 +96,11 @@
 .tp-agent-task-confirmation{background:var(--cds-layer-01);border-inline-start:3px solid var(--cds-border-interactive)}
 .tp-agent-task-goal{display:grid;gap:var(--cds-spacing-02);min-width:0;padding:var(--cds-spacing-05);background:var(--cds-layer-02);color:var(--cds-text-primary)}
 .tp-agent-task-goal p{margin:0;overflow-wrap:anywhere}
+
+/* Agent Workbench result preview: Carbon layers, no decorative card borders. */
+.tp-agent-results-preview{background:var(--cds-layer-01)}
+.tp-agent-results-heading{background:var(--cds-layer-02);border-bottom:1px solid var(--cds-border-subtle)}
+.tp-agent-result-record{background:var(--cds-layer-02);color:var(--cds-text-primary)}
+.tp-agent-result-fields{color:var(--cds-text-primary)}
+.tp-agent-result-fields>div>p:first-child{margin:0 0 var(--cds-spacing-02);color:var(--cds-text-secondary)}
+.tp-agent-result-fields>div>p:not(:first-child){margin:0}
