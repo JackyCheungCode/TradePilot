@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Activity, ArrowRight, Bot, BrainCircuit, CheckCircle2, Clock3, Globe2, LockKeyhole, PlugZap, ShieldCheck, Sparkles, Workflow } from "lucide-react";
+import { Activity, ArrowRight, Bot, BrainCircuit, Clock3, Globe2, LockKeyhole, PlugZap, ShieldCheck, Sparkles } from "lucide-react";
 import { AgentOrbIcon } from "../components/AgentOrbIcon";
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input } from "@/shared/ui/primitives";
 type Section="agentWorkbench"|"agentMarket"|"agentOrchestration"|"agentConnections"|"agentRuns"|"agentApprovals"|"agentSettings";
