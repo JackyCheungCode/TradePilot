@@ -1,7 +1,6 @@
 import * as React from "react";
 import * as Slot from "@radix-ui/react-slot";
 import * as SeparatorPrimitive from "@radix-ui/react-separator";
-import * as PopoverPrimitive from "@radix-ui/react-popover";
 import {
   Button as CarbonButton,
   Checkbox as CarbonCheckbox,
@@ -210,27 +209,6 @@ export function Progress({ value, className }: { value: number; className?: stri
 export function Separator({ className }: { className?: string }) {
   return <SeparatorPrimitive.Root decorative className={cn("shrink-0 bg-border-subtle", className)} />;
 }
-
-export const Popover = PopoverPrimitive.Root;
-export const PopoverTrigger = PopoverPrimitive.Trigger;
-export const PopoverAnchor = PopoverPrimitive.Anchor;
-export const PopoverClose = PopoverPrimitive.Close;
-export const PopoverContent = React.forwardRef<
-  React.ElementRef<typeof PopoverPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>
->(function PopoverContent({ className, align = "center", sideOffset = 4, ...props }, ref) {
-  return (
-    <PopoverPrimitive.Portal>
-      <PopoverPrimitive.Content
-        ref={ref}
-        align={align}
-        sideOffset={sideOffset}
-        className={cn("z-50 w-72 rounded-md border border-border-subtle bg-layer p-4 text-text-primary shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0", className)}
-        {...props}
-      />
-    </PopoverPrimitive.Portal>
-  );
-});
 
 export type ComboboxOption = { value: string; label: string; description?: string; icon?: React.ReactNode };
 
