@@ -14,6 +14,10 @@
 - Odoo 公司资料包括公司名称、地址、Tax ID、LEI、Company ID、币种、电话、手机、邮箱、网站和 Logo；产品支持商品/服务、销售采购、变体、属性和计量单位转换。
 - SAP 和 Odoo 的字段会受版本、公司组织配置和国家税务本地化影响，TradePilot 采用跨境贸易共通字段，并保留扩展字段。
 
+官方参考：
+- SAP [Business Partner Master Data Structure](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/25a41481f62e469ba0e61015a0d39d20/776fbd534f22b44ce10000000a174cb4.html) 与 [Required Organizational Units](https://help.sap.com/docs/s4hana-best-practices/create-customer-master-bnd-982e94d5f072f9a0ade948ef90c00af1/required-organizational-units?locale=en-US&state=PRODUCTION&version=2508)。
+- Odoo [Contacts](https://www.odoo.com/documentation/18.0/applications/essentials/contacts.html)、[Companies](https://www.odoo.com/documentation/18.0/applications/general/companies.html)、[Product Variants](https://www.odoo.com/documentation/18.0/applications/sales/sales/products_prices/products/variants.html)、[Units of Measure](https://www.odoo.com/documentation/18.0/applications/inventory_and_mrp/inventory/product_management/configure/uom.html)。
+
 ## CRM 客户 / 往来单位
 ### 基本身份
 - account_number、partner_ref、account_name、legal_name、company_type、account_type、status、parent_account_id
