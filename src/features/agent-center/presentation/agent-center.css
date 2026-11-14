@@ -70,3 +70,24 @@
 .tp-agent-market-prompt-actions>.cds--btn{width:100%}
 .tp-agent-market-card-actions{flex-wrap:wrap}
 }
+
+
+/* Agent market cards need readable text and full-width actions on narrow screens. */
+@media (max-width: 767px) {
+  .tp-page-canvas .tp-agent-market-grid {
+    /* Keep Carbon's 4/8/16-column responsive spans intact. */
+    gap: 12px;
+  }
+  .tp-page-canvas .tp-agent-market-grid > * {
+    width: 100%;
+    min-width: 0;
+  }
+  .tp-page-canvas .tp-agent-market-grid [data-slot="card-content"] {
+    min-width: 0;
+  }
+  .tp-page-canvas .tp-agent-market-grid textarea {
+    width: 100%;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+}
