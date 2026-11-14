@@ -232,7 +232,7 @@ export const PopoverContent = React.forwardRef<
   );
 });
 
-export type ComboboxOption = { value: string; label: string; description?: string };
+export type ComboboxOption = { value: string; label: string; description?: string; icon?: React.ReactNode };
 
 export function Combobox({
   value,
