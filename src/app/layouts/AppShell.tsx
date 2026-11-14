@@ -8,7 +8,7 @@ type AppPage = "agentWorkbench" | "agentMarket" | "agentOrchestration" | "agentC
 
 export function AppShell({ children, activePage, onNavigate, userEmail, onSignOut }: { children: ReactNode; activePage: AppPage; onNavigate: (page: AppPage) => void; userEmail: string; onSignOut: () => void }) {
  const [collapsed,setCollapsed]=useState(false),[mobileOpen,setMobileOpen]=useState(false);
- const [agentExpanded,setAgentExpanded]=useState(true),[discoveryExpanded,setDiscoveryExpanded]=useState(false),[crmExpanded,setCrmExpanded]=useState(true),[settingsExpanded,setSettingsExpanded]=useState(false),[documentsExpanded,setDocumentsExpanded]=useState(true),;
+ const [agentExpanded,setAgentExpanded]=useState(true),[discoveryExpanded,setDiscoveryExpanded]=useState(false),[crmExpanded,setCrmExpanded]=useState(true),[settingsExpanded,setSettingsExpanded]=useState(false),[documentsExpanded,setDocumentsExpanded]=useState(true);
  const navClass="flex w-full items-center justify-start gap-3 px-3 py-2.5 text-left text-sm";
  const childNavClass="flex w-full items-center justify-start gap-3 px-3 py-2.5 text-left text-sm";
  const sidebar=<div className="flex h-full min-h-0 flex-col bg-card text-foreground">
