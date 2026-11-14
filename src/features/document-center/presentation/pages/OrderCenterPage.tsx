@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ArrowDown, ArrowUp, ArrowUpDown, ArrowUpRight, CheckCircle2, FileText, Pencil, RefreshCw, ShoppingCart, Truck } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowsVertical as ArrowUpDown, ArrowUpRight, CheckmarkFilled as CheckCircle2, Document as FileText, Edit as Pencil, Renew as RefreshCw, Store as ShoppingCart, DeliveryTruck as Truck } from "@carbon/icons-react";
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Combobox, Checkbox } from "@/shared/ui/primitives";
 import { PageControlPanel } from "@/shared/ui/page-layout";
 import { SearchControlPanel, StatusBadge } from "@/shared/ui/data-views";
