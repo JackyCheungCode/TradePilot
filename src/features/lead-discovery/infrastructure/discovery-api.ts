@@ -27,6 +27,8 @@ export const discoveryWorkspaceApi = {
  listLeads: () => request<FormalLead[]>("/api/v1/leads"),
 };
 
+export interface InstagramDiscoveryInput {keywords:string[];countries:string[];languageCodes:string[];accountTypes:Array<"business"|"creator"|"personal">;minFollowers:number;maxFollowers:number;recentDays:number;requireContact:boolean;excludeTerms:string[];limit:number;maxCostUsd?:number;includeCaptions:boolean;}
+export const instagramDiscoveryApi={start:(input:InstagramDiscoveryInput)=>request<DiscoveryRun>("/api/v1/instagram-discovery-runs",{method:"POST",body:JSON.stringify(input)})};
 export interface FacebookDiscoveryInput { country:string; state?:string; city?:string; query:string; objectTypes:Array<"page"|"person"|"post"|"group"|"video"|"event">; limitPerType:number; enrichPages?:boolean; enrichGroups?:boolean; enrichPosts?:boolean; dateFrom?:string; dateTo?:string; }
 export const facebookDiscoveryApi = { start:(input:FacebookDiscoveryInput)=>request<DiscoveryRun>("/api/v1/facebook-discovery-runs",{method:"POST",body:JSON.stringify(input)}) };
 export interface SearchDiscoveryInput {
