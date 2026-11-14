@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --font-sans: "IBM Plex Sans", "Noto Sans TC", "Noto Sans SC", ui-sans-serif, system-ui, sans-serif;
