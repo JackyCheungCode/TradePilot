@@ -10,6 +10,6 @@ describe("global stylesheet boundaries", () => {
   });
 
   it("does not style native controls or data tables globally", () => {
-    expect(globalStyles).not.toMatch(/^\\s*(?:button|input|textarea|select|table|label)\\s*[{,]/m);
+    expect(globalStyles).not.toMatch(/^\s*(?:button|input|textarea|select|table|label)\s*[{,]/m);
   });
 });
