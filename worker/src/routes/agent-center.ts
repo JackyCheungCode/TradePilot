@@ -474,7 +474,7 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
       const execution=asRecord(body.execution);
       const plannerMode=execution.mode==="planner";
       const explicitInternal=execution.mode==="internal_discovery";
-      let engine:"serper"|"serpapi"=execution.searchEngine==="serpapi"?"serpapi":"serper";
+      const engine:"serper"|"serpapi"=execution.searchEngine==="serpapi"?"serpapi":"serper";
       let country=typeof execution.country==="string"?execution.country.trim().toUpperCase():"US";
       let limit=Number.isInteger(execution.limitPerCountry)?Number(execution.limitPerCountry):50;
       let planner:PlannerResult|undefined;
