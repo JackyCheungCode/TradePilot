@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Plus, Trash2, UserRoundPlus, X } from "lucide-react";
+import { ArrowLeft, Add as Plus, TrashCan as Trash2, UserFollow as UserRoundPlus, Close as X } from "@carbon/icons-react";
 import { FileUploaderButton } from "@carbon/react";
 import { toast } from "sonner";
 import { Badge, Button, Combobox, Input, Textarea } from "@/shared/ui/primitives";
