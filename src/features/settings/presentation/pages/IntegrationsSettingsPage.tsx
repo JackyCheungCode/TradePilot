@@ -1,7 +1,7 @@
 import {useEffect,useMemo,useState} from "react";
-import {BrainCircuit,Check,CheckCircle2,ChevronDown,Cloud,Database,Eye,EyeOff,Globe2,KeyRound,Languages,LoaderCircle,LockKeyhole,Save,Search,ShieldCheck,TestTube2,Plus} from "lucide-react";
+import {BrainCircuit,CheckCircle2,Cloud,Database,Eye,EyeOff,Globe2,KeyRound,Languages,LoaderCircle,LockKeyhole,Save,Search,ShieldCheck,TestTube2,Plus} from "lucide-react";
 import {toast} from "sonner";
-import {Badge,Button,Card,CardContent,CardDescription,CardHeader,CardTitle,Input,Popover,PopoverContent,PopoverTrigger} from "@/shared/ui/primitives";
+import {Badge,Button,Card,CardContent,CardDescription,CardHeader,CardTitle,Input,Combobox} from "@/shared/ui/primitives";
 import { PageControlPanel } from "@/shared/ui/page-layout";
 import { FormField } from "@/shared/ui/data-views";
 import {integrationsApi,type AIConfig,type AIProvider,type IntegrationService,type IntegrationStatus,type IntegrationTestResult,type InstagramDiscoveryConfig} from "../../infrastructure/integrations-api";
@@ -31,11 +31,10 @@ function ProviderLogo({id}:{id:string}){const slug=providerLogo[id];return <span
 const tasks=[["agent_chat","小雅对话"],["agent_planning","Agent 任务规划"],["website_extraction","官网信息提取"],["contact_extraction","联系人与联系方式识别"],["company_analysis","企业分析"],["multilingual","多语言内容理解"],["structured_json","结构化数据输出"]];
 const empty:AIConfig={defaultModel:"@cf/google/gemma-4-26b-a4b-it",taskModels:{},providers:[{id:"workers-ai",name:"Cloudflare Workers AI",protocol:"workers-ai",baseUrl:"",model:"@cf/google/gemma-4-26b-a4b-it",configured:true}]};
 
-function ModelPicker({value,options,onChange,placeholder="选择模型"}:{value:string;options:Array<{value:string;label:string}>;onChange:(value:string)=>void;placeholder?:string}){
- const [open,setOpen]=useState(false);
- const selected=options.find(x=>x.value===value);
- return <Popover open={open} onOpenChange={setOpen}><PopoverTrigger asChild><Button type="button" variant="outline" className="w-full justify-between font-normal"><span className="min-w-0 flex-1 truncate text-left" title={selected?.label??placeholder}>{selected?.label??placeholder}</span><ChevronDown className="ml-2 h-4 w-4 shrink-0 text-muted-foreground"/></Button></PopoverTrigger><PopoverContent align="start" className="w-[var(--radix-popover-trigger-width)] p-1"><div role="listbox" aria-label={placeholder} className="max-h-64 overflow-y-auto">{options.map(option=><button type="button" role="option" aria-selected={option.value===value} key={option.value} onClick={()=>{onChange(option.value);setOpen(false)}} className="flex w-full items-center gap-2 rounded-sm px-2 py-2 text-left text-sm hover:bg-accent focus:bg-accent focus:outline-none"><Check className={"h-4 w-4 shrink-0 "+(option.value===value?"opacity-100":"opacity-0")}/><span className="truncate">{option.label}</span></button>)}</div></PopoverContent></Popover>;
+function ModelPicker({value,options,onChange,placeholder="选择模型"}:{value:string;options:Array<{value:string;label:string}>;onChange:(value:string)=>void;placeholder?:string}) {
+ return <Combobox value={value} onValueChange={onChange} options={options} placeholder={placeholder} searchPlaceholder="搜索模型…"/>;
 }
+
 export function IntegrationsSettingsPage(){
 const [tab,setTab]=useState<"ai"|"api">("ai"),[status,setStatus]=useState<IntegrationStatus|null>(null),[loading,setLoading]=useState(true),[keys,setKeys]=useState<Record<IntegrationService,string>>({cloudflare:"",supabase:"",googleMaps:"",deepl:"",serper:"",serpapi:"",apify:""}),[show,setShow]=useState<Record<IntegrationService,boolean>>({cloudflare:false,supabase:false,googleMaps:false,deepl:false,serper:false,serpapi:false,apify:false}),[apiTests,setApiTests]=useState<Partial<Record<IntegrationService,IntegrationTestResult>>>({}),[busy,setBusy]=useState<string|null>(null);
 const [instagramConfig,setInstagramConfig]=useState<InstagramDiscoveryConfig>({hashtagActor:"apify~instagram-hashtag-scraper",searchActor:"apify~instagram-search-scraper",profilePrimaryActor:"transparent_meteorite~instagram-public-profile-scraper",profileFallbackActor:"dami_studio~instagram-profile-scraper",discoveryCostPer1000:0,profileCostPer1000:0,actorVersion:"latest"}),[instagramConfigBusy,setInstagramConfigBusy]=useState(false);
