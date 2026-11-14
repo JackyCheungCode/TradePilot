@@ -44,7 +44,7 @@ export function SearchControlPanel({
         ) : null}
         {filters}
         {activeFilters && onClear ? (
-          <Button type="button" variant="ghost" size="sm" onClick={onClear} >
+          <Button type="button" variant="ghost" size="sm" onClick={onClear}>
             <Close aria-hidden="true" className="h-3.5 w-3.5" />清除筛选
           </Button>
         ) : null}
@@ -75,7 +75,7 @@ export function FormSection({ title, description, children, className }: { title
     <section className={cn("tp-form-section space-y-3", className)}>
       <div className="space-y-1">
         <h3 className="cds--type-heading-compact-01">{title}</h3>
-        {description ? <p className="cds--type-helper-text-01">{description}</p> : null}
+        {description ? <p className="cds--type-body-compact-01">{description}</p> : null}
       </div>
       {children}
     </section>
