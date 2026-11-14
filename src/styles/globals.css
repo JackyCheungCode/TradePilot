@@ -776,9 +776,6 @@ code, pre, kbd, samp, .font-mono {
     grid-template-columns: minmax(0, 1fr);
     gap: 16px;
   }
-  .tp-page-canvas .tp-agent-market-grid {
-    grid-template-columns: minmax(0, 1fr) !important;
-  }
 }
 @media (min-width: 672px) and (max-width: 1055px) {
   .tp-page-root { padding-inline: 16px; }
