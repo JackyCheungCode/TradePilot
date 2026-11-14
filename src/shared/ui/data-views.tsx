@@ -1,8 +1,9 @@
-import type { ReactNode } from "react";
-import { Search, Close } from "@carbon/icons-react";
+import { useId, type ReactNode } from "react";
+import { Close } from "@carbon/icons-react";
+import { Search as CarbonSearch } from "@carbon/react";
 import { cn } from "@/shared/lib/utils";
 import { Tag as CarbonTag } from "@carbon/react";
-import { Button, Input } from "@/shared/ui/primitives";
+import { Button } from "@/shared/ui/primitives";
 
 export function SearchControlPanel({
   search,
@@ -25,13 +26,21 @@ export function SearchControlPanel({
   resultCount?: ReactNode;
   className?: string;
 }) {
+  const searchId = useId();
   return (
     <section aria-label="搜索与筛选" className={cn("tp-search-control-panel flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between", className)}>
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
         {onSearchChange ? (
-          <div className="relative min-w-[180px] flex-1 sm:max-w-[320px]">
-            <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input value={search ?? ""} onChange={(event) => onSearchChange(event.target.value)} placeholder={searchPlaceholder} aria-label={searchPlaceholder} className="h-9 pl-9" />
+          <div className="min-w-[180px] flex-1 sm:max-w-[320px]">
+            <CarbonSearch
+              id={searchId}
+              size="md"
+              labelText={searchPlaceholder}
+              hideLabel
+              placeholder={searchPlaceholder}
+              value={search ?? ""}
+              onChange={(event) => onSearchChange(event.currentTarget.value)}
+            />
           </div>
         ) : null}
         {filters}
