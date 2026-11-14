@@ -2,6 +2,7 @@ import { useEffect,useState } from "react";
 import { Activity,ArrowRight,Facebook,LoaderCircle,Search,SlidersHorizontal,ChevronDown,Check,Building2,UserRound,MessageSquareText,Users,Video,CalendarDays,CheckCircle2,Clock3,Terminal,Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Badge,Button,Card,CardContent,CardDescription,CardHeader,CardTitle,Input,Popover,PopoverContent,PopoverTrigger,Progress,Checkbox } from "@/shared/ui/primitives";
+import { PageControlPanel } from "@/shared/ui/page-layout";
 import { CountrySelect } from "../components/CountrySelect";
 import { RegionCityPicker } from "../components/RegionCityPicker";
 import { facebookDiscoveryApi,discoveryApi } from "../../infrastructure/discovery-api";
@@ -18,7 +19,7 @@ export function FacebookDiscoveryPage(){
  const start=async()=>{if(!configured)return toast.error("请先在 AI 与 API 集成 → API 集成中配置 Apify API Key。");if(!query.trim()||!selected.length)return toast.error("请输入关键词并至少选择一种检索对象。");setBusy(true);try{const created=await facebookDiscoveryApi.start({country,state:state||undefined,city:city||undefined,query:query.trim(),objectTypes:selected,limitPerType:Math.max(1,Math.min(500,Number(limit)||50)),enrichPages,enrichGroups,enrichPosts});setRun(created);setLogs([]);toast.success("Facebook 任务已创建："+(created.taskCode??created.id));}catch(error){toast.error(error instanceof Error?error.message:"Facebook 任务创建失败");}finally{setBusy(false);}};
  const running=run!==null&&["queued","running"].includes(run.status);
  return <div className="mx-auto w-full max-w-[1500px] space-y-5 p-3 sm:p-4 lg:p-6">
-  <div className="tp-page-heading flex flex-wrap items-start justify-between gap-3"><div><p className="mb-2 flex items-center gap-2 text-sm text-muted-foreground"><Facebook className="h-4 w-4"/>潜客发现 / Facebook 发现</p><h1 className="text-2xl font-semibold tracking-tight">Facebook 发现</h1><p className="mt-1 text-sm text-muted-foreground">检索公开主页、用户、帖子、群组、视频和活动；所有结果进入统一搜索结果中心。</p></div><div className="flex flex-wrap gap-2"><Badge variant="outline" className="gap-1.5 py-1.5"><span className={"h-2 w-2 rounded-full "+(configured?"bg-emerald-500":"bg-amber-500")}/>{configured?"Apify 已连接":"Apify 未配置"}</Badge></div></div>
+  <PageControlPanel eyebrow="潜客发现 / Facebook 发现" title="Facebook 发现" description="检索公开主页、用户、帖子、群组、视频和活动；所有结果进入统一搜索结果中心。" actions={<Badge variant="outline" className="gap-1.5 py-1.5"><span className={"h-2 w-2 rounded-full "+(configured?"bg-emerald-500":"bg-amber-500")}/>{configured?"Apify 已连接":"Apify 未配置"}</Badge>}/>
   <div className="space-y-5">
    <Card><CardHeader><div className="flex items-center gap-2"><Search className="h-5 w-5"/><CardTitle>发现条件</CardTitle></div></CardHeader><CardContent className="space-y-6">
     <div className="space-y-2"><label className="text-sm font-medium">企业 / 行业 / 商业意向关键词</label><Input value={query} onChange={e=>setQuery(e.target.value)} placeholder="例如：3C electronics distributor / looking for suppliers"/></div>
