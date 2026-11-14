@@ -104,6 +104,112 @@ async function sha256(value:string):Promise<string>{
   return Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,"0")).join("");
 }
 
+function asRecord(value:unknown):Record<string,unknown>{
+  return value&&typeof value==="object"&&!Array.isArray(value)?value as Record<string,unknown>:{};
+}
+function boundedResult(value:unknown):unknown{
+  const raw=JSON.stringify(value)??"null";
+  if(raw.length<=150000)return value;
+  return {truncated:true,preview:raw.slice(0,150000),originalLength:raw.length};
+}
+function approvalActionType(toolName:string,description:string,method?:string):string{
+  const text=(toolName+" "+description).toLowerCase();
+  if(/email|mail|send_message|send_email/.test(text))return "send_email";
+  if(/delete|remove|purge/.test(text))return "delete_records";
+  if(/merge|deduplicate/.test(text))return "merge_records";
+  if(/import|create|add|insert/.test(text)||method==="POST")return "bulk_import";
+  return "bulk_update";
+}
+async function executeMcpTool(connection:ConnectionRow,headers:Record<string,string>,toolName:string,args:Record<string,unknown>):Promise<unknown>{
+  const init=await mcpRequest(connection.endpoint_url,headers,{jsonrpc:"2.0",id:1,method:"initialize",params:{protocolVersion:"2025-03-26",capabilities:{},clientInfo:{name:"TradePilot",version:"0.1.0"}}});
+  const initResult=init.body.result as Record<string,unknown>|undefined;
+  if(!initResult)throw new Error("MCP_INITIALIZE_FAILED");
+  if(init.sessionId){
+    await fetch(connection.endpoint_url,{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json, text/event-stream",...headers,"Mcp-Session-Id":init.sessionId},body:JSON.stringify({jsonrpc:"2.0",method:"notifications/initialized"}),signal:AbortSignal.timeout(15000)});
+  }
+  const called=await mcpRequest(connection.endpoint_url,headers,{jsonrpc:"2.0",id:2,method:"tools/call",params:{name:toolName,arguments:args}},init.sessionId??undefined);
+  const result=called.body.result;
+  if(!result)throw new Error("MCP_TOOL_RESULT_EMPTY");
+  if(asRecord(result).isError===true)throw new Error("MCP_TOOL_EXECUTION_FAILED: "+JSON.stringify(result).slice(0,500));
+  return result;
+}
+async function executeRestTool(connection:ConnectionRow,tool:Record<string,unknown>,headers:Record<string,string>,args:Record<string,unknown>):Promise<unknown>{
+  const method=String(tool.method??"").toUpperCase();
+  if(!["GET","POST","PUT","PATCH","DELETE"].includes(method))throw new Error("REST_METHOD_UNSUPPORTED");
+  const routePath=typeof tool.path==="string"?tool.path:"";
+  if(!routePath.startsWith("/"))throw new Error("REST_PATH_INVALID");
+  const endpoint=new URL(connection.endpoint_url);
+  const metadata=connection.protocol_metadata??{};
+  const baseUrl=typeof metadata.baseUrl==="string"?metadata.baseUrl:endpoint.origin;
+  const base=new URL(baseUrl);
+  if(!isPublicHttpsEndpoint(base.href)||base.hostname!==endpoint.hostname)throw new Error("REST_BASE_URL_NOT_ALLOWED");
+  const pathArgs=asRecord(args.path);
+  const queryArgs=asRecord(args.query);
+  const headerArgs=asRecord(args.headers);
+  const parameters=Array.isArray(tool.parameters)?tool.parameters.map(asRecord):[];
+  const resolvedPath=routePath.replace(/\{([^}]+)\}/g,(_match,name:string)=>{
+    const value=pathArgs[name]??args[name];
+    if(value===undefined||value===null)throw new Error("REST_PATH_PARAMETER_REQUIRED: "+name);
+    return encodeURIComponent(String(value));
+  });
+  const prefix=base.pathname.replace(/\/$/,"");
+  const target=new URL(base.origin+prefix+resolvedPath);
+  const requestHeaders:Record<string,string>={Accept:"application/json",...headers};
+  for(const parameter of parameters){
+    const name=typeof parameter.name==="string"?parameter.name:"";
+    const location=typeof parameter.in==="string"?parameter.in:"";
+    if(!name||!["path","query","header"].includes(location))continue;
+    const value=location==="path"?(pathArgs[name]??args[name]):location==="query"?(queryArgs[name]??args[name]):(headerArgs[name]??args[name]);
+    if(value===undefined||value===null){
+      if(parameter.required===true)throw new Error("REST_PARAMETER_REQUIRED: "+name);
+      continue;
+    }
+    const textValue=Array.isArray(value)?value.map(String).join(","):typeof value==="object"?JSON.stringify(value):String(value);
+    if(location==="query")target.searchParams.set(name,textValue);
+    if(location==="header"&&!["authorization","host","cookie","set-cookie","content-length","connection","transfer-encoding"].includes(name.toLowerCase()))requestHeaders[name]=textValue;
+  }
+  let body:string|undefined;
+  if(method!=="GET"&&method!=="DELETE"){
+    const hasExplicitBody=Object.prototype.hasOwnProperty.call(args,"body");
+    const implicitBody=Object.fromEntries(Object.entries(args).filter(([key])=>!["path","query","headers"].includes(key)));
+    const bodyValue=hasExplicitBody?args.body:implicitBody;
+    const requestBody=asRecord(tool.requestBody);
+    if(requestBody.required===true&&!hasExplicitBody&&Object.keys(implicitBody).length===0)throw new Error("REST_REQUEST_BODY_REQUIRED");
+    const content=asRecord(requestBody.content);
+    if(Object.keys(content).length&&!content["application/json"]&&!content["application/*+json"])throw new Error("REST_REQUEST_BODY_CONTENT_TYPE_UNSUPPORTED");
+    if(bodyValue!==undefined){body=JSON.stringify(bodyValue);requestHeaders["Content-Type"]="application/json";}
+  }
+  const response=await fetch(target.toString(),{method,headers:requestHeaders,...(body!==undefined?{body}:{}),signal:AbortSignal.timeout(30000)});
+  const contentLength=Number(response.headers.get("content-length")??0);
+  if(contentLength>1000000)throw new Error("REST_RESPONSE_TOO_LARGE");
+  const raw=await response.text();
+  if(raw.length>1000000)throw new Error("REST_RESPONSE_TOO_LARGE");
+  let data:unknown=raw;
+  if(raw){
+    try{data=JSON.parse(raw);}catch{data={text:raw.slice(0,20000)};}
+  }
+  if(!response.ok)throw new Error("REST_API_HTTP_"+response.status+": "+JSON.stringify(data).slice(0,500));
+  return {httpStatus:response.status,data};
+}
+async function executeExternalTool(env:Env,ownerId:string,connection:ConnectionRow,tool:Record<string,unknown>,run:{id:string;goal:string},args:Record<string,unknown>):Promise<unknown>{
+  let credentials:Record<string,unknown>={};
+  if(connection.encrypted_credentials){
+    if(!env.AGENT_ENCRYPTION_KEY)throw new Error("AGENT_ENCRYPTION_KEY_MISSING");
+    credentials=await decryptCredentials(connection.encrypted_credentials,ownerId,env.AGENT_ENCRYPTION_KEY);
+  }
+  const headers=credentialHeaders(connection.auth_mode,credentials);
+  const toolName=String(tool.name??"");
+  if(connection.protocol==="mcp")return executeMcpTool(connection,headers,toolName,args);
+  if(connection.protocol==="rest_api")return executeRestTool(connection,tool,headers,args);
+  const response=await fetch(connection.endpoint_url,{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json",...headers},body:JSON.stringify({event:"tradepilot.agent.tool.invoke",run:{id:run.id,goal:run.goal},tool:{name:toolName,arguments:args}}),signal:AbortSignal.timeout(30000)});
+  const raw=await response.text();
+  if(!response.ok)throw new Error("WEBHOOK_HTTP_"+response.status+": "+raw.slice(0,500));
+  try{return raw?JSON.parse(raw):{accepted:true,status:response.status};}catch{return {accepted:true,status:response.status,response:raw.slice(0,20000)};}
+}
+async function writeRunLog(env:Env,ownerId:string,runId:string,level:"info"|"error",message:string,payload:Record<string,unknown>={}):Promise<void>{
+  await db(env,"discovery_run_logs",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({run_id:runId,owner_id:ownerId,level,message,payload})});
+  await db(env,"agent_run_events",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({owner_id:ownerId,run_id:runId,event_type:level==="error"?"execution_failed":"execution_update",message,payload})});
+}
 
 export async function handleAgentCenter(request:Request,env:Env):Promise<Response>{
   const ownerId=await ownerFromRequest(request,env);
@@ -190,7 +296,7 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
       }else if(connection.protocol==="rest_api"){
         const response=await fetch(connection.endpoint_url,{method:"GET",headers:{Accept:"application/json",...headers},signal:AbortSignal.timeout(20000)});
         if(!response.ok)throw new Error("OPENAPI_HTTP_"+response.status);
-        const spec=await response.json() as {openapi?:string;info?:{title?:string;version?:string};paths?:Record<string,Record<string,Record<string,unknown>>>};
+        const spec=await response.json() as {openapi?:string;info?:{title?:string;version?:string};servers?:Array<{url?:string}>;paths?:Record<string,Record<string,Record<string,unknown>>>};
         if(!spec.openapi?.startsWith("3.")||!spec.paths)throw new Error("REST_API_REQUIRES_OPENAPI3: 请将端点设置为 OpenAPI 3.x JSON 文档地址。");
         for(const [routePath,operations] of Object.entries(spec.paths)){
           for(const [method,operation] of Object.entries(operations)){
@@ -200,7 +306,7 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
             tools.push({name,description:String(op.summary??op.description??name).slice(0,1000),method:method.toUpperCase(),path:routePath,parameters:op.parameters??[],requestBody:op.requestBody??null,risk:method==="get"?"read_only":"approval_required",protocol:"rest_api"});
           }
         }
-        tools=tools.slice(0,150);metadata={title:spec.info?.title??connection.name,version:spec.info?.version??"",openapi:spec.openapi,toolCount:tools.length};
+        tools=tools.slice(0,150);const openApiHost=new URL(connection.endpoint_url);const apiBase=new URL(spec.servers?.[0]?.url??openApiHost.origin,connection.endpoint_url);if(!isPublicHttpsEndpoint(apiBase.href)||apiBase.hostname!==openApiHost.hostname)throw new Error("OPENAPI_SERVER_NOT_ALLOWED: OpenAPI server 必须使用配置端点的同一公网主机。");metadata={title:spec.info?.title??connection.name,version:spec.info?.version??"",openapi:spec.openapi,baseUrl:apiBase.toString().replace(/\/$/,""),toolCount:tools.length};
       }else{
         const capabilityList=connection.capabilities??[];
         tools=[{name:"trigger_webhook",description:"向已登记的 Webhook 发送任务请求",risk:capabilityList.some(x=>["buyer_discovery","market_research","company_research"].includes(x))?"read_only":"approval_required",protocol:"webhook"}];
@@ -209,6 +315,50 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
       if(!tools.length)throw new Error("AGENT_NO_TOOLS_DISCOVERED: 该端点没有发现可用工具。");
       await db<ConnectionRow[]>(env,"agent_connections?id=eq."+connection.id+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=representation"},body:JSON.stringify({protocol_tools:tools,protocol_metadata:metadata,status:"active",last_tested_at:new Date().toISOString(),last_error:null,updated_at:new Date().toISOString()})});
       return successResponse(request,{connectionId:connection.id,status:"active",tools,metadata},200);
+    }
+
+    const invokeMatch=path.match(/^\/api\/v1\/agent\/connections\/([0-9a-f-]{36})\/invoke$/i);
+    if(invokeMatch&&request.method==="POST"){
+      let body:Record<string,unknown>;try{body=await request.json() as Record<string,unknown>;}catch{return errorResponse(request,"INVALID_JSON","请求内容不是有效 JSON。",400);}
+      const runId=typeof body.runId==="string"?body.runId:"";
+      const toolName=typeof body.toolName==="string"?body.toolName.trim():"";
+      const args=asRecord(body.arguments);
+      if(!/^[0-9a-f-]{36}$/i.test(runId)||!toolName||JSON.stringify(args).length>30000)return errorResponse(request,"VALIDATION_ERROR","调用请求缺少有效任务、工具名称或参数过大。",400);
+      const connectionRows=await db<ConnectionRow[]>(env,"agent_connections?id=eq."+invokeMatch[1]+"&owner_id=eq."+ownerId+"&select=id,owner_id,name,protocol,endpoint_url,auth_mode,encrypted_credentials,capabilities,protocol_tools,protocol_metadata,status,last_tested_at,last_error,created_at,updated_at&limit=1");
+      const connection=connectionRows?.[0];if(!connection||connection.status!=="active")return errorResponse(request,"CONNECTION_NOT_ACTIVE","外部 Agent 尚未连接或不可用。",409);
+      const tool=connection.protocol_tools?.find(item=>item.name===toolName);
+      if(!tool)return errorResponse(request,"TOOL_NOT_FOUND","该工具不在此连接已发现的能力列表中，请重新验证能力。",404);
+      const runRows=await db<Array<{id:string;goal:string;status:string;connection_id:string|null}>>(env,"agent_runs?id=eq."+runId+"&owner_id=eq."+ownerId+"&select=id,goal,status,connection_id&limit=1");
+      const run=runRows?.[0];if(!run)return errorResponse(request,"RUN_NOT_FOUND","Agent 任务不存在。",404);
+      if(!["planned","queued"].includes(run.status))return errorResponse(request,"RUN_NOT_READY","只有草案或排队中的 Agent 任务可以启动工具。",409);
+      const risk=tool.risk==="read_only"?"read_only":"approval_required";
+      const snapshot={connectionId:connection.id,connectionName:connection.name,endpointUrl:connection.endpoint_url,protocol:connection.protocol,toolName,tool,arguments:args,runId,goal:run.goal};
+      if(risk==="approval_required"){
+        const actionType=approvalActionType(toolName,String(tool.description??""),typeof tool.method==="string"?tool.method:undefined);
+        const snapshotHash=await sha256(stableStringify(snapshot));
+        const approvals=await db<Array<{id:string;expires_at:string}>>(env,"agent_approvals?select=id,expires_at",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({owner_id:ownerId,run_id:runId,action_type:actionType,operation_snapshot:snapshot,snapshot_sha256:snapshotHash})});
+        const approval=approvals?.[0];if(!approval)return errorResponse(request,"APPROVAL_CREATE_FAILED","无法创建审批记录。",500);
+        await db(env,"agent_runs?id=eq."+runId+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({connection_id:connection.id,status:"awaiting_approval",plan:{execution_state:"awaiting_approval",connection_id:connection.id,tool_name:toolName,risk},updated_at:new Date().toISOString()})});
+        await db(env,"discovery_runs?id=eq."+runId+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"awaiting_approval",message:"外部 Agent 操作等待人工审批："+toolName})});
+        await writeRunLog(env,ownerId,runId,"info","外部 Agent 操作已进入人工审批："+toolName,{approvalId:approval.id,connectionId:connection.id,toolName,risk});
+        return successResponse(request,{runId,status:"awaiting_approval",approvalId:approval.id,expiresAt:approval.expires_at,toolName},202);
+      }
+      await db(env,"agent_runs?id=eq."+runId+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({connection_id:connection.id,status:"running",started_at:new Date().toISOString(),plan:{execution_state:"running",connection_id:connection.id,tool_name:toolName,risk},updated_at:new Date().toISOString()})});
+      await db(env,"discovery_runs?id=eq."+runId+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"running",progress:15,message:"正在调用外部 Agent 工具："+toolName})});
+      await writeRunLog(env,ownerId,runId,"info","开始执行外部 Agent 工具："+toolName,{connectionId:connection.id,toolName,risk});
+      try{
+        const result=boundedResult(await executeExternalTool(env,ownerId,connection,tool,{id:run.id,goal:run.goal},args));
+        await db(env,"agent_runs?id=eq."+runId+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"succeeded",result:{toolName,connectionId:connection.id,data:result},actual_cost_usd:0,completed_at:new Date().toISOString(),updated_at:new Date().toISOString()})});
+        await db(env,"discovery_runs?id=eq."+runId+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"completed",progress:100,message:"外部 Agent 工具执行完成："+toolName})});
+        await writeRunLog(env,ownerId,runId,"info","外部 Agent 工具执行完成："+toolName,{connectionId:connection.id,toolName});
+        return successResponse(request,{runId,status:"succeeded",toolName,result},200);
+      }catch(error){
+        const message=error instanceof Error?error.message:"外部 Agent 工具执行失败。";
+        await db(env,"agent_runs?id=eq."+runId+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"failed",error_message:message,completed_at:new Date().toISOString(),updated_at:new Date().toISOString()})});
+        await db(env,"discovery_runs?id=eq."+runId+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"failed",progress:100,message})});
+        await writeRunLog(env,ownerId,runId,"error","外部 Agent 工具执行失败："+message,{connectionId:connection.id,toolName});
+        return errorResponse(request,"AGENT_TOOL_EXECUTION_FAILED",message,502);
+      }
     }
     const connectionMatch=path.match(/^\/api\/v1\/agent\/connections\/([0-9a-f-]{36})$/i);
     if(connectionMatch&&request.method==="DELETE"){
@@ -238,7 +388,7 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
       return successResponse(request,{...run,taskCode,channel:"agent",countries:["GLOBAL"],progress:0,discoveredCount:0,message:"Agent 任务草案已保存"},201);
     }
     if(path==="/api/v1/agent/approvals"&&request.method==="GET"){
-      const rows=await db<unknown[]>(env,"agent_approvals?owner_id=eq."+ownerId+"&select=id,run_id,action_type,status,decision_note,decided_at,expires_at,created_at&order=created_at.desc&limit=100");
+      const rows=await db<unknown[]>(env,"agent_approvals?owner_id=eq."+ownerId+"&select=id,run_id,action_type,status,operation_snapshot,decision_note,decided_at,expires_at,created_at&order=created_at.desc&limit=100");
       return successResponse(request,rows??[]);
     }
     if(path==="/api/v1/agent/approvals"&&request.method==="POST"){
@@ -255,23 +405,63 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
       const approval=rows?.[0];if(!approval)return errorResponse(request,"APPROVAL_CREATE_FAILED","无法创建审批记录。",500);
       await db(env,"agent_run_events",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({owner_id:ownerId,run_id:runId,event_type:"approval_requested",message:"操作已进入人工审批队列："+actionType,payload:{approvalId:approval.id,snapshotSha256:snapshotHash}})});
       await db(env,"agent_runs?id=eq."+runId+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"awaiting_approval",updated_at:new Date().toISOString()})});
+      await db(env,"discovery_runs?id=eq."+runId+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"awaiting_approval",message:"Agent 操作等待人工审批："+actionType})});
       return successResponse(request,approval,201);
     }
+
     const approvalDecision=path.match(/^\/api\/v1\/agent\/approvals\/([0-9a-f-]{36})\/decision$/i);
     if(approvalDecision&&request.method==="POST"){
       let body:Record<string,unknown>;try{body=await request.json() as Record<string,unknown>;}catch{return errorResponse(request,"INVALID_JSON","请求内容不是有效 JSON。",400);}
       const decision=body.decision;
       if(decision!=="approve"&&decision!=="reject")return errorResponse(request,"VALIDATION_ERROR","审批决定只能是 approve 或 reject。",400);
-      const rows=await db<Array<{id:string;run_id:string;operation_snapshot:unknown;snapshot_sha256:string;status:string;expires_at:string}>>(env,"agent_approvals?id=eq."+approvalDecision[1]+"&owner_id=eq."+ownerId+"&select=id,run_id,operation_snapshot,snapshot_sha256,status,expires_at&limit=1");
+      const rows=await db<Array<{id:string;run_id:string;action_type:string;operation_snapshot:unknown;snapshot_sha256:string;status:string;expires_at:string}>>(env,"agent_approvals?id=eq."+approvalDecision[1]+"&owner_id=eq."+ownerId+"&select=id,run_id,action_type,operation_snapshot,snapshot_sha256,status,expires_at&limit=1");
       const approval=rows?.[0];if(!approval)return errorResponse(request,"APPROVAL_NOT_FOUND","审批记录不存在。",404);
       if(approval.status!=="pending")return errorResponse(request,"APPROVAL_ALREADY_DECIDED","该审批已处理，不能重复操作。",409);
       if(Date.parse(approval.expires_at)<=Date.now()){await db(env,"agent_approvals?id=eq."+approval.id+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"expired"})});return errorResponse(request,"APPROVAL_EXPIRED","该审批已过期，请重新发起。",409);}
       const verifiedHash=await sha256(stableStringify(approval.operation_snapshot));
       if(verifiedHash!==approval.snapshot_sha256)return errorResponse(request,"APPROVAL_SNAPSHOT_MISMATCH","审批快照校验失败，已阻止此操作。",409);
-      const status=decision==="approve"?"approved":"rejected";
-      await db(env,"agent_approvals?id=eq."+approval.id+"&owner_id=eq."+ownerId+"&status=eq.pending",{method:"PATCH",headers:{Prefer:"return=representation"},body:JSON.stringify({status,decision_note:typeof body.note==="string"?body.note.slice(0,1000):null,decided_at:new Date().toISOString()})});
-      await db(env,"agent_run_events",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({owner_id:ownerId,run_id:approval.run_id,event_type:"approval_"+decision,message:decision==="approve"?"人工审批已通过。":"人工审批已拒绝。",payload:{approvalId:approval.id}})});
-      return successResponse(request,{id:approval.id,status,decision});
+      const snapshot=asRecord(approval.operation_snapshot);
+      const runRows=await db<Array<{id:string;goal:string;status:string}>>(env,"agent_runs?id=eq."+approval.run_id+"&owner_id=eq."+ownerId+"&select=id,goal,status&limit=1");
+      const run=runRows?.[0];if(!run)return errorResponse(request,"RUN_NOT_FOUND","审批关联的 Agent 任务不存在。",404);
+      const note=typeof body.note==="string"?body.note.slice(0,1000):null;
+      if(decision==="reject"){
+        await db(env,"agent_approvals?id=eq."+approval.id+"&owner_id=eq."+ownerId+"&status=eq.pending",{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"rejected",decision_note:note,decided_at:new Date().toISOString()})});
+        await db(env,"agent_runs?id=eq."+run.id+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"cancelled",error_message:"人工审批已拒绝。",completed_at:new Date().toISOString(),updated_at:new Date().toISOString()})});
+        await db(env,"discovery_runs?id=eq."+run.id+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"cancelled",progress:100,message:"人工审批已拒绝。"})});
+        await writeRunLog(env,ownerId,run.id,"info","人工审批已拒绝。",{approvalId:approval.id});
+        return successResponse(request,{id:approval.id,status:"rejected",decision});
+      }
+      const connectionId=typeof snapshot.connectionId==="string"?snapshot.connectionId:"";
+      const toolName=typeof snapshot.toolName==="string"?snapshot.toolName:"";
+      const endpointUrl=typeof snapshot.endpointUrl==="string"?snapshot.endpointUrl:"";
+      const protocol=snapshot.protocol as Protocol;
+      const args=asRecord(snapshot.arguments);
+      if(!/^[0-9a-f-]{36}$/i.test(connectionId)||!toolName||!endpointUrl||!allowedProtocols.includes(protocol))return errorResponse(request,"APPROVAL_SNAPSHOT_INVALID","审批快照缺少可执行的连接或工具信息。",409);
+      const connectionRows=await db<ConnectionRow[]>(env,"agent_connections?id=eq."+connectionId+"&owner_id=eq."+ownerId+"&select=id,owner_id,name,protocol,endpoint_url,auth_mode,encrypted_credentials,capabilities,protocol_tools,protocol_metadata,status,last_tested_at,last_error,created_at,updated_at&limit=1");
+      const connection=connectionRows?.[0];
+      if(!connection||connection.status!=="active"||connection.endpoint_url!==endpointUrl||connection.protocol!==protocol)return errorResponse(request,"APPROVAL_CONNECTION_CHANGED","审批后连接信息发生变化，已阻止执行，请重新发起审批。",409);
+      const tool=connection.protocol_tools?.find(item=>item.name===toolName);
+      if(!tool||stableStringify(tool)!==stableStringify(snapshot.tool))return errorResponse(request,"APPROVAL_TOOL_CHANGED","审批后工具定义发生变化，已阻止执行，请重新发起审批。",409);
+      const claimed=await db<Array<{id:string}>>(env,"agent_approvals?id=eq."+approval.id+"&owner_id=eq."+ownerId+"&status=eq.pending&select=id",{method:"PATCH",headers:{Prefer:"return=representation"},body:JSON.stringify({status:"approved",decision_note:note,decided_at:new Date().toISOString()})});
+      if(!claimed?.length)return errorResponse(request,"APPROVAL_ALREADY_DECIDED","该审批已被处理，不能重复执行。",409);
+      await db(env,"agent_runs?id=eq."+run.id+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({connection_id:connection.id,status:"running",started_at:new Date().toISOString(),plan:{execution_state:"approved_and_running",connection_id:connection.id,tool_name:toolName},updated_at:new Date().toISOString()})});
+      await db(env,"discovery_runs?id=eq."+run.id+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"running",progress:20,message:"审批已通过，正在执行："+toolName})});
+      await writeRunLog(env,ownerId,run.id,"info","人工审批已通过，开始执行外部 Agent 工具："+toolName,{approvalId:approval.id,connectionId:connection.id});
+      try{
+        const result=boundedResult(await executeExternalTool(env,ownerId,connection,tool,{id:run.id,goal:run.goal},args));
+        await db(env,"agent_approvals?id=eq."+approval.id+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"executed",executed_at:new Date().toISOString()})});
+        await db(env,"agent_runs?id=eq."+run.id+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"succeeded",result:{toolName,connectionId:connection.id,data:result},completed_at:new Date().toISOString(),updated_at:new Date().toISOString()})});
+        await db(env,"discovery_runs?id=eq."+run.id+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"completed",progress:100,message:"审批操作执行完成："+toolName})});
+        await writeRunLog(env,ownerId,run.id,"info","审批操作执行完成："+toolName,{approvalId:approval.id,connectionId:connection.id});
+        return successResponse(request,{id:approval.id,status:"executed",decision,result});
+      }catch(error){
+        const message=error instanceof Error?error.message:"审批操作执行失败。";
+        await db(env,"agent_approvals?id=eq."+approval.id+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"execution_failed"})});
+        await db(env,"agent_runs?id=eq."+run.id+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"failed",error_message:message,completed_at:new Date().toISOString(),updated_at:new Date().toISOString()})});
+        await db(env,"discovery_runs?id=eq."+run.id+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"failed",progress:100,message})});
+        await writeRunLog(env,ownerId,run.id,"error","审批操作执行失败："+message,{approvalId:approval.id,connectionId:connection.id});
+        return errorResponse(request,"APPROVED_TOOL_EXECUTION_FAILED",message,502);
+      }
     }
     return errorResponse(request,"NOT_FOUND","Agent API 路由不存在。",404);
   }catch(error){
