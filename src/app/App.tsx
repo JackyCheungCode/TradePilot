@@ -15,8 +15,9 @@ import { InstagramDiscoveryPage } from "@/features/lead-discovery/presentation/p
 import { getSupabaseClient } from "@/shared/lib/supabase";
 import { AgentCenterPage } from "@/features/agent-center/presentation/pages/AgentCenterPage";
 import { AgentAppearanceSettingsPage } from "@/features/agent-center/presentation/pages/AgentAppearanceSettingsPage";
+import { DocumentCenterPage } from "@/features/document-center/presentation/pages/DocumentCenterPage";
 
-type AppPage = "agentWorkbench" | "agentMarket" | "agentOrchestration" | "agentConnections" | "agentRuns" | "agentApprovals" | "agentSettings" | "discovery" | "discoveryTasks" | "discoveryResults" | "searchDiscovery" | "facebookDiscovery" | "instagramDiscovery" | "leads" | "integrations" | "searchExclusions" | "agentAppearance";
+type AppPage = "agentWorkbench" | "agentMarket" | "agentOrchestration" | "agentConnections" | "agentRuns" | "agentApprovals" | "agentSettings" | "discovery" | "discoveryTasks" | "discoveryResults" | "searchDiscovery" | "facebookDiscovery" | "instagramDiscovery" | "leads" | "integrations" | "searchExclusions" | "agentAppearance" | "documentWorkbench" | "documentCreate" | "documentRecords" | "documentTemplates" | "documentParties" | "documentSettings";
 const ROUTES: Record<AppPage, string> = {
   agentWorkbench: "/agent/workbench", agentMarket: "/agent/market", agentOrchestration: "/agent/orchestration", agentConnections: "/agent/connections", agentRuns: "/agent/runs", agentApprovals: "/agent/approvals", agentSettings: "/agent/settings",
   discovery: "/lead-discovery/map-local-businesses",
@@ -29,10 +30,12 @@ const ROUTES: Record<AppPage, string> = {
   integrations: "/settings/integrations",
   searchExclusions: "/settings/search-exclusions",
   agentAppearance: "/settings/agent-appearance",
+  documentWorkbench: "/documents", documentCreate: "/documents/create", documentRecords: "/documents/records", documentTemplates: "/documents/templates", documentParties: "/documents/parties", documentSettings: "/documents/settings",
 };
 const getPath = () => window.location.pathname;
 const getPage = (path: string): AppPage | null => {
   if (path.startsWith("/agent/")) { const key = path.slice(7); const map: Record<string, AppPage> = {workbench:"agentWorkbench",market:"agentMarket",orchestration:"agentOrchestration",connections:"agentConnections",runs:"agentRuns",approvals:"agentApprovals",settings:"agentSettings"}; return map[key] ?? "agentWorkbench"; }
+  if (path.startsWith("/documents")) { const key = path.split("/")[2]; const map: Record<string, AppPage> = {create:"documentCreate",records:"documentRecords",templates:"documentTemplates",parties:"documentParties",settings:"documentSettings"}; return map[key] ?? "documentWorkbench"; }
   if (path === ROUTES.discovery || path === "/") return "discovery";
   if (path === ROUTES.discoveryTasks || path.endsWith("/tasks")) return "discoveryTasks";
   if (path === ROUTES.discoveryResults || path.endsWith("/results")) return "discoveryResults";
@@ -100,7 +103,7 @@ export function App() {
   if (checkingSession) return <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">正在检查登录状态…</div>;
   if (!session || path === "/login") return <><LoginPage /><Toaster richColors position="top-right" /></>;
   return <AppShell activePage={activePage ?? "discovery"} onNavigate={navigate} userEmail={session.user.email ?? ""} onSignOut={() => void getSupabaseClient().auth.signOut()}>
-    {activePage && ["agentWorkbench","agentMarket","agentOrchestration","agentConnections","agentRuns","agentApprovals","agentSettings"].includes(activePage) ? <AgentCenterPage section={activePage as "agentWorkbench" | "agentMarket" | "agentOrchestration" | "agentConnections" | "agentRuns" | "agentApprovals" | "agentSettings"} /> : activePage === "integrations" ? <IntegrationsSettingsPage /> : activePage === "searchExclusions" ? <SearchExclusionRulesPage /> : activePage === "agentAppearance" ? <AgentAppearanceSettingsPage /> : activePage === "discoveryTasks" ? <DiscoveryTasksPage /> : activePage === "discoveryResults" ? <DiscoveryResultsPage /> : activePage === "searchDiscovery" ? <SearchEngineDiscoveryPage /> : activePage === "facebookDiscovery" ? <FacebookDiscoveryPage /> : activePage === "instagramDiscovery" ? <InstagramDiscoveryPage /> : activePage === "leads" ? <LeadsPage /> : <MapLocalDiscoveryPage />}
+    {activePage && ["documentWorkbench","documentCreate","documentRecords","documentTemplates","documentParties","documentSettings"].includes(activePage) ? <DocumentCenterPage initialSection={activePage === "documentCreate" ? "create" : activePage === "documentRecords" ? "documents" : activePage === "documentTemplates" ? "templates" : activePage === "documentParties" ? "parties" : activePage === "documentSettings" ? "settings" : "workbench"} /> : activePage && ["agentWorkbench","agentMarket","agentOrchestration","agentConnections","agentRuns","agentApprovals","agentSettings"].includes(activePage) ? <AgentCenterPage section={activePage as "agentWorkbench" | "agentMarket" | "agentOrchestration" | "agentConnections" | "agentRuns" | "agentApprovals" | "agentSettings"} /> : activePage === "integrations" ? <IntegrationsSettingsPage /> : activePage === "searchExclusions" ? <SearchExclusionRulesPage /> : activePage === "agentAppearance" ? <AgentAppearanceSettingsPage /> : activePage === "discoveryTasks" ? <DiscoveryTasksPage /> : activePage === "discoveryResults" ? <DiscoveryResultsPage /> : activePage === "searchDiscovery" ? <SearchEngineDiscoveryPage /> : activePage === "facebookDiscovery" ? <FacebookDiscoveryPage /> : activePage === "instagramDiscovery" ? <InstagramDiscoveryPage /> : activePage === "leads" ? <LeadsPage /> : <MapLocalDiscoveryPage />}
     <Toaster richColors position="top-right" />
   </AppShell>;
 }
