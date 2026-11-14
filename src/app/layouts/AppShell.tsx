@@ -1,87 +1,337 @@
 import { useEffect, useState, type ReactNode } from "react";
+import {
+  Header,
+  HeaderGlobalAction,
+  HeaderGlobalBar,
+  HeaderMenuButton,
+  HeaderName,
+  SideNav,
+  SideNavItems,
+  SideNavLink,
+  SideNavMenu,
+  SideNavMenuItem,
+  SkipToContent,
+} from "@carbon/react";
 import { Facebook, Instagram } from "lucide-react";
-import { Button } from "@/shared/ui/primitives";
 import { AgentOrbIcon } from "@/features/agent-center/presentation/components/AgentOrbIcon";
 import tradePilotLogo from "@/assets/tradepilot-logo.svg";
 
-type AppPage = "agentWorkbench" | "agentMarket" | "agentOrchestration" | "agentConnections" | "agentRuns" | "agentApprovals" | "agentSettings" | "orderQuotations" | "orderSales" | "orderPurchase" | "discovery" | "discoveryTasks" | "discoveryResults" | "searchDiscovery" | "facebookDiscovery" | "instagramDiscovery" | "leads" | "crmAccounts" | "crmContacts" | "crmOpportunities" | "enterpriseConfig" | "productConfig" | "productCatalog" | "integrations" | "searchExclusions" | "agentAppearance" | "orderCenter" | "documentWorkbench" | "documentCreate" | "documentRecords" | "documentTemplates";
+type AppPage =
+  | "agentWorkbench" | "agentMarket" | "agentOrchestration" | "agentConnections" | "agentRuns" | "agentApprovals" | "agentSettings"
+  | "orderQuotations" | "orderSales" | "orderPurchase"
+  | "discovery" | "discoveryTasks" | "discoveryResults" | "searchDiscovery" | "facebookDiscovery" | "instagramDiscovery"
+  | "leads" | "crmAccounts" | "crmContacts" | "crmOpportunities"
+  | "enterpriseConfig" | "productConfig" | "productCatalog" | "integrations" | "searchExclusions" | "agentAppearance"
+  | "orderCenter" | "documentWorkbench" | "documentCreate" | "documentRecords" | "documentTemplates";
 
-function MaterialIcon({ name, className = "" }: { name: string; className?: string }) { return <span aria-hidden="true" className={`material-symbols-outlined ${className}`}>{name}</span>; }
+type NavItem = { page: AppPage; label: string; icon?: ReactNode };
+type NavGroup = { id: string; title: string; icon: string; pages: AppPage[]; items: NavItem[] };
 
-export function AppShell({ children, activePage, onNavigate, userEmail, onSignOut }: { children: ReactNode; activePage: AppPage; onNavigate: (page: AppPage) => void; userEmail: string; onSignOut: () => void }) {
- const [collapsed,setCollapsed]=useState(false),[mobileOpen,setMobileOpen]=useState(false);
- const [agentExpanded,setAgentExpanded]=useState(true),[discoveryExpanded,setDiscoveryExpanded]=useState(false),[crmExpanded,setCrmExpanded]=useState(true),[settingsExpanded,setSettingsExpanded]=useState(false),[documentsExpanded,setDocumentsExpanded]=useState(true),[ordersExpanded,setOrdersExpanded]=useState(true);
- useEffect(()=>{
-  setAgentExpanded(["agentWorkbench","agentMarket","agentOrchestration","agentConnections","agentRuns","agentApprovals","agentSettings"].includes(activePage));
-  setOrdersExpanded(activePage.startsWith("order"));
-  setDocumentsExpanded(["documentWorkbench","documentCreate","documentRecords"].includes(activePage));
-  setDiscoveryExpanded(["discovery","discoveryTasks","discoveryResults","searchDiscovery","facebookDiscovery","instagramDiscovery"].includes(activePage));
-  setCrmExpanded(["leads","crmAccounts","crmContacts","crmOpportunities"].includes(activePage));
-  setSettingsExpanded(["enterpriseConfig","productConfig","integrations","searchExclusions","agentAppearance","documentTemplates"].includes(activePage));
- },[activePage]);
- const navClass="flex w-full items-center justify-start gap-3 px-3 py-2.5 text-left text-sm";
- const childNavClass="flex w-full items-center justify-start gap-3 px-3 py-2.5 text-left text-sm";
- const sidebar=<div className="tp-sidebar flex h-full min-h-0 flex-col text-foreground">
-  <div className="flex h-12 shrink-0 items-center gap-3 border-b px-4">{(!collapsed||mobileOpen)?<img src={tradePilotLogo} alt="TradePilot" className="h-auto w-[116px] max-w-full object-contain"/>:<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-foreground text-background"><MaterialIcon name="radar" className="h-5 w-5"/></div>}<div className="ml-auto hidden md:block"><Button variant="ghost" size="icon" onClick={()=>setCollapsed(!collapsed)} aria-label={collapsed?"展开侧边栏":"收起侧边栏"}>{collapsed?<MaterialIcon name="left_panel_open" className="h-4 w-4"/>:<MaterialIcon name="left_panel_close" className="h-4 w-4"/>}</Button></div><div className="ml-auto md:hidden"><Button variant="ghost" size="icon" onClick={()=>setMobileOpen(false)} aria-label="关闭菜单"><MaterialIcon name="close" className="h-5 w-5"/></Button></div></div>
-  <nav className="flex-1 space-y-1 overflow-y-auto px-2.5 py-3">
-   <div>
-    <Button variant={activePage.startsWith("agent")?"secondary":"ghost"} onClick={()=>{setAgentExpanded(!agentExpanded);if(!agentExpanded){onNavigate("agentWorkbench");setMobileOpen(false);}}} className={navClass}><MaterialIcon name="smart_toy" className="h-5 w-5 shrink-0"/>{(!collapsed||mobileOpen)&&<><span className="flex-1 text-left font-semibold">TradePilot Agent 智能体</span>{agentExpanded?<MaterialIcon name="keyboard_arrow_down" className="ml-auto h-4 w-4"/>:<MaterialIcon name="chevron_right" className="ml-auto h-4 w-4"/>}</>}</Button>
-    {agentExpanded&&<div className={`ml-5 space-y-1 pl-3 ${collapsed&&!mobileOpen?"":"border-l"}`}>
-     <Button variant={activePage==="agentWorkbench"?"secondary":"ghost"} onClick={()=>{onNavigate("agentWorkbench");setMobileOpen(false);}} className={childNavClass}><MaterialIcon name="auto_awesome" className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>Agent 工作台</span>}</Button>
-     <Button variant={activePage==="agentMarket"?"secondary":"ghost"} onClick={()=>{onNavigate("agentMarket");setMobileOpen(false);}} className={childNavClass}><MaterialIcon name="smart_toy" className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>Agent 市场</span>}</Button>
-     <Button variant={activePage==="agentOrchestration"?"secondary":"ghost"} onClick={()=>{onNavigate("agentOrchestration");setMobileOpen(false);}} className={childNavClass}><MaterialIcon name="account_tree" className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>Agent 编排</span>}</Button>
-     <Button variant={activePage==="agentConnections"?"secondary":"ghost"} onClick={()=>{onNavigate("agentConnections");setMobileOpen(false);}} className={childNavClass}><MaterialIcon name="hub" className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>外部 Agent 接入</span>}</Button>
-     <Button variant={activePage==="agentRuns"?"secondary":"ghost"} onClick={()=>{onNavigate("agentRuns");setMobileOpen(false);}} className={childNavClass}><MaterialIcon name="monitoring" className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>执行记录</span>}</Button>
-     <Button variant={activePage==="agentApprovals"?"secondary":"ghost"} onClick={()=>{onNavigate("agentApprovals");setMobileOpen(false);}} className={childNavClass}><MaterialIcon name="task_alt" className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>审批中心</span>}</Button>
-     <Button variant={activePage==="agentSettings"?"secondary":"ghost"} onClick={()=>{onNavigate("agentSettings");setMobileOpen(false);}} className={childNavClass}><MaterialIcon name="tune" className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>Agent 设置</span>}</Button>
-    </div>}
-   </div>
-   <div>
-    <Button variant={activePage.startsWith("order")?"secondary":"ghost"} onClick={()=>{setOrdersExpanded(!ordersExpanded);if(!ordersExpanded){onNavigate("orderQuotations");setMobileOpen(false);}}} className={navClass}><MaterialIcon name="assignment" className="h-5 w-5 shrink-0"/>{(!collapsed||mobileOpen)&&<><span className="flex-1 text-left font-semibold">订单中心</span>{ordersExpanded?<MaterialIcon name="keyboard_arrow_down" className="ml-auto h-4 w-4"/>:<MaterialIcon name="chevron_right" className="ml-auto h-4 w-4"/>}</>}</Button>
-    {ordersExpanded&&<div className={`ml-5 space-y-1 pl-3 ${collapsed&&!mobileOpen?"":"border-l"}`}>
-     <Button variant={activePage==="orderQuotations"?"secondary":"ghost"} onClick={()=>{onNavigate("orderQuotations");setMobileOpen(false);}} className={childNavClass}><MaterialIcon name="description" className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>报价与询价</span>}</Button>
-     <Button variant={activePage==="orderSales"?"secondary":"ghost"} onClick={()=>{onNavigate("orderSales");setMobileOpen(false);}} className={childNavClass}><MaterialIcon name="shopping_cart" className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>销售业务</span>}</Button>
-     <Button variant={activePage==="orderPurchase"?"secondary":"ghost"} onClick={()=>{onNavigate("orderPurchase");setMobileOpen(false);}} className={childNavClass}><MaterialIcon name="local_shipping" className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>采购业务</span>}</Button>
-    </div>}
-   </div>
-   <div>
-    <Button variant={activePage.startsWith("document")?"secondary":"ghost"} onClick={()=>{setDocumentsExpanded(!documentsExpanded);if(!documentsExpanded){onNavigate("documentWorkbench");setMobileOpen(false);}}} className={navClass}><MaterialIcon name="folder_copy" className="h-5 w-5 shrink-0"/>{(!collapsed||mobileOpen)&&<><span className="flex-1 text-left font-semibold">单据中心</span>{documentsExpanded?<MaterialIcon name="keyboard_arrow_down" className="ml-auto h-4 w-4"/>:<MaterialIcon name="chevron_right" className="ml-auto h-4 w-4"/>}</>}</Button>
-    {documentsExpanded&&<div className={`ml-5 space-y-1 pl-3 ${collapsed&&!mobileOpen?"":"border-l"}`}>
-     <Button variant={activePage==="documentWorkbench"?"secondary":"ghost"} onClick={()=>{onNavigate("documentWorkbench");setMobileOpen(false);}} className={childNavClass}><MaterialIcon name="folder_copy" className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>单据工作台</span>}</Button>
-     <Button variant={activePage==="documentCreate"?"secondary":"ghost"} onClick={()=>{onNavigate("documentCreate");setMobileOpen(false);}} className={childNavClass}><MaterialIcon name="note_add" className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>单据制作</span>}</Button>
-     <Button variant={activePage==="documentRecords"?"secondary":"ghost"} onClick={()=>{onNavigate("documentRecords");setMobileOpen(false);}} className={childNavClass}><MaterialIcon name="archive" className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>单据管理</span>}</Button>
-     
-    </div>}
-   </div>
-   <div>
-    <Button variant={["discovery","discoveryTasks","discoveryResults","searchDiscovery","facebookDiscovery","instagramDiscovery"].includes(activePage)?"secondary":"ghost"} onClick={()=>setDiscoveryExpanded(!discoveryExpanded)} className={navClass}><MaterialIcon name="explore" className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<><span className="flex-1 text-left">潜客发现</span>{discoveryExpanded?<MaterialIcon name="keyboard_arrow_down" className="ml-auto h-4 w-4"/>:<MaterialIcon name="chevron_right" className="ml-auto h-4 w-4"/>}</>}</Button>
-    {discoveryExpanded&&<div className={`ml-5 space-y-1 pl-3 ${collapsed&&!mobileOpen?"":"border-l"}`}>
-     <Button variant={activePage==="discovery"?"secondary":"ghost"} onClick={()=>{onNavigate("discovery");setMobileOpen(false);}} className={childNavClass}><MaterialIcon name="map" className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<span>地图与本地商家</span>}</Button>
-     <Button variant={activePage==="searchDiscovery"?"secondary":"ghost"} onClick={()=>{onNavigate("searchDiscovery");setMobileOpen(false);}} className={childNavClass}><MaterialIcon name="search" className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<span>搜索引擎发现</span>}</Button>
-     <Button variant={activePage==="facebookDiscovery"?"secondary":"ghost"} onClick={()=>{onNavigate("facebookDiscovery");setMobileOpen(false);}} className={childNavClass}><Facebook className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<span>Facebook 发现</span>}</Button>
-     <Button variant={activePage==="instagramDiscovery"?"secondary":"ghost"} onClick={()=>{onNavigate("instagramDiscovery");setMobileOpen(false);}} className={childNavClass}><Instagram className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<span>Instagram 发现</span>}</Button>
-     <div className="my-2 border-t"/>
-     <Button variant={activePage==="discoveryTasks"?"secondary":"ghost"} onClick={()=>{onNavigate("discoveryTasks");setMobileOpen(false);}} className={childNavClass}><MaterialIcon name="checklist" className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<span>任务执行中心</span>}</Button>
-     <Button variant={activePage==="discoveryResults"?"secondary":"ghost"} onClick={()=>{onNavigate("discoveryResults");setMobileOpen(false);}} className={childNavClass}><MaterialIcon name="folder_open" className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<span>搜索结果</span>}</Button>
-    </div>}
-   </div>
-   <div>
-    <Button variant={activePage.startsWith("crm")?"secondary":"ghost"} onClick={()=>setCrmExpanded(!crmExpanded)} className={navClass}><MaterialIcon name="group" className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<><span className="flex-1 text-left">客户关系管理</span>{crmExpanded?<MaterialIcon name="keyboard_arrow_down" className="ml-auto h-4 w-4"/>:<MaterialIcon name="chevron_right" className="ml-auto h-4 w-4"/>}</>}</Button>
-    {crmExpanded&&<div className={`ml-5 space-y-1 pl-3 ${collapsed&&!mobileOpen?"":"border-l"}`}><Button variant={activePage==="leads"?"secondary":"ghost"} onClick={()=>{onNavigate("leads");setMobileOpen(false);}} className={childNavClass}><MaterialIcon name="contacts" className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<span>线索</span>}</Button><Button variant={activePage==="crmAccounts"?"secondary":"ghost"} onClick={()=>{onNavigate("crmAccounts");setMobileOpen(false);}} className={childNavClass}><MaterialIcon name="business" className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>客户</span>}</Button><Button variant={activePage==="crmContacts"?"secondary":"ghost"} onClick={()=>{onNavigate("crmContacts");setMobileOpen(false);}} className={childNavClass}><MaterialIcon name="contacts" className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>联系人</span>}</Button><Button variant={activePage==="crmOpportunities"?"secondary":"ghost"} onClick={()=>{onNavigate("crmOpportunities");setMobileOpen(false);}} className={childNavClass}><MaterialIcon name="handshake" className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>商机</span>}</Button></div>}
-   </div>
-   <div>
-    <Button variant={activePage==="productCatalog"?"secondary":"ghost"} onClick={()=>{onNavigate("productCatalog");setMobileOpen(false);}} className={navClass}><MaterialIcon name="inventory_2" className="h-5 w-5 shrink-0"/>{(!collapsed||mobileOpen)&&<span className="font-semibold">产品资料</span>}</Button>
-   </div>
-   <div>
-    <Button variant={["enterpriseConfig","productConfig","integrations","searchExclusions","agentAppearance","documentTemplates"].includes(activePage)?"secondary":"ghost"} onClick={()=>setSettingsExpanded(!settingsExpanded)} className={navClass}><MaterialIcon name="settings" className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<><span className="flex-1 text-left">系统设置</span>{settingsExpanded?<MaterialIcon name="keyboard_arrow_down" className="ml-auto h-4 w-4"/>:<MaterialIcon name="chevron_right" className="ml-auto h-4 w-4"/>}</>}</Button>
-    {settingsExpanded&&<div className={`ml-5 space-y-1 pl-3 ${collapsed&&!mobileOpen?"":"border-l"}`}>
-     <Button variant={activePage==="enterpriseConfig"?"secondary":"ghost"} onClick={()=>{onNavigate("enterpriseConfig");setMobileOpen(false);}} className={childNavClass}><MaterialIcon name="business" className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<span>企业配置</span>}</Button>
-     <Button variant={activePage==="productConfig"?"secondary":"ghost"} onClick={()=>{onNavigate("productConfig");setMobileOpen(false);}} className={childNavClass}><MaterialIcon name="inventory_2" className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<span>产品基础配置</span>}</Button>
-     <Button variant={activePage==="documentTemplates"?"secondary":"ghost"} onClick={()=>{onNavigate("documentTemplates");setMobileOpen(false);}} className={childNavClass}><MaterialIcon name="dashboard_customize" className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<span>单据模板</span>}</Button><Button variant={activePage==="integrations"?"secondary":"ghost"} onClick={()=>{onNavigate("integrations");setMobileOpen(false);}} className={childNavClass}><MaterialIcon name="key" className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<span>AI 与 API 集成</span>}</Button><Button variant={activePage==="searchExclusions"?"secondary":"ghost"} onClick={()=>{onNavigate("searchExclusions");setMobileOpen(false);}} className={childNavClass}><MaterialIcon name="block" className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<span>搜索排除规则</span>}</Button><Button variant={activePage==="agentAppearance"?"secondary":"ghost"} onClick={()=>{onNavigate("agentAppearance");setMobileOpen(false);}} className={childNavClass}><MaterialIcon name="auto_awesome" className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<span>Agent 形象设计</span>}</Button></div>}
-   </div>
-  </nav>
-  <div className="shrink-0 border-t p-3">{(!collapsed||mobileOpen)&&<p className="mb-2 truncate px-2 text-xs text-muted-foreground" title={userEmail}>{userEmail}</p>}<Button variant="ghost" onClick={onSignOut} className={`flex w-full items-center gap-2 ${collapsed&&!mobileOpen?"justify-center":"justify-start"}`} aria-label="退出登录"><MaterialIcon name="logout" className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>退出登录</span>}</Button></div>
- </div>;
- const pageTitle=activePage.startsWith("order")?"订单中心":activePage==="documentWorkbench"?"单据工作台":activePage==="documentCreate"?"单据制作":activePage==="documentRecords"?"单据管理":activePage==="documentTemplates"?"模板中心":activePage==="agentWorkbench"?"Agent 工作台":activePage==="agentMarket"?"Agent 市场":activePage==="agentOrchestration"?"Agent 编排":activePage==="agentConnections"?"外部 Agent 接入":activePage==="agentRuns"?"Agent 执行记录":activePage==="agentApprovals"?"审批中心":activePage==="agentSettings"?"Agent 设置":activePage==="integrations"?"AI 与 API 集成":activePage==="searchExclusions"?"搜索排除规则":activePage==="agentAppearance"?"Agent 形象设计":activePage==="leads"?"线索":activePage==="crmAccounts"?"客户":activePage==="crmContacts"?"联系人":activePage==="crmOpportunities"?"商机":activePage==="enterpriseConfig"?"企业配置":activePage==="productConfig"?"产品基础配置":activePage==="productCatalog"?"产品资料":activePage==="discoveryTasks"?"任务执行中心":activePage==="discoveryResults"?"搜索结果":activePage==="searchDiscovery"?"搜索引擎发现":activePage==="facebookDiscovery"?"Facebook 发现":activePage==="instagramDiscovery"?"Instagram 发现":"地图与本地商家";
- return <div className="flex min-h-screen bg-background text-foreground"><aside className={`sticky top-0 hidden h-screen shrink-0 overflow-hidden border-r transition-[width] duration-200 md:block ${collapsed?"w-[72px]":"w-[240px]"}`}>{sidebar}</aside>{mobileOpen&&<div className="fixed inset-0 z-50 md:hidden"><button type="button" aria-label="关闭导航菜单" className="absolute inset-0 bg-black/40" onClick={()=>setMobileOpen(false)}/><aside className="absolute inset-y-0 left-0 w-[min(84vw,320px)] border-r shadow-xl">{sidebar}</aside></div>}<main className="min-w-0 flex-1"><header className="tp-topbar sticky top-0 z-30 flex h-12 items-center justify-between border-b px-4 backdrop-blur"><div className="flex min-w-0 items-center gap-2">{/* Mobile navigation */}<div className="md:hidden"><Button size="icon" variant="ghost" onClick={()=>setMobileOpen(true)} aria-label="打开侧边栏菜单"><MaterialIcon name="menu" className="h-5 w-5"/></Button></div><img src={tradePilotLogo} alt="TradePilot" className="h-auto w-[112px] max-w-[42vw] object-contain md:hidden"/><div className="hidden min-w-0 items-center gap-2 text-[12px] md:flex"><span className="font-medium text-muted-foreground">工作区</span><span className="text-muted-foreground/50">/</span><span className="font-medium text-muted-foreground">{["enterpriseConfig","productConfig","integrations","searchExclusions","agentAppearance","documentTemplates"].includes(activePage)?"设置":activePage.startsWith("agent")?"Agent":activePage.startsWith("order")?"订单中心":activePage==="productCatalog"?"产品资料":activePage.startsWith("document")?"单据中心":["discovery","discoveryTasks","discoveryResults","searchDiscovery","facebookDiscovery","instagramDiscovery"].includes(activePage)?"潜客发现":["leads","crmAccounts","crmContacts","crmOpportunities"].includes(activePage)?"客户关系管理":"业务数据"}</span><span className="text-muted-foreground/50">/</span><span className="truncate font-semibold text-foreground">{pageTitle}</span></div></div><Button type="button" variant="ghost" size="icon" className="h-10 w-10 rounded-full p-0 ring-1 ring-border transition hover:scale-105 hover:bg-accent focus-visible:ring-2 focus-visible:ring-primary" onClick={()=>onNavigate("agentWorkbench")} aria-label="打开小雅 Agent 工作台" title="小雅 · 继续任务"><AgentOrbIcon agentKey="default" className="h-9 w-9" sizePx={36} state={activePage==="agentWorkbench"?"happy":"idle"}/></Button></header><div className="tp-page-canvas">{children}</div></main></div>;
+function MaterialIcon({ name, className = "" }: { name: string; className?: string }) {
+  return <span aria-hidden="true" className={`material-symbols-outlined ${className}`}>{name}</span>;
+}
+
+export function AppShell({
+  children,
+  activePage,
+  onNavigate,
+  userEmail,
+  onSignOut,
+}: {
+  children: ReactNode;
+  activePage: AppPage;
+  onNavigate: (page: AppPage) => void;
+  userEmail: string;
+  onSignOut: () => void;
+}) {
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [agentExpanded, setAgentExpanded] = useState(true);
+  const [discoveryExpanded, setDiscoveryExpanded] = useState(false);
+  const [crmExpanded, setCrmExpanded] = useState(true);
+  const [settingsExpanded, setSettingsExpanded] = useState(false);
+  const [documentsExpanded, setDocumentsExpanded] = useState(true);
+  const [ordersExpanded, setOrdersExpanded] = useState(true);
+
+  useEffect(() => {
+    setAgentExpanded(["agentWorkbench", "agentMarket", "agentOrchestration", "agentConnections", "agentRuns", "agentApprovals", "agentSettings"].includes(activePage));
+    setOrdersExpanded(activePage.startsWith("order"));
+    setDocumentsExpanded(["documentWorkbench", "documentCreate", "documentRecords"].includes(activePage));
+    setDiscoveryExpanded(["discovery", "discoveryTasks", "discoveryResults", "searchDiscovery", "facebookDiscovery", "instagramDiscovery"].includes(activePage));
+    setCrmExpanded(["leads", "crmAccounts", "crmContacts", "crmOpportunities"].includes(activePage));
+    setSettingsExpanded(["enterpriseConfig", "productConfig", "integrations", "searchExclusions", "agentAppearance", "documentTemplates"].includes(activePage));
+  }, [activePage]);
+
+  const closeMobile = () => setMobileOpen(false);
+  const navigate = (page: AppPage) => {
+    onNavigate(page);
+    closeMobile();
+  };
+  const isSettingsPage = ["enterpriseConfig", "productConfig", "integrations", "searchExclusions", "agentAppearance", "documentTemplates"].includes(activePage);
+  const isDiscoveryPage = ["discovery", "discoveryTasks", "discoveryResults", "searchDiscovery", "facebookDiscovery", "instagramDiscovery"].includes(activePage);
+  const isCrmPage = ["leads", "crmAccounts", "crmContacts", "crmOpportunities"].includes(activePage);
+  const isAgentPage = activePage.startsWith("agent");
+  const pageTitle =
+    activePage.startsWith("order") ? "订单中心" :
+    activePage === "documentWorkbench" ? "单据工作台" :
+    activePage === "documentCreate" ? "单据制作" :
+    activePage === "documentRecords" ? "单据管理" :
+    activePage === "documentTemplates" ? "模板中心" :
+    activePage === "agentWorkbench" ? "Agent 工作台" :
+    activePage === "agentMarket" ? "Agent 市场" :
+    activePage === "agentOrchestration" ? "Agent 编排" :
+    activePage === "agentConnections" ? "外部 Agent 接入" :
+    activePage === "agentRuns" ? "Agent 执行记录" :
+    activePage === "agentApprovals" ? "审批中心" :
+    activePage === "agentSettings" ? "Agent 设置" :
+    activePage === "integrations" ? "AI 与 API 集成" :
+    activePage === "searchExclusions" ? "搜索排除规则" :
+    activePage === "agentAppearance" ? "Agent 形象设计" :
+    activePage === "leads" ? "线索" :
+    activePage === "crmAccounts" ? "客户" :
+    activePage === "crmContacts" ? "联系人" :
+    activePage === "crmOpportunities" ? "商机" :
+    activePage === "enterpriseConfig" ? "企业配置" :
+    activePage === "productConfig" ? "产品基础配置" :
+    activePage === "productCatalog" ? "产品资料" :
+    activePage === "discoveryTasks" ? "任务执行中心" :
+    activePage === "discoveryResults" ? "搜索结果" :
+    activePage === "searchDiscovery" ? "搜索引擎发现" :
+    activePage === "facebookDiscovery" ? "Facebook 发现" :
+    activePage === "instagramDiscovery" ? "Instagram 发现" : "地图与本地商家";
+
+  const groups: NavGroup[] = [
+    {
+      id: "agent", title: "TradePilot Agent 智能体", icon: "smart_toy",
+      pages: ["agentWorkbench", "agentMarket", "agentOrchestration", "agentConnections", "agentRuns", "agentApprovals", "agentSettings"],
+      items: [
+        { page: "agentWorkbench", label: "Agent 工作台" },
+        { page: "agentMarket", label: "Agent 市场" },
+        { page: "agentOrchestration", label: "Agent 编排" },
+        { page: "agentConnections", label: "外部 Agent 接入" },
+        { page: "agentRuns", label: "执行记录" },
+        { page: "agentApprovals", label: "审批中心" },
+        { page: "agentSettings", label: "Agent 设置" },
+      ],
+    },
+    {
+      id: "orders", title: "订单中心", icon: "assignment",
+      pages: ["orderQuotations", "orderSales", "orderPurchase"],
+      items: [
+        { page: "orderQuotations", label: "报价与询价" },
+        { page: "orderSales", label: "销售业务" },
+        { page: "orderPurchase", label: "采购业务" },
+      ],
+    },
+    {
+      id: "documents", title: "单据中心", icon: "folder_copy",
+      pages: ["documentWorkbench", "documentCreate", "documentRecords"],
+      items: [
+        { page: "documentWorkbench", label: "单据工作台" },
+        { page: "documentCreate", label: "单据制作" },
+        { page: "documentRecords", label: "单据管理" },
+      ],
+    },
+    {
+      id: "discovery", title: "潜客发现", icon: "explore",
+      pages: ["discovery", "discoveryTasks", "discoveryResults", "searchDiscovery", "facebookDiscovery", "instagramDiscovery"],
+      items: [
+        { page: "discovery", label: "地图与本地商家" },
+        { page: "searchDiscovery", label: "搜索引擎发现" },
+        { page: "facebookDiscovery", label: "Facebook 发现" },
+        { page: "instagramDiscovery", label: "Instagram 发现" },
+        { page: "discoveryTasks", label: "任务执行中心" },
+        { page: "discoveryResults", label: "搜索结果" },
+      ],
+    },
+    {
+      id: "crm", title: "客户关系管理", icon: "group",
+      pages: ["leads", "crmAccounts", "crmContacts", "crmOpportunities"],
+      items: [
+        { page: "leads", label: "线索" },
+        { page: "crmAccounts", label: "客户" },
+        { page: "crmContacts", label: "联系人" },
+        { page: "crmOpportunities", label: "商机" },
+      ],
+    },
+    {
+      id: "settings", title: "系统设置", icon: "settings",
+      pages: ["enterpriseConfig", "productConfig", "integrations", "searchExclusions", "agentAppearance", "documentTemplates"],
+      items: [
+        { page: "enterpriseConfig", label: "企业配置" },
+        { page: "productConfig", label: "产品基础配置" },
+        { page: "documentTemplates", label: "单据模板" },
+        { page: "integrations", label: "AI 与 API 集成" },
+        { page: "searchExclusions", label: "搜索排除规则" },
+        { page: "agentAppearance", label: "Agent 形象设计" },
+      ],
+    },
+  ];
+
+  const groupExpanded: Record<string, boolean> = {
+    agent: agentExpanded,
+    orders: ordersExpanded,
+    documents: documentsExpanded,
+    discovery: discoveryExpanded,
+    crm: crmExpanded,
+    settings: settingsExpanded,
+  };
+  const setGroupExpanded: Record<string, (value: boolean) => void> = {
+    agent: setAgentExpanded,
+    orders: setOrdersExpanded,
+    documents: setDocumentsExpanded,
+    discovery: setDiscoveryExpanded,
+    crm: setCrmExpanded,
+    settings: setSettingsExpanded,
+  };
+
+  const sideNavigation = (
+    <SideNav
+      aria-label="TradePilot 主导航"
+      isFixedNav
+      expanded={!collapsed || mobileOpen}
+      className="tp-carbon-side-nav"
+    >
+      <SideNavItems>
+        {groups.map((group) => (
+          <SideNavMenu
+            key={`${group.id}-${activePage}-${groupExpanded[group.id]}`}
+            title={group.title}
+            isActive={group.pages.includes(activePage)}
+            defaultExpanded={groupExpanded[group.id]}
+            renderIcon={() => <MaterialIcon name={group.icon} />}
+            onClick={(event) => {
+              if ((event.target as HTMLElement).closest("a")) return;
+              const wasExpanded = groupExpanded[group.id];
+              setGroupExpanded[group.id](!wasExpanded);
+              if (!wasExpanded) navigate(group.items[0].page);
+            }}
+          >
+            {group.items.map((item) => (
+              <SideNavMenuItem
+                key={item.page}
+                href="#"
+                isActive={activePage === item.page}
+                onClick={(event) => {
+                  event.preventDefault();
+                  navigate(item.page);
+                }}
+              >
+                {item.label}
+              </SideNavMenuItem>
+            ))}
+          </SideNavMenu>
+        ))}
+        <SideNavLink
+          href="#"
+          isActive={activePage === "productCatalog"}
+          renderIcon={() => <MaterialIcon name="inventory_2" />}
+          onClick={(event) => {
+            event.preventDefault();
+            navigate("productCatalog");
+          }}
+        >
+          产品资料
+        </SideNavLink>
+        <div className="tp-carbon-side-nav__footer">
+          <div className="tp-carbon-side-nav__user" title={userEmail}>{userEmail}</div>
+          <SideNavLink
+            href="#"
+            renderIcon={() => <MaterialIcon name="logout" />}
+            onClick={(event) => {
+              event.preventDefault();
+              onSignOut();
+            }}
+          >
+            退出登录
+          </SideNavLink>
+        </div>
+      </SideNavItems>
+    </SideNav>
+  );
+
+  return (
+    <div className="tp-carbon-shell flex min-h-screen bg-background text-foreground">
+      <aside className={`tp-carbon-sidebar hidden md:block ${collapsed ? "is-collapsed" : ""}`}>
+        <div className="tp-carbon-sidebar__brand">
+          {collapsed ? (
+            <div className="tp-carbon-sidebar__mark" aria-label="TradePilot">
+              <MaterialIcon name="radar" />
+            </div>
+          ) : (
+            <img src={tradePilotLogo} alt="TradePilot" />
+          )}
+          <button
+            type="button"
+            className="tp-carbon-sidebar__collapse"
+            aria-label={collapsed ? "展开侧边栏" : "收起侧边栏"}
+            onClick={() => setCollapsed((value) => !value)}
+          >
+            <MaterialIcon name={collapsed ? "left_panel_open" : "left_panel_close"} />
+          </button>
+        </div>
+        {sideNavigation}
+      </aside>
+
+      {mobileOpen && (
+        <div className="tp-carbon-mobile-nav md:hidden">
+          <button
+            type="button"
+            aria-label="关闭导航菜单"
+            className="tp-carbon-mobile-nav__backdrop"
+            onClick={closeMobile}
+          />
+          <aside className="tp-carbon-mobile-nav__panel">
+            <div className="tp-carbon-sidebar__brand">
+              <img src={tradePilotLogo} alt="TradePilot" />
+              <button type="button" className="tp-carbon-sidebar__collapse" aria-label="关闭菜单" onClick={closeMobile}>
+                <MaterialIcon name="close" />
+              </button>
+            </div>
+            {sideNavigation}
+          </aside>
+        </div>
+      )}
+
+      <main className="tp-carbon-main min-w-0 flex-1">
+        <Header aria-label="TradePilot 工作区" className="tp-carbon-header">
+          <SkipToContent href="#main-content">跳转到主要内容</SkipToContent>
+          <div className="md:hidden">
+            <HeaderMenuButton
+              aria-label="打开侧边栏菜单"
+              isActive={mobileOpen}
+              onClick={() => setMobileOpen(true)}
+            />
+          </div>
+          <div className="hidden md:block">
+            <HeaderMenuButton
+              aria-label={collapsed ? "展开侧边栏" : "收起侧边栏"}
+              isActive={!collapsed}
+              onClick={() => setCollapsed((value) => !value)}
+            />
+          </div>
+          <HeaderName href="#" prefix="" onClick={(event) => event.preventDefault()}>
+            <img src={tradePilotLogo} alt="TradePilot" className="tp-carbon-header__logo" />
+          </HeaderName>
+          <div className="tp-carbon-header__context">
+            <span>工作区</span>
+            <span aria-hidden="true">/</span>
+            <span>{isSettingsPage ? "设置" : isAgentPage ? "Agent" : activePage.startsWith("order") ? "订单中心" : activePage === "productCatalog" ? "产品资料" : activePage.startsWith("document") ? "单据中心" : isDiscoveryPage ? "潜客发现" : isCrmPage ? "客户关系管理" : "业务数据"}</span>
+            <span aria-hidden="true">/</span>
+            <strong>{pageTitle}</strong>
+          </div>
+          <HeaderGlobalBar>
+            <HeaderGlobalAction
+              aria-label="打开小雅 Agent 工作台"
+              onClick={() => navigate("agentWorkbench")}
+              tooltipAlignment="end"
+            >
+              <AgentOrbIcon agentKey="default" className="h-8 w-8" sizePx={32} state={activePage === "agentWorkbench" ? "happy" : "idle"} />
+            </HeaderGlobalAction>
+          </HeaderGlobalBar>
+        </Header>
+        <div id="main-content" className="tp-page-canvas" tabIndex={-1}>{children}</div>
+      </main>
+    </div>
+  );
 }
