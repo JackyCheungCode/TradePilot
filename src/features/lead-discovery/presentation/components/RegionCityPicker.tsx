@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import isoCountries from "i18n-iso-countries";
-import { AlertCircle, Check, ChevronDown, LoaderCircle, Search } from "lucide-react";
-import { Button, Input, Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/primitives";
+import { WarningAltFilled as AlertCircle } from "@carbon/icons-react";
+import { Combobox } from "@/shared/ui/primitives";
 
 interface GeoResponse<T> { error?: boolean; msg?: string; data?: T; }
 interface StateRecord { name: string; state_code?: string; }
@@ -9,21 +9,21 @@ interface CountryRecord { name: string; Iso2?: string; iso2?: string; }
 const API = "https://countriesnow.space/api/v0.1";
 
 function SearchablePicker({ label, value, options, placeholder, disabled, loading, onChange }: {
- label: string; value: string; options: string[]; placeholder: string; disabled?: boolean; loading?: boolean; onChange: (value: string) => void;
+  label: string; value: string; options: string[]; placeholder: string; disabled?: boolean; loading?: boolean; onChange: (value: string) => void;
 }) {
- const [open, setOpen] = useState(false);
- const [search, setSearch] = useState("");
- const filtered = options.filter((item) => item.toLowerCase().includes(search.toLowerCase()));
- return <div className="min-w-0 space-y-1.5">
-  <label className="text-sm font-medium">{label}</label>
-  <Popover open={open} onOpenChange={setOpen}>
-   <PopoverTrigger asChild><Button type="button" variant="outline" disabled={disabled || loading} className="w-full justify-between font-normal"><span className="truncate">{loading ? "正在加载…" : value || placeholder}</span>{loading ? <LoaderCircle className="h-4 w-4 animate-spin text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}</Button></PopoverTrigger>
-   <PopoverContent align="start" sideOffset={6} className="z-50 w-[min(86vw,340px)] p-2">
-    <div className="relative mb-2"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={"搜索" + label} className="pl-9" /></div>
-    <div className="max-h-56 overflow-y-auto">{filtered.slice(0, 120).map((item) => <Button key={item} type="button" variant="ghost" onClick={() => { onChange(item); setOpen(false); setSearch(""); }} className="flex h-auto w-full justify-between px-2 py-2 text-left text-sm font-normal">{item}{value === item && <Check className="h-4 w-4 text-primary" />}</Button>)}{!filtered.length && <p className="p-4 text-center text-sm text-muted-foreground">没有匹配选项</p>}{filtered.length > 120 && <p className="px-2 py-2 text-xs text-muted-foreground">结果较多，请继续输入关键词缩小范围</p>}</div>
-   </PopoverContent>
-  </Popover>
- </div>;
+  return (
+    <div className="min-w-0 space-y-1.5">
+      <label className="text-sm font-medium">{label}</label>
+      <Combobox
+        value={value}
+        onValueChange={onChange}
+        options={options.map((option) => ({ value: option, label: option }))}
+        placeholder={loading ? "正在加载…" : placeholder}
+        searchPlaceholder={"搜索" + label}
+        disabled={disabled || loading}
+      />
+    </div>
+  );
 }
 
 export function RegionCityPicker({ countryCode, state, city, onStateChange, onCityChange }: {

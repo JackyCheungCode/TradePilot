@@ -1,5 +1,5 @@
 import { useEffect,useState } from "react";
-import { Check,LoaderCircle,Save,ShieldCheck } from "lucide-react";
+import { Checkmark as Check,Renew as LoaderCircle,Save,Security as ShieldCheck } from "@carbon/icons-react";
 import { toast } from "sonner";
 import { Button,Card,CardContent,CardDescription,CardHeader,CardTitle, Textarea } from "@/shared/ui/primitives";
 import { PageControlPanel } from "@/shared/ui/page-layout";

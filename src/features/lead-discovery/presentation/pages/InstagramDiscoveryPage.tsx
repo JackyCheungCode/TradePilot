@@ -1,7 +1,7 @@
 import {useEffect,useMemo,useState} from "react";
-import {Activity,Check,ChevronDown,LoaderCircle,MessageCircle,Search,Sparkles,Terminal,Users,Wallet} from "lucide-react";
+import {Activity,Renew as LoaderCircle,Chat as MessageCircle,Search,MagicWand as Sparkles,Terminal,UserMultiple as Users,Wallet} from "@carbon/icons-react";
 import {toast} from "sonner";
-import {Badge,Button,Card,CardContent,CardDescription,CardHeader,CardTitle,Input,Popover,PopoverContent,PopoverTrigger,Checkbox,Textarea} from "@/shared/ui/primitives";
+import {Badge,Button,Card,CardContent,CardDescription,CardHeader,CardTitle,Input,Checkbox,Textarea,MultiSelect,Combobox} from "@/shared/ui/primitives";
 import { PageControlPanel } from "@/shared/ui/page-layout";
 import { TaskExecutionPanel } from "../components/TaskExecutionPanel";
 import {CountrySelect} from "../components/CountrySelect";
@@ -11,8 +11,31 @@ import type {DiscoveryLog,DiscoveryRun} from "../../domain/model";
 const languages:Array<[string,string]>=[["en","英语"],["fr","法语"],["es","西班牙语"],["ar","阿拉伯语"],["ru","俄语"],["pt","葡萄牙语"],["tr","土耳其语"],["sw","斯瓦希里语"]];
 const accountTypes:Array<[string,string]>=[["business","商业账号"],["creator","创作者"],["personal","个人"]];
 const levelClass:Record<DiscoveryLog["level"],string>={info:"text-sky-300",success:"text-emerald-300",warning:"text-amber-300",error:"text-rose-300"};
-function MultiPicker({label,options,value,onChange}:{label:string;options:Array<[string,string]>;value:string[];onChange:(v:string[])=>void}){const [open,setOpen]=useState(false);return <div className="space-y-2"><label className="text-sm font-medium">{label}</label><Popover open={open} onOpenChange={setOpen}><PopoverTrigger asChild><Button type="button" variant="outline" className="w-full justify-between font-normal"><span className="truncate">{value.length?options.filter(x=>value.includes(x[0])).map(x=>x[1]).join("、"): "不限"}</span><ChevronDown className="h-4 w-4 shrink-0"/></Button></PopoverTrigger><PopoverContent align="start" className="w-[var(--radix-popover-trigger-width)] p-2"><div className="space-y-1">{options.map(([id,name])=><button key={id} type="button" onClick={()=>onChange(value.includes(id)?value.filter(x=>x!==id):[...value,id])} className={"flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm "+(value.includes(id)?"bg-primary/10":"hover:bg-muted")}><span className="flex-1">{name}</span>{value.includes(id)&&<Check className="h-4 w-4 text-primary"/>}</button>)}</div></PopoverContent></Popover></div>}
-function RecentDaysPicker({value,onChange}:{value:string;onChange:(v:string)=>void}){const [open,setOpen]=useState(false);const options=[["30","近 30 天"],["60","近 60 天"],["90","近 90 天"],["180","近 180 天"],["365","近一年"],["0","不限"]];const selected=options.find(x=>x[0]===value)?.[1]??"近 90 天";return <Popover open={open} onOpenChange={setOpen}><PopoverTrigger asChild><Button type="button" variant="outline" className="w-full justify-between font-normal">{selected}<ChevronDown className="h-4 w-4"/></Button></PopoverTrigger><PopoverContent align="start" className="w-[var(--radix-popover-trigger-width)] p-1">{options.map(([v,label])=><button key={v} type="button" onClick={()=>{onChange(v);setOpen(false)}} className={"w-full rounded-md px-3 py-2 text-left text-sm "+(value===v?"bg-primary/10":"hover:bg-muted")}>{label}</button>)}</PopoverContent></Popover>;}
+function MultiPicker({label,options,value,onChange}:{label:string;options:Array<[string,string]>;value:string[];onChange:(v:string[])=>void}) {
+  return (
+    <div className="space-y-2">
+      <label className="text-sm font-medium">{label}</label>
+      <MultiSelect
+        placeholder={label}
+        options={options.map(([optionValue, optionLabel]) => ({ value: optionValue, label: optionLabel }))}
+        value={value}
+        onValueChange={onChange}
+      />
+    </div>
+  );
+}
+function RecentDaysPicker({value,onChange}:{value:string;onChange:(v:string)=>void}) {
+  const options=[["30","近 30 天"],["60","近 60 天"],["90","近 90 天"],["180","近 180 天"],["365","近一年"],["0","不限"]];
+  return (
+    <Combobox
+      value={value}
+      onValueChange={onChange}
+      placeholder="选择时间范围"
+      options={options.map(([optionValue, label]) => ({ value: optionValue, label }))}
+    />
+  );
+}
+
 export function InstagramDiscoveryPage(){
  const [country,setCountry]=useState("NG"),[countries,setCountries]=useState<string[]>(["NG"]),[keywords,setKeywords]=useState("#usedclothing\n#bale\nthrift shop"),[languagesSelected,setLanguagesSelected]=useState(["en"]),[types,setTypes]=useState(["business","creator","personal"]),[minFollowers,setMinFollowers]=useState("200"),[maxFollowers,setMaxFollowers]=useState("50000"),[recent,setRecent]=useState("90"),[requireContact,setRequireContact]=useState(true),[exclude,setExclude]=useState("wholesale supplier\nmanufacturer\nfactory"),[limit,setLimit]=useState("100"),[maxCost,setMaxCost]=useState("10"),[includeCaptions,setIncludeCaptions]=useState(false);
  const [configured,setConfigured]=useState(false),[run,setRun]=useState<DiscoveryRun|null>(null),[logs,setLogs]=useState<DiscoveryLog[]>([]),[busy,setBusy]=useState(false),[actorConfig,setActorConfig]=useState<{discoveryCostPer1000?:number;profileCostPer1000?:number}|null>(null);
@@ -28,10 +51,10 @@ export function InstagramDiscoveryPage(){
   <div className="space-y-5">
    <Card><CardHeader><div className="flex items-center gap-2"><Search className="h-5 w-5"/><CardTitle>发现条件</CardTitle></div><CardDescription>通过公开话题标签和关键词发现潜在买家，默认筛选近 90 天活跃、200–50,000 粉丝的账号。</CardDescription></CardHeader><CardContent className="space-y-6">
     <div className="space-y-2"><label className="text-sm font-medium">关键词 / 话题标签</label><Textarea value={keywords} onChange={e=>setKeywords(e.target.value)} rows={3} placeholder="#usedclothing&#10;thrift shop&#10;second hand clothes"/><p className="text-xs text-muted-foreground">每行一个，支持批量粘贴；输入时可带 #。</p></div>
-    <div className="space-y-2"><label className="text-sm font-medium">目标国家 / 地区</label><div className="flex flex-wrap gap-2"><div className="min-w-[220px] flex-1"><CountrySelect value={country} onChange={setCountry}/></div><Button type="button" variant="outline" onClick={()=>{if(!countries.includes(country))setCountries(v=>[...v,country]);}}>添加国家</Button></div><div className="flex flex-wrap gap-1">{countries.map(c=><Badge key={c} variant="secondary" className="gap-1">{c}<button type="button" onClick={()=>setCountries(v=>v.filter(x=>x!==c))} aria-label={"移除 "+c}>×</button></Badge>)}</div></div>
+    <div className="space-y-2"><label className="text-sm font-medium">目标国家 / 地区</label><div className="flex flex-wrap gap-2"><div className="min-w-[220px] flex-1"><CountrySelect value={country} onChange={setCountry}/></div><Button type="button" variant="outline" onClick={()=>{if(!countries.includes(country))setCountries(v=>[...v,country]);}}>添加国家</Button></div><div className="flex flex-wrap gap-1">{countries.map(c=><Badge key={c} variant="secondary" className="gap-1">{c}<Button type="button" size="icon" variant="ghost" className="ml-1 h-5 min-h-0 w-5 p-0" onClick={()=>setCountries(v=>v.filter(x=>x!==c))} aria-label={"移除 "+c}>×</Button></Badge>)}</div></div>
     <div className="grid gap-4 sm:grid-cols-2"><MultiPicker label="语言" options={languages} value={languagesSelected} onChange={setLanguagesSelected}/><MultiPicker label="账号类型" options={accountTypes} value={types} onChange={setTypes}/></div>
     <div className="grid gap-4 sm:grid-cols-2"><div className="space-y-2"><label className="text-sm font-medium">粉丝数范围</label><div className="grid grid-cols-2 gap-2"><Input type="number" min="0" value={minFollowers} onChange={e=>setMinFollowers(e.target.value)} placeholder="最少"/><Input type="number" min="0" value={maxFollowers} onChange={e=>setMaxFollowers(e.target.value)} placeholder="最多"/></div></div><div className="space-y-2"><label className="text-sm font-medium">最近发帖时间</label><RecentDaysPicker value={recent} onChange={setRecent}/></div></div>
-    <div className="flex flex-wrap items-center gap-5"><label className="flex items-center gap-2 text-sm"><Checkbox checked={requireContact} onChange={e=>setRequireContact(e.target.checked)}/>必须含联系方式</label><label className="flex items-center gap-2 text-sm"><Checkbox checked={includeCaptions} onChange={e=>setIncludeCaptions(e.target.checked)}/>分析近期帖子文案（增加成本）</label></div>
+    <div className="flex flex-wrap items-center gap-5"><Checkbox className="text-sm" labelText="必须含联系方式" checked={requireContact} onChange={e=>setRequireContact(e.target.checked)}/><Checkbox className="text-sm" labelText="分析近期帖子文案（增加成本）" checked={includeCaptions} onChange={e=>setIncludeCaptions(e.target.checked)}/></div>
     <div className="space-y-2"><label className="text-sm font-medium">排除词</label><Textarea value={exclude} onChange={e=>setExclude(e.target.value)} rows={2}/><p className="text-xs text-muted-foreground">命中同行供应商、制造商等词汇的账号将扣分或排除。</p></div>
     <div className="max-w-xs space-y-2"><label className="text-sm font-medium">任务成本上限（USD）</label><Input type="number" min="0" step="0.1" value={maxCost} onChange={e=>setMaxCost(e.target.value)}/></div>
     <div className="max-w-xs space-y-2"><label className="text-sm font-medium">单次候选账号上限</label><Input type="number" min="1" max="1000" value={limit} onChange={e=>setLimit(e.target.value)}/><p className="text-xs text-muted-foreground">限制本次搜索最多处理的候选账号数量。</p></div>

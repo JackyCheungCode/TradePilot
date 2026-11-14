@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Activity, ArrowRight, Clock3, LoaderCircle } from "lucide-react";
+import { Activity, ArrowRight, Time as Clock3, Renew as LoaderCircle } from "@carbon/icons-react";
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Progress } from "@/shared/ui/primitives";
 import { StatusBadge } from "@/shared/ui/data-views";
 

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Plus, Trash2, Upload, UserRoundPlus, X } from "lucide-react";
+import { ArrowLeft, Add as Plus, TrashCan as Trash2, UserFollow as UserRoundPlus, Close as X } from "@carbon/icons-react";
+import { ContentSwitcher, FileUploaderButton, Switch } from "@carbon/react";
 import { toast } from "sonner";
 import { Badge, Button, Combobox, Input, Textarea } from "@/shared/ui/primitives";
 import { FormField, FormSection } from "@/shared/ui/data-views";
@@ -253,7 +254,7 @@ export function CustomerAccountForm({
               <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted">
                 {form.logo_url ? <img src={form.logo_url} alt="客户徽标" className="h-full w-full object-contain" /> : <span className="text-xs text-muted-foreground">徽标</span>}
               </div>
-              <div className="min-w-0 space-y-2"><p className="text-sm font-medium">徽标</p><label className="inline-flex cursor-pointer items-center gap-2 rounded-[4px] border bg-background px-3 py-2 text-xs font-medium hover:bg-muted"><Upload className="h-3.5 w-3.5" />{uploading ? "正在上传…" : "上传图片"}<input className="sr-only" type="file" accept="image/png,image/jpeg,image/webp" disabled={uploading} onChange={(event) => { void uploadLogo(event.target.files?.[0]); event.currentTarget.value = ""; }} /></label><p className="text-xs text-muted-foreground">PNG、JPG、WEBP 或 SVG，最大 5 MB。</p></div>
+              <div className="min-w-0 space-y-2"><p className="text-sm font-medium">徽标</p><FileUploaderButton accept={["image/png", "image/jpeg", "image/webp"]} buttonKind="tertiary" size="sm" disableLabelChanges disabled={uploading} labelText={uploading ? "正在上传…" : "上传图片"} onChange={(event) => { void uploadLogo(event.target.files?.[0]); event.currentTarget.value = ""; }} /><p className="text-xs text-muted-foreground">PNG、JPG、WEBP 或 SVG，最大 5 MB。</p></div>
             </div>
             <FormField label="名称" required><Input autoFocus value={form.account_name} onChange={(event) => update("account_name", event.target.value)} placeholder="客户或公司名称" /></FormField>
             <FormField label="关联公司"><Combobox value={form.parent_account_id} onValueChange={(value) => update("parent_account_id", value)} options={parentOptions} placeholder="无（顶级客户）" searchPlaceholder="搜索公司名称…" /></FormField>
@@ -266,15 +267,19 @@ export function CustomerAccountForm({
             <FormField label="税号 ID"><Input value={form.tax_number} onChange={(event) => update("tax_number", event.target.value)} placeholder="Tax ID / VAT Number" /></FormField>
             <FormField label="工作职位"><Input value={form.job_title} onChange={(event) => update("job_title", event.target.value)} placeholder="职位" /></FormField>
             <FormField label="网站"><Input type="url" value={form.website} onChange={(event) => update("website", event.target.value)} placeholder="https://" /></FormField>
-            <FormField label="标签" className="md:col-span-2"><div className="space-y-2"><div className="flex gap-2"><Input value={tagInput} onChange={(event) => setTagInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === ",") { event.preventDefault(); addTag(); } }} placeholder="输入标签后按 Enter 添加" /><Button type="button" variant="outline" onClick={addTag}><Plus className="h-4 w-4" />添加</Button></div><div className="flex min-h-8 flex-wrap gap-2">{tags.map((tag) => <Badge key={tag} variant="secondary" className="gap-1 px-2 py-1">{tag}<button type="button" aria-label={"移除标签 " + tag} onClick={() => setTags((current) => current.filter((item) => item !== tag))}><X className="h-3 w-3" /></button></Badge>)}{tags.length === 0 && <span className="text-xs text-muted-foreground">尚未添加标签</span>}</div></div></FormField>
+            <FormField label="标签" className="md:col-span-2"><div className="space-y-2"><div className="flex gap-2"><Input value={tagInput} onChange={(event) => setTagInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === ",") { event.preventDefault(); addTag(); } }} placeholder="输入标签后按 Enter 添加" /><Button type="button" variant="outline" onClick={addTag}><Plus className="h-4 w-4" />添加</Button></div><div className="flex min-h-8 flex-wrap gap-2">{tags.map((tag) => <Badge key={tag} variant="secondary" className="gap-1 px-2 py-1">{tag}<Button type="button" size="icon" variant="ghost" className="ml-1 h-5 min-h-0 w-5 p-0" aria-label={"移除标签 " + tag} onClick={() => setTags((current) => current.filter((item) => item !== tag))}><X className="h-3 w-3" /></Button></Badge>)}{tags.length === 0 && <span className="text-xs text-muted-foreground">尚未添加标签</span>}</div></div></FormField>
           </div>
         </FormSection>
       </section>
 
       <section className="overflow-hidden rounded-lg bg-card">
-        <div role="tablist" aria-label="客户附加资料" className="flex gap-1 overflow-x-auto border-b px-3 pt-2 sm:px-5">
-          {tabs.map((tab) => <button key={tab.key} type="button" role="tab" aria-selected={activeTab === tab.key} onClick={() => setActiveTab(tab.key)} className={"shrink-0 border-b-2 px-4 py-3 text-sm transition-colors " + (activeTab === tab.key ? "border-primary font-semibold text-foreground" : "border-transparent text-muted-foreground hover:text-foreground")}>{tab.label}</button>)}
-        </div>
+        <ContentSwitcher
+          className="tp-carbon-content-switcher"
+          selectedIndex={Math.max(0, tabs.findIndex((tab) => tab.key === activeTab))}
+          onChange={({ name }) => setActiveTab(name as CustomerTab)}
+        >
+          {tabs.map((tab) => <Switch key={tab.key} name={tab.key} text={tab.label} />)}
+        </ContentSwitcher>
         <div role="tabpanel" className="min-h-[220px] p-4 sm:p-6">
           {activeTab === "contacts" && <div className="space-y-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-semibold">联系人</h2><p className="mt-1 text-sm text-muted-foreground">一个客户可以关联多位联系人。</p></div><Button onClick={() => setShowContactsFullScreen(true)}><UserRoundPlus className="h-4 w-4" />全屏管理联系人 <Badge className="ml-1">{contacts.length}</Badge></Button></div>{contactsLoading ? <p className="py-5 text-sm text-muted-foreground">正在读取联系人…</p> : contacts.length ? <div className="space-y-2">{contacts.map((contact) => <div key={contact.draftId} className="flex min-w-0 items-center justify-between gap-3 rounded-md bg-muted/30 px-3 py-2.5"><div className="min-w-0"><p className="truncate text-sm font-medium">{contact.name || "未命名联系人"}</p><p className="truncate text-xs text-muted-foreground">{[contact.job_title, contact.email, contact.phone].filter(Boolean).join(" · ") || "尚未填写联系方式"}</p></div><Badge variant="outline">{contact.id ? "已保存" : "待创建"}</Badge></div>)}</div> : <div className="rounded-md bg-muted/25 px-4 py-7 text-center text-sm text-muted-foreground">暂未添加联系人，可进入全屏窗口创建多位联系人。</div>}</div>}
           {activeTab === "sales" && <FormSection title="销售" description="设置客户负责人及默认交易条件。"><div className="grid gap-4 sm:grid-cols-2"><FormField label="销售员"><Input value={form.sales_person} onChange={(event) => update("sales_person", event.target.value)} placeholder="销售负责人" /></FormField><FormField label="付款条件"><Input value={form.payment_terms} onChange={(event) => update("payment_terms", event.target.value)} placeholder="例如：预付 30%，余款发货前支付" /></FormField><FormField label="付款方式"><Input value={form.payment_method} onChange={(event) => update("payment_method", event.target.value)} placeholder="T/T、L/C、信用卡等" /></FormField><FormField label="国际贸易术语"><Combobox value={form.incoterms_code} onValueChange={(value) => update("incoterms_code", value)} placeholder="选择 Incoterms" options={["EXW","FCA","CPT","CIP","DAP","DPU","DDP","FAS","FOB","CFR","CIF"].map((value) => ({ value, label: value }))} /></FormField></div></FormSection>}

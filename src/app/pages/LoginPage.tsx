@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { LoaderCircle, LockKeyhole } from "lucide-react";
+import { Renew as LoaderCircle, Locked as LockKeyhole } from "@carbon/icons-react";
 import { toast } from "sonner";
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input } from "@/shared/ui/primitives";
 import { getSupabaseClient } from "@/shared/lib/supabase";

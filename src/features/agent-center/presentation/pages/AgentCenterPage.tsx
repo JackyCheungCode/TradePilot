@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Activity, LockKeyhole, PlugZap } from "lucide-react";
+import { Activity, Locked as LockKeyhole, Plug as PlugZap } from "@carbon/icons-react";
 import { AgentChatWorkspace } from "../components/AgentChatWorkspace";
 import "../agent-center.css";
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, Combobox, Textarea } from "@/shared/ui/primitives";

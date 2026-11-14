@@ -1,6 +1,6 @@
 import { useEffect,useMemo,useState } from "react";
 import { AgentCharacterSelector,CharacterMark,COLOR_IDS,SHAPE_IDS,type ColorId,type ShapeId,type CharacterState } from "@aora-bot/react";
-import { RotateCcw,Save,Sparkles } from "lucide-react";
+import { Reset as RotateCcw, Save, MagicWand as Sparkles } from "@carbon/icons-react";
 import { Badge,Button,Card,CardContent,CardHeader,CardTitle } from "@/shared/ui/primitives";
 import { PageControlPanel } from "@/shared/ui/page-layout";
 import { AGENT_APPEARANCE_PROFILES,DEFAULT_AGENT_APPEARANCE,DEFAULT_AGENT_APPEARANCE_CONFIG,type AgentAppearance,type AgentAppearanceConfig } from "../../domain/appearance";
