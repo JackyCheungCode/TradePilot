@@ -730,7 +730,7 @@ code, pre, kbd, samp, .font-mono {
   gap: 16px;
 }
 @media (max-width: 671px) {
-
+  .tp-page-root { padding: 16px 0; }
   .tp-control-panel { padding: 16px; margin-inline: 0; }
   .tp-page-section { padding: 16px; }
   .tp-page-canvas .tp-mobile-card-grid {
