@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  AtSign, Facebook, Globe, Instagram, Linkedin, Mail, MessageCircle, MessageSquare,
-  Music2, Phone, Plus, RefreshCw, Search, Send, Smartphone, Trash2, UserRound,
-  Youtube, X, Pencil, Star,
-} from "lucide-react";
+  At as AtSign, LogoFacebook as Facebook, Earth as Globe, LogoInstagram as Instagram, LogoLinkedin as Linkedin, Email as Mail, Chat as MessageCircle, Chat as MessageSquare,
+  Music, Phone, Add as Plus, Renew as RefreshCw, Search, Send, Mobile as Smartphone, TrashCan as Trash2, User as UserRound,
+  LogoYoutube as Youtube, Close as X, Edit as Pencil, Star,
+} from "@carbon/icons-react";
 import { toast } from "sonner";
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Combobox, Input, Textarea } from "@/shared/ui/primitives";
 import { PageControlPanel } from "@/shared/ui/page-layout";
