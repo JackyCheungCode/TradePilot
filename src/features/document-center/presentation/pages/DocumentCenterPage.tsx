@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Archive, Building2, FilePlus2, FileStack, FileText, LayoutTemplate, Languages, Package, Plus, RefreshCw, Search, Users } from "lucide-react";
+import { Archive, Building2, FilePlus2, FileStack, FileText, LayoutTemplate, Languages, Package, Plus, RefreshCw, Search } from "lucide-react";
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input } from "@/shared/ui/primitives";
 import { tradeApi, type TradeDocument, type TradeOrder, type TradeParty, type TradeProduct } from "../../infrastructure/trade-api";
 type Section="workbench"|"create"|"documents"|"templates"|"parties"|"settings";
