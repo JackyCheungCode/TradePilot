@@ -1,5 +1,5 @@
 export type DiscoveryProvider = "google_maps" | "openstreetmap" | "serper" | "serpapi" | "apify";
-export type DiscoveryStatus = "queued" | "running" | "completed" | "partial" | "failed" | "cancelled";
+export type DiscoveryStatus = "planned" | "queued" | "running" | "completed" | "partial" | "failed" | "cancelled";
 export type SearchEngine = "serper" | "serpapi";
 export type SearchType = "web" | "shopping" | "images" | "news" | "videos" | "scholar" | "patents";
 export interface DiscoveryRunInput { countries: string[]; query: string; limitPerCountry: number; providers: DiscoveryProvider[]; state?: string; city?: string; osmTags?: Array<{key:string;value:string}>; businessTypes?: string[]; filters?: {minRating?:number;openNow?:boolean;requireWebsite?:boolean;requirePhone?:boolean}; originalQuery?:string; translatedQuery?:string; targetLanguage?:string; channel?:"map_local_businesses"|"search_engine"; searchEngines?:SearchEngine[]; searchTypes?:SearchType[]; searchLanguage?:string; advancedQuery?:string; excludeCategories?:string[]; }

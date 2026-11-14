@@ -102,10 +102,19 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
       let body:Record<string,unknown>;try{body=await request.json() as Record<string,unknown>;}catch{return errorResponse(request,"INVALID_JSON","请求内容不是有效 JSON。",400);}
       const goal=typeof body.goal==="string"?body.goal.trim():"";
       if(goal.length<2||goal.length>10000)return errorResponse(request,"VALIDATION_ERROR","任务目标长度必须为 2–10000 个字符。",400);
-      const rows=await db<Array<{id:string;agent_key:string;goal:string;status:string;created_at:string}>>(env,"agent_runs",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({owner_id:ownerId,agent_key:"tradepilot_planner",goal,status:"planned",plan:{execution_state:"not_started",reason:"Agent execution adapters are not yet enabled",policy:{search_and_analysis:"automatic",send_email:"approval_required",bulk_import:"approval_required"}}})});
+      const runId=crypto.randomUUID();
+      const taskCode="AGENT-"+new Date().toISOString().slice(0,10).replace(/-/g,"")+"-"+runId.replace(/-/g,"").slice(0,6).toUpperCase();
+      const rows=await db<Array<{id:string;agent_key:string;goal:string;status:string;created_at:string}>>(env,"agent_runs",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({id:runId,owner_id:ownerId,agent_key:"tradepilot_planner",goal,status:"planned",plan:{execution_state:"not_started",reason:"Agent execution adapters are not yet enabled",policy:{search_and_analysis:"automatic",send_email:"approval_required",bulk_import:"approval_required"}}})});
       const run=rows?.[0];if(!run)return errorResponse(request,"RUN_CREATE_FAILED","Agent 任务草案创建失败。",500);
-      await db(env,"agent_run_events",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({owner_id:ownerId,run_id:run.id,event_type:"plan_created",message:"已保存 Agent 任务目标；等待执行引擎与工具权限接通。",payload:{execution_state:"not_started"}})});
-      return successResponse(request,run,201);
+      try{
+        await db(env,"discovery_runs",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({id:runId,owner_id:ownerId,query:goal,countries:["GLOBAL"],limit_per_country:1,status:"planned",progress:0,discovered_count:0,created_lead_count:0,message:"Agent 任务草案已保存，等待执行引擎",task_code:taskCode,channel:"agent",providers:["agent"]})});
+        await db(env,"discovery_run_logs",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({run_id:runId,owner_id:ownerId,level:"info",message:"TradePilot Agent 任务草案已创建；执行引擎接通后将自动进入搜索与分析流程。"})});
+      }catch(error){
+        await db(env,"agent_runs?id=eq."+runId+"&owner_id=eq."+ownerId,{method:"DELETE",headers:{Prefer:"return=minimal"}});
+        throw error;
+      }
+      await db(env,"agent_run_events",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({owner_id:ownerId,run_id:run.id,event_type:"plan_created",message:"已保存 Agent 任务目标并同步至统一任务执行中心；等待执行引擎与工具权限接通。",payload:{execution_state:"not_started",taskCode}})});
+      return successResponse(request,{...run,taskCode,channel:"agent",countries:["GLOBAL"],progress:0,discoveredCount:0,message:"Agent 任务草案已保存"},201);
     }
     if(path==="/api/v1/agent/approvals"&&request.method==="GET"){
       const rows=await db<unknown[]>(env,"agent_approvals?owner_id=eq."+ownerId+"&select=id,run_id,action_type,operation_snapshot,snapshot_sha256,status,decision_note,decided_at,expires_at,created_at&order=created_at.desc&limit=100");
