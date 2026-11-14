@@ -1,10 +1,11 @@
 import { useState, type ReactNode } from "react";
-import { Compass, Facebook, Instagram, KeyRound, LogOut, MapPinned, Menu, PanelLeftClose, PanelLeftOpen, Radar, Search, Settings, Settings2, ShieldBan, Users, X, ChevronDown, ChevronRight, ListTodo, Files, ContactRound, Building2, Handshake, Package, ClipboardList, ShoppingCart, Truck } from "lucide-react";
+import { Facebook, Instagram } from "lucide-react";
 import { Button } from "@/shared/ui/primitives";
 import { AgentOrbIcon } from "@/features/agent-center/presentation/components/AgentOrbIcon";
-import { Sparkles, Workflow, PlugZap, ClipboardCheck, Bot, Activity, FileStack, FilePlus2, Archive, LayoutTemplate, FileText } from "lucide-react";
 
 type AppPage = "agentWorkbench" | "agentMarket" | "agentOrchestration" | "agentConnections" | "agentRuns" | "agentApprovals" | "agentSettings" | "orderQuotations" | "orderSales" | "orderPurchase" | "discovery" | "discoveryTasks" | "discoveryResults" | "searchDiscovery" | "facebookDiscovery" | "instagramDiscovery" | "leads" | "crmAccounts" | "crmContacts" | "crmOpportunities" | "enterpriseConfig" | "productConfig" | "productCatalog" | "integrations" | "searchExclusions" | "agentAppearance" | "orderCenter" | "documentWorkbench" | "documentCreate" | "documentRecords" | "documentTemplates";
+
+function MaterialIcon({ name, className = "" }: { name: string; className?: string }) { return <span aria-hidden="true" className={`material-symbols-outlined ${className}`}>{name}</span>; }
 
 export function AppShell({ children, activePage, onNavigate, userEmail, onSignOut }: { children: ReactNode; activePage: AppPage; onNavigate: (page: AppPage) => void; userEmail: string; onSignOut: () => void }) {
  const [collapsed,setCollapsed]=useState(false),[mobileOpen,setMobileOpen]=useState(false);
