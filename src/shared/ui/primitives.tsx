@@ -97,7 +97,7 @@ export function Badge({
 export const Input = React.forwardRef<
   HTMLInputElement,
   React.InputHTMLAttributes<HTMLInputElement>
->(function Input({ className, id, ...props }, ref) {
+>(function Input({ className, id, defaultValue, ...props }, ref) {
   const generatedId = React.useId();
   return (
     <CarbonTextInput
@@ -107,6 +107,7 @@ export const Input = React.forwardRef<
       hideLabel
       data-tp-control="true"
       className={className}
+      defaultValue={typeof defaultValue === "string" || typeof defaultValue === "number" ? defaultValue : undefined}
       {...props}
     />
   );
@@ -133,7 +134,7 @@ export const Checkbox = React.forwardRef<
 export const Textarea = React.forwardRef<
   HTMLTextAreaElement,
   React.TextareaHTMLAttributes<HTMLTextAreaElement>
->(function Textarea({ className, id, ...props }, ref) {
+>(function Textarea({ className, id, defaultValue, ...props }, ref) {
   const generatedId = React.useId();
   return (
     <CarbonTextArea
@@ -143,6 +144,7 @@ export const Textarea = React.forwardRef<
       hideLabel
       data-tp-control="true"
       className={className}
+      defaultValue={typeof defaultValue === "string" || typeof defaultValue === "number" ? defaultValue : undefined}
       {...props}
     />
   );
@@ -212,8 +214,8 @@ export function Combobox({
       itemToString={(item) => item?.label ?? ""}
       onChange={({ selectedItem }) => onValueChange(selectedItem?.value ?? "")}
       placeholder={searchPlaceholder || placeholder}
-      titleText={placeholder}
-      hideLabel
+      titleText=""
+      aria-label={placeholder}
       disabled={disabled}
       className={className}
     />
