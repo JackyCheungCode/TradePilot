@@ -37,7 +37,11 @@ const ROUTES: Record<AppPage, string> = {
 const getPath = () => window.location.pathname;
 const getPage = (path: string): AppPage | null => {
   if (path.startsWith("/agent/")) { const key = path.slice(7); const map: Record<string, AppPage> = {workbench:"agentWorkbench",market:"agentMarket",orchestration:"agentOrchestration",connections:"agentConnections",runs:"agentRuns",approvals:"agentApprovals",settings:"agentSettings"}; return map[key] ?? "agentWorkbench"; }
-  if (path === "/orders") return "orderQuotations";\n  if (path === "/orders/quotations") return "orderQuotations";\n  if (path === "/orders/sales") return "orderSales";\n  if (path === "/orders/purchase") return "orderPurchase";\n  if (path.startsWith("/orders/")) return "orderQuotations";
+  if (path === "/orders") return "orderQuotations";
+  if (path === "/orders/quotations") return "orderQuotations";
+  if (path === "/orders/sales") return "orderSales";
+  if (path === "/orders/purchase") return "orderPurchase";
+  if (path.startsWith("/orders/")) return "orderQuotations";
   if (path.startsWith("/documents")) { const key = path.split("/")[2]; const map: Record<string, AppPage> = {create:"documentCreate",records:"documentRecords",templates:"documentTemplates"}; return map[key] ?? "documentWorkbench"; }
   if (path === ROUTES.discovery || path === "/") return "discovery";
   if (path === ROUTES.discoveryTasks || path.endsWith("/tasks")) return "discoveryTasks";
