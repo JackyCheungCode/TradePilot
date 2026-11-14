@@ -17,7 +17,8 @@ const money = (value: number, currency: string) => {
 export function OrderCenterPage({ onCreateQuotation, initialView = "quotations" }: { onCreateQuotation: () => void; initialView?: Exclude<View, "all"> }) {
   const [orders, setOrders] = useState<TradeOrder[]>([]);
   const [documents, setDocuments] = useState<TradeDocument[]>([]);
-  const [view, setView] = useState<View>(initialView);\n  useEffect(() => { setView(initialView); }, [initialView]);
+  const [view, setView] = useState<View>(initialView);
+  useEffect(() => { setView(initialView); }, [initialView]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [busyId, setBusyId] = useState("");
