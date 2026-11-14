@@ -190,7 +190,7 @@ export function AgentMarketPage() {
               />
             </div>
           </Column>
-          <Column className="tp-agent-market-column" sm={4} md={4} lg={4} className="tp-agent-market-column tp-agent-market-result-column">
+          <Column className="tp-agent-market-column tp-agent-market-result-column" sm={4} md={4} lg={4}>
             <p className="tp-agent-market-result-count cds--type-label-01">{visibleAgents.length} 个 Agent</p>
           </Column>
         </Grid>
