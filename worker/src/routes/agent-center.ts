@@ -37,7 +37,7 @@ function decodeKey(value:string):Uint8Array{
   throw new Error("AGENT_ENCRYPTION_KEY 必须是 32 字节密钥的 Base64 或 64 位十六进制值。");
 }
 async function encryptCredentials(value:unknown,ownerId:string,secret:string):Promise<string>{
-  const key=await crypto.subtle.importKey("raw",decodeKey(secret),{name:"AES-GCM"},false,["encrypt"]);
+  const keyBytes=decodeKey(secret);const keyBuffer=new ArrayBuffer(keyBytes.length);new Uint8Array(keyBuffer).set(keyBytes);const key=await crypto.subtle.importKey("raw",keyBuffer,{name:"AES-GCM"},false,["encrypt"]);
   const iv=crypto.getRandomValues(new Uint8Array(12));
   const plaintext=new TextEncoder().encode(JSON.stringify(value));
   const ciphertext=await crypto.subtle.encrypt({name:"AES-GCM",iv,additionalData:new TextEncoder().encode(ownerId)},key,plaintext);
