@@ -64,5 +64,5 @@
   --tp-text-muted: #aab1b9;
 }
 
-* { box-sizing: border-box; border-color: var(--border); }
+* { box-sizing: border-box; }
 html, body, #root { min-height: 100%; }
