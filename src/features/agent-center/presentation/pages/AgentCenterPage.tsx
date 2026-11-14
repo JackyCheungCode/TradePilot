@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Activity, Bot, BrainCircuit, Clock3, Globe2, LockKeyhole, PlugZap, ShieldCheck, Sparkles } from "lucide-react";
+import { Activity, Bot, BrainCircuit, LockKeyhole, PlugZap, ShieldCheck, Sparkles } from "lucide-react";
 import { AgentChatWorkspace } from "../components/AgentChatWorkspace";
 import "../agent-center.css";
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input } from "@/shared/ui/primitives";
@@ -23,5 +23,4 @@ export function AgentCenterPage({section}:{section:Section}){
  {notice&&section==="agentWorkbench"&&<p className="rounded-md bg-muted p-3 text-sm text-muted-foreground">{notice}</p>}
  </div>
 }
-function RoleGrid({limit}:{limit?:number}){const icons=[Globe2,BrainCircuit,Bot,ShieldCheck,Sparkles,Clock3,LockKeyhole];return <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{roles.slice(0,limit).map(([id,name,desc,p],index)=>{const Icon=icons[index]??Bot;return <Card key={id}><CardContent className="flex gap-3 p-4"><div className="rounded-lg bg-muted p-2"><Icon className="h-5 w-5"/></div><div><div className="flex flex-wrap items-center gap-2"><p className="text-sm font-semibold">{name}</p><Badge>{p}</Badge></div><p className="mt-1 text-xs text-muted-foreground">{desc}</p></div></CardContent></Card>;})}</div>}
 function Empty({title,detail}:{title:string;detail:string}){return <Card><CardContent className="flex flex-col items-center gap-3 py-16 text-center"><Activity className="h-8 w-8 text-muted-foreground"/><p className="font-medium">{title}</p><p className="max-w-md text-sm text-muted-foreground">{detail}</p></CardContent></Card>}
