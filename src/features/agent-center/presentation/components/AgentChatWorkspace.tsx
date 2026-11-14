@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { ArrowUp, Bot, Globe2, Wrench, CheckCircle2, Clock3 } from "lucide-react";
+import { ArrowUp, Bot, Globe2, Wrench, CheckCircle2, Clock3, History, MessageSquarePlus } from "lucide-react";
 import { AgentOrbIcon } from "./AgentOrbIcon";
 import { Badge, Button, Card, CardContent } from "@/shared/ui/primitives";
 import { agentApi, type AgentConnection } from "../../infrastructure/agent-api";
 
 type ChatRecord={id:string;name:string;country_code?:string|null;address?:string|null;phone?:string|null;email?:string|null;website?:string|null;business_type?:string|null;confidence_score?:number|null;channel?:string;record_type?:string;raw_data?:Record<string,unknown>;status?:string;sources?:Array<{provider?:string;keyword?:string;source_url?:string;raw_data?:Record<string,unknown>}>};
-type ChatMessage={id:number;role:"user"|"assistant";content:string;kind?:"plan"|"progress"|"result";records?:ChatRecord[];runId?:string};
+type ChatMessage={id:string|number;role:"user"|"assistant";content:string;kind?:"plan"|"progress"|"result";records?:ChatRecord[];runId?:string};
 const agents=[
  {id:"auto",name:"小雅自动调度"},
  {id:"buyer_development",name:"全球买家开发"},
@@ -17,7 +17,11 @@ const agents=[
  {id:"trade_compliance",name:"贸易合规"},
 ];
 export function AgentChatWorkspace({connections,onNotice}:{connections:AgentConnection[];onNotice:(message:string)=>void}){
- const [messages,setMessages]=useState<ChatMessage[]>([{id:1,role:"assistant",content:"你好，我是小雅。告诉我你想开发什么市场、寻找哪类客户，或者直接 @ 一位专业 Agent。我会先整理任务计划，等你确认后再执行。"}]);
+ const welcomeMessage:ChatMessage={id:"welcome",role:"assistant",content:"你好，我是小雅。告诉我你想开发什么市场、寻找哪类客户，或者直接 @ 一位专业 Agent。我会先整理任务计划，等你确认后再执行。"};
+ const [messages,setMessages]=useState<ChatMessage[]>([welcomeMessage]);
+ const [conversations,setConversations]=useState<Array<{id:string;title:string;last_message_at:string;created_at:string}>>([]);
+ const [showHistory,setShowHistory]=useState(false);
+ const [historyLoading,setHistoryLoading]=useState(true);
  const [draft,setDraft]=useState("");
  const [selectedAgent,setSelectedAgent]=useState("auto");
  const [country,setCountry]=useState("US");
@@ -31,6 +35,56 @@ export function AgentChatWorkspace({connections,onNotice}:{connections:AgentConn
  const [activeRunId,setActiveRunId]=useState<string|null>(null);
  const [conversationId,setConversationId]=useState<string|undefined>(undefined);
  const [chatWaitSeconds,setChatWaitSeconds]=useState(0);
+ async function startNewChat(){
+  if(busy)return;
+  try{
+   const row=await agentApi.createConversation("新聊天");
+   setConversations(old=>[row,...old]);
+   setConversationId(row.id);
+   setMessages([welcomeMessage]);
+   setDraft("");setShowPlan(false);setPlanGoal("");setActiveRunId(null);setShowHistory(false);
+  }catch(error){onNotice(error instanceof Error?error.message:"新建聊天失败。");}
+ }
+ async function openConversation(id:string){
+  if(busy)return;
+  setHistoryLoading(true);
+  try{
+   const rows=await agentApi.listConversationMessages(id);
+   setConversationId(id);
+   const restored:ChatMessage[]=rows.map(row=>({id:row.id,role:row.role,content:row.content,...(row.metadata?.kind==="result"?{kind:"result" as const}:{}),...(typeof row.metadata?.runId==="string"?{runId:row.metadata.runId}:{})}));
+   for(const item of restored){if(item.runId){try{const snapshot=await agentApi.getRun(item.runId);item.records=snapshot.records??[];}catch{/* Keep the saved message visible if an old task was removed. */}}}
+   setMessages(restored.length?restored:[welcomeMessage]);
+   const last=rows.at(-1);
+   const task=last?.metadata?.task as {goal?:string;agentKey?:string;country?:string;mode?:"planner"|"internal"|"external"}|undefined;
+   if(task?.goal){setPlanGoal(task.goal);setSelectedAgent(task.agentKey??"auto");setCountry(task.country??"US");setMode(task.mode??"planner");setShowPlan(true);}else setShowPlan(false);
+   setActiveRunId(null);setShowHistory(false);
+  }catch(error){onNotice(error instanceof Error?error.message:"读取历史聊天失败。");}
+  finally{setHistoryLoading(false);}
+ }
+ useEffect(()=>{
+  let alive=true;
+  const load=async()=>{
+   try{
+    const rows=await agentApi.listConversations();
+    if(!alive)return;
+    setConversations(rows);
+    if(rows.length){await openConversation(rows[0].id);}
+    else{
+     const created=await agentApi.createConversation("新聊天");
+     if(!alive)return;
+     setConversations([created]);setConversationId(created.id);setMessages([welcomeMessage]);
+    }
+   }catch(error){if(alive)onNotice(error instanceof Error?error.message:"加载历史聊天失败。");}
+   finally{if(alive)setHistoryLoading(false);}
+  };
+  void load();
+  return()=>{alive=false;};
+ },[]);
+ async function saveAssistantMessage(content:string,metadata:Record<string,unknown>={}){
+  if(!conversationId)return;
+  try{await agentApi.saveConversationMessage(conversationId,{role:"assistant",content,metadata});}
+  catch(error){onNotice(error instanceof Error?error.message:"保存聊天记录失败。");}
+ }
  useEffect(()=>{if(!busy)return;setChatWaitSeconds(0);const started=Date.now();const timer=window.setInterval(()=>setChatWaitSeconds(Math.floor((Date.now()-started)/1000)),1000);return()=>window.clearInterval(timer);},[busy]);
  useEffect(()=>{if(!activeRunId)return;let alive=true;const poll=async()=>{try{const snapshot=await agentApi.getRun(activeRunId);if(!alive)return;const run=snapshot.run;const currentSteps=Array.isArray(run.plan?.execution_steps)?run.plan.execution_steps as Array<{title?:string;agentKey?:string;status?:string}>:[];const activeStep=currentSteps.find(item=>item.status==="running");const latest=(activeStep?(activeStep.title??activeStep.agentKey??"专业 Agent")+" 正在执行 · ":"")+(snapshot.logs.at(-1)?.message??snapshot.events.at(-1)?.message??snapshot.discoveryRun?.message??"");const status=run.status;const statusText=status==="queued"?"已排队":status==="running"?"正在执行":status==="awaiting_approval"?"等待人工审批":status==="succeeded"?"执行成功":status==="completed"?"执行完成":status==="partial"?"部分完成":status==="failed"?"执行失败":status==="cancelled"?"已取消":status;const progress=snapshot.discoveryRun?.progress;const update=[statusText,typeof progress==="number"?"进度 "+progress+"%":null,latest].filter(Boolean).join(" · ");setMessages(old=>{const index=old.findIndex(item=>item.id===-1);if(index<0)return [...old,{id:-1,role:"assistant",content:update,kind:"progress"}];const next=[...old];next[index]={...next[index],content:update,kind:"progress"};return next;});if(["succeeded","completed","partial","failed","cancelled","awaiting_approval","planned"].includes(status)){const specialistResults=Array.isArray(run.result?.specialists)?run.result.specialists.map(item=>item as Record<string,unknown>):[];const analysisText=specialistResults.map(item=>"\n\n【"+String(item.label??item.agentKey??"专业 Agent")+"】\n"+String(item.output??"")).join("").slice(0,18000);const actualRecords=snapshot.records??[];const reportedCount=Number(snapshot.discoveryRun?.discovered_count??0);const countNote=actualRecords.length+" 条可查看明细"+(reportedCount>actualRecords.length?"（任务统计 "+reportedCount+" 条，归档明细 "+actualRecords.length+" 条）":"");const finalMessage=status==="awaiting_approval"?"任务已暂停，等待你在审批中心确认。":status==="failed"?(run.error_message??"任务执行失败，请查看执行记录。"):status==="partial"?"任务部分完成。"+countNote+"，请检查下方明细和执行日志。":status==="cancelled"?"任务已取消。":"任务已完成。"+countNote+"。"+analysisText;setMessages(old=>[...old.filter(item=>item.id!==-2),{id:-2,role:"assistant",content:finalMessage,kind:"result",records:actualRecords,runId:activeRunId??undefined}]);setActiveRunId(null);}}catch(error){if(alive)onNotice(error instanceof Error?error.message:"读取任务进度失败。");}};void poll();const timer=window.setInterval(()=>void poll(),3000);return()=>{alive=false;window.clearInterval(timer);};},[activeRunId,onNotice]);
  const activeConnections=connections.filter(c=>c.status==="active");
@@ -44,6 +98,7 @@ export function AgentChatWorkspace({connections,onNotice}:{connections:AgentConn
   try{
    const response=await agentApi.chat(text,conversationId);
    setConversationId(response.conversationId);
+   setConversations(old=>[{id:response.conversationId,title:text.slice(0,100),last_message_at:new Date().toISOString(),created_at:old.find(item=>item.id===response.conversationId)?.created_at??new Date().toISOString()},...old.filter(item=>item.id!==response.conversationId)]);
    setMessages(old=>[...old.filter(item=>!(item.kind==="progress"&&item.content==="小雅正在理解你的需求…")),{id:Date.now()+2,role:"assistant",content:response.reply}]);
    if(response.task){
     setPlanGoal(response.task.goal);
@@ -67,14 +122,14 @@ export function AgentChatWorkspace({connections,onNotice}:{connections:AgentConn
     const run=await agentApi.createRun(planGoal);
     const result=await agentApi.invokeConnection(connection.id,run.id,toolName,args);
     const message=result.status==="awaiting_approval"?"任务已提交审批中心。批准后才会执行外部写操作。":result.status==="succeeded"?"外部工具已执行，结果已写入执行记录。":"外部工具状态："+result.status;
-    setMessages(old=>[...old,{id:Date.now()+2,role:"assistant",content:message,kind:"result"}]);
+    setMessages(old=>[...old,{id:Date.now()+2,role:"assistant",content:message,kind:"result"}]);await saveAssistantMessage(message,{kind:"result"});
    }else{
     const run=await agentApi.createRun(planGoal,{mode:mode==="planner"?"planner":"internal_discovery",country:country.toUpperCase(),searchEngine:"serper",limitPerCountry:50,...(selectedAgent!=="auto"?{agentKey:selectedAgent}:{})});
     if(["queued","running"].includes(run.status))setActiveRunId(run.id);
     const planner=run.plan?.planner as {summary?:string;steps?:string[]}|undefined;
     const status=run.status==="awaiting_approval"?"等待人工审批":run.status==="planned"?"等待补充执行条件":run.status==="failed"?"执行失败":"已进入统一任务执行中心";
     const detail=[planner?.summary??run.message??"小雅已接收任务。",status,"任务编号："+(run.taskCode??run.id),...(planner?.steps??[]).map((s,i)=>(i+1)+". "+s)].join("\n");
-    setMessages(old=>[...old,{id:Date.now()+2,role:"assistant",content:detail,kind:"result"}]);
+    setMessages(old=>[...old,{id:Date.now()+2,role:"assistant",content:detail,kind:"result"}]);await saveAssistantMessage(detail,{kind:"result",runId:run.id});
    }
    setShowPlan(false);
   }catch(error){setMessages(old=>[...old,{id:Date.now()+3,role:"assistant",content:error instanceof Error?error.message:"任务提交失败。",kind:"result"}]);}
@@ -82,7 +137,8 @@ export function AgentChatWorkspace({connections,onNotice}:{connections:AgentConn
  }
  return <div className="grid min-h-[680px] gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
   <Card className="flex min-h-[680px] flex-col overflow-hidden border-0 shadow-sm">
-   <div className="flex items-center gap-3 border-b bg-card px-5 py-4"><AgentOrbIcon className="h-11 w-11" sizePx={44} state={busy?"working":"happy"}/><div className="min-w-0 flex-1"><p className="font-semibold">小雅 <span className="text-xs font-normal text-muted-foreground">TradePilot 总协调 Agent</span></p><p className="text-xs text-muted-foreground">多轮对话 · 任务理解 · Agent 调度</p></div><Badge variant="success">在线</Badge></div>
+   <div className="flex items-center gap-3 border-b bg-card px-5 py-4"><Button size="sm" variant="outline" onClick={()=>void startNewChat()} disabled={busy}><MessageSquarePlus className="mr-1 h-4 w-4"/>新建聊天</Button><Button size="sm" variant="outline" onClick={()=>setShowHistory(v=>!v)}><History className="mr-1 h-4 w-4"/>历史记录</Button><AgentOrbIcon className="h-11 w-11" sizePx={44} state={busy?"working":"happy"}/><div className="min-w-0 flex-1"><p className="font-semibold">小雅 <span className="text-xs font-normal text-muted-foreground">TradePilot 总协调 Agent</span></p><p className="text-xs text-muted-foreground">多轮对话 · 任务理解 · Agent 调度</p></div><Badge variant="success">在线</Badge></div>
+   {showHistory&&<div className="max-h-64 overflow-y-auto border-b bg-card p-3"><div className="mb-2 flex items-center justify-between"><p className="text-sm font-semibold">历史聊天</p><Button size="sm" variant="ghost" onClick={()=>setShowHistory(false)}>收起</Button></div>{historyLoading?<p className="p-3 text-xs text-muted-foreground">正在读取历史记录…</p>:conversations.length===0?<p className="p-3 text-xs text-muted-foreground">暂无历史聊天</p>:<div className="space-y-1">{conversations.map(item=><button key={item.id} onClick={()=>void openConversation(item.id)} className={`w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-muted ${conversationId===item.id?"bg-muted font-medium":""}`}><span className="block truncate">{item.title||"新聊天"}</span><span className="text-[11px] text-muted-foreground">{new Date(item.last_message_at).toLocaleString()}</span></button>)}</div>}</div>}
    <CardContent className="flex flex-1 flex-col gap-4 overflow-y-auto bg-muted/20 p-4 md:p-6">
     {messages.map(m=><div key={m.id} className={m.role==="user"?"ml-auto max-w-[88%]":"mr-auto max-w-[94%]"}>
      <div className="mb-1 flex items-center gap-2 text-[11px] text-muted-foreground">{m.role==="assistant"?<><Bot className="h-3.5 w-3.5"/>小雅</>:"你"}{m.kind==="progress"&&<Badge>处理中</Badge>}{m.kind==="result"&&<Badge variant="success">任务反馈</Badge>}</div>

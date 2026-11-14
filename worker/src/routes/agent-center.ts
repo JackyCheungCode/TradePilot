@@ -621,16 +621,50 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
       return successResponse(request,{run,discoveryRun:discovery?.[0]??null,events:events??[],logs:logs??[],records:detailedRecords});
     }
 
+    if(path==="/api/v1/agent/conversations"&&request.method==="GET"){
+      const rows=await db<Array<Record<string,unknown>>>(env,"agent_conversations?owner_id=eq."+ownerId+"&select=id,title,last_message_at,created_at&order=last_message_at.desc&limit=100");
+      return successResponse(request,rows??[]);
+    }
+    if(path==="/api/v1/agent/conversations"&&request.method==="POST"){
+      let body:Record<string,unknown>={};try{body=await request.json() as Record<string,unknown>;}catch{/* empty body is allowed */}
+      const title=typeof body.title==="string"?body.title.trim().slice(0,100):"新聊天";
+      const id=crypto.randomUUID();
+      await db(env,"agent_conversations",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({id,owner_id:ownerId,title:title||"新聊天",last_message_at:new Date().toISOString()})});
+      return successResponse(request,{id,title:title||"新聊天",last_message_at:new Date().toISOString(),created_at:new Date().toISOString()});
+    }
+    const conversationMessagesMatch=path.match(new RegExp("^/api/v1/agent/conversations/([0-9a-f-]{36})/messages$","i"));
+    if(conversationMessagesMatch&&request.method==="GET"){
+      const conversationId=conversationMessagesMatch[1];
+      const owned=await db<Array<{id:string}>>(env,"agent_conversations?id=eq."+conversationId+"&owner_id=eq."+ownerId+"&select=id&limit=1");
+      if(!owned?.length)return errorResponse(request,"CONVERSATION_NOT_FOUND","聊天会话不存在。",404);
+      const rows=await db<Array<Record<string,unknown>>>(env,"agent_chat_messages?conversation_id=eq."+conversationId+"&owner_id=eq."+ownerId+"&select=id,role,content,metadata,created_at&order=created_at.asc&limit=500");
+      return successResponse(request,rows??[]);
+    }
+    if(conversationMessagesMatch&&request.method==="POST"){
+      const conversationId=conversationMessagesMatch[1];
+      const owned=await db<Array<{id:string}>>(env,"agent_conversations?id=eq."+conversationId+"&owner_id=eq."+ownerId+"&select=id&limit=1");
+      if(!owned?.length)return errorResponse(request,"CONVERSATION_NOT_FOUND","聊天会话不存在。",404);
+      let body:Record<string,unknown>;try{body=await request.json() as Record<string,unknown>;}catch{return errorResponse(request,"INVALID_JSON","请求内容不是有效 JSON。",400);}
+      const role=body.role==="user"?"user":body.role==="assistant"?"assistant":null;
+      const content=typeof body.content==="string"?body.content.trim():"";
+      if(!role||content.length<1||content.length>5000)return errorResponse(request,"VALIDATION_ERROR","消息角色或内容无效（内容限制 1–5000 字）。",400);
+      const metadata=body.metadata&&typeof body.metadata==="object"&&!Array.isArray(body.metadata)?body.metadata:{};
+      const rows=await db<Array<Record<string,unknown>>>(env,"agent_chat_messages",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({owner_id:ownerId,conversation_id:conversationId,role,content,metadata})});
+      await db(env,"agent_conversations?id=eq."+conversationId+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({last_message_at:new Date().toISOString()})});
+      return successResponse(request,rows?.[0]??{});
+    }
+
     if(path==="/api/v1/agent/chat"&&request.method==="POST"){
       let body:Record<string,unknown>;try{body=await request.json() as Record<string,unknown>;}catch{return errorResponse(request,"INVALID_JSON","请求内容不是有效 JSON。",400);}
       const message=typeof body.message==="string"?body.message.trim():"";
       if(message.length<1||message.length>5000)return errorResponse(request,"VALIDATION_ERROR","消息长度必须为 1–5000 个字符。",400);
       let conversationId=typeof body.conversationId==="string"&&/^[0-9a-f-]{36}$/i.test(body.conversationId)?body.conversationId:crypto.randomUUID();
-      const existing=await db<Array<{id:string}>>(env,"agent_conversations?id=eq."+conversationId+"&owner_id=eq."+ownerId+"&select=id&limit=1");
+      const existing=await db<Array<{id:string;title:string}>>(env,"agent_conversations?id=eq."+conversationId+"&owner_id=eq."+ownerId+"&select=id,title&limit=1");
       if(!existing?.length){
         conversationId=crypto.randomUUID();
         await db(env,"agent_conversations",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({id:conversationId,owner_id:ownerId,title:message.slice(0,100),last_message_at:new Date().toISOString()})});
       }
+      if(existing?.[0]?.title==="新聊天")await db(env,"agent_conversations?id=eq."+conversationId+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({title:message.slice(0,100)})});
       const history=await db<Array<{role:"user"|"assistant";content:string}>>(env,"agent_chat_messages?conversation_id=eq."+conversationId+"&owner_id=eq."+ownerId+"&select=role,content&order=created_at.desc&limit=16");
       const turns:ChatTurn[]=[...(history??[]).reverse(),{role:"user",content:message}];
       await db(env,"agent_chat_messages",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({owner_id:ownerId,conversation_id:conversationId,role:"user",content:message})});
