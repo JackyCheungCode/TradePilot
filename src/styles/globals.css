@@ -153,16 +153,16 @@ button { -webkit-tap-highlight-color: transparent; }
 }
 .tp-page-canvas > * { max-width: 100%; }
 main { min-width: 0; background: var(--tp-canvas); }
-main h1, .tp-page-canvas h1 {
+main h1:not([class*="cds--type-"]), .tp-page-canvas h1:not([class*="cds--type-"]) {
   color: var(--tp-text);
   font-size: 21px;
   font-weight: 600;
   line-height: 1.3;
   letter-spacing: -.025em;
 }
-.tp-page-canvas h2 { font-size: 17px; line-height: 1.35; font-weight: 600; letter-spacing: -.015em; }
-.tp-page-canvas h3 { font-size: 14px; line-height: 1.4; font-weight: 600; letter-spacing: -.015em; }
-.tp-page-canvas p { line-height: 1.5; }
+.tp-page-canvas h2:not([class*="cds--type-"]) { font-size: 17px; line-height: 1.35; font-weight: 600; letter-spacing: -.015em; }
+.tp-page-canvas h3:not([class*="cds--type-"]) { font-size: 14px; line-height: 1.4; font-weight: 600; letter-spacing: -.015em; }
+.tp-page-canvas p:not([class*="cds--type-"]) { line-height: 1.5; }
 
 /* Surface, form controls and data views */
 .tp-page-canvas .rounded-xl,
