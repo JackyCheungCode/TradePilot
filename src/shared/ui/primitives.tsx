@@ -148,7 +148,7 @@ export const Checkbox = React.forwardRef<
       hideLabel={!labelText}
       data-tp-control="true"
       className={className}
-      onChange={(event, _data) => onChange?.(event as React.ChangeEvent<HTMLInputElement>)}
+      onChange={(event) => onChange?.(event as React.ChangeEvent<HTMLInputElement>)}
       {...props}
     />
   );
