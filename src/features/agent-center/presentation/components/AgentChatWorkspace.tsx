@@ -26,7 +26,6 @@ export function AgentChatWorkspace({connections,onNotice}:{connections:AgentConn
  const [planGoal,setPlanGoal]=useState("");
  const [showPlan,setShowPlan]=useState(false);
  const [busy,setBusy]=useState(false);
- const [completed,setCompleted]=useState(false);
  const [argsJson,setArgsJson]=useState("{}");
  const activeConnections=connections.filter(c=>c.status==="active");
  const connection=activeConnections.find(c=>c.id===connectionId);
