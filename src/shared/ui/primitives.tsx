@@ -259,7 +259,7 @@ export function Combobox({
       items={options}
       selectedItem={selected}
       itemToString={(item) => item?.label ?? ""}
-      itemToElement={(item) => <span className="flex flex-col"><span>{item.label}</span>{item.description ? <span className="text-xs text-text-secondary">{item.description}</span> : null}</span>}
+      itemToElement={(item) => <span className="flex items-center gap-2">{item.icon}{<span className="flex flex-col"><span>{item.label}</span>{item.description ? <span className="text-xs text-text-secondary">{item.description}</span> : null}</span>}</span>}
       onChange={({ selectedItem }) => onValueChange(selectedItem?.value ?? "")}
       placeholder={searchPlaceholder || placeholder}
       titleText=""
@@ -270,7 +270,7 @@ export function Combobox({
   );
 }
 
-export type MultiSelectOption = { value: string; label: string; description?: string };
+export type MultiSelectOption = { value: string; label: string; description?: string; icon?: React.ReactNode };
 
 export function MultiSelect({
   value,
