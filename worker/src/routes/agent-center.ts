@@ -347,7 +347,7 @@ export async function callAgentChatModel(env:Env,messages:ChatTurn[],systemOverr
    if(!response.ok)throw new Error("小雅模型请求失败（HTTP "+response.status+"）。");
    raw=extractModelText(await response.json());
   }else{
-   response=await fetch(base+"/chat/completions",{method:"POST",redirect:"manual",headers:{Authorization:"Bearer "+key,"Content-Type":"application/json"},body:JSON.stringify({model,messages:[{role:"system",content:system},...messages],response_format:{type:"json_object"},...(jsonResponse?{response_format:{type:"json_object"}}:{}),max_tokens:maxTokens}),signal:AbortSignal.timeout(45000)});
+   response=await fetch(base+"/chat/completions",{method:"POST",redirect:"manual",headers:{Authorization:"Bearer "+key,"Content-Type":"application/json"},body:JSON.stringify({model,messages:[{role:"system",content:system},...messages],...(jsonResponse?{response_format:{type:"json_object"}}:{}),max_tokens:maxTokens}),signal:AbortSignal.timeout(45000)});
    if(!response.ok)throw new Error("小雅模型请求失败（HTTP "+response.status+"）。");
    raw=extractModelText(await response.json());
   }
