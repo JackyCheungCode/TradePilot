@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Toaster } from "sonner";
 import type { Session } from "@supabase/supabase-js";
 import { AppShell } from "./layouts/AppShell";
+import { NotifyViewport } from "@/components/common";
 import { LoginPage } from "./pages/LoginPage";
 import { MapLocalDiscoveryPage } from "@/features/lead-discovery/presentation/pages/MapLocalDiscoveryPage";
 import { DiscoveryTasksPage } from "@/features/lead-discovery/presentation/pages/DiscoveryTasksPage";
@@ -116,9 +117,9 @@ export function App() {
     else if (session && path === "/") goTo(ROUTES.discovery, true);
   }, [checkingSession, session, path, activePage, goTo]);
   if (checkingSession) return <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">正在检查登录状态…</div>;
-  if (!session || path === "/login") return <><LoginPage /><Toaster richColors position="top-right" /></>;
+  if (!session || path === "/login") return <><LoginPage /><Toaster richColors position="top-right" /><NotifyViewport /></>;
   return <AppShell activePage={activePage ?? "discovery"} onNavigate={navigate} userEmail={session.user.email ?? ""} onSignOut={() => void getSupabaseClient().auth.signOut()}>
     {activePage && ["orderQuotations","orderSales","orderPurchase"].includes(activePage) ? <OrderCenterPage initialView={activePage === "orderSales" ? "sales" : activePage === "orderPurchase" ? "purchase" : "quotations"} onCreateQuotation={() => navigate("documentCreate")} /> : activePage && ["documentWorkbench","documentCreate","documentRecords","documentTemplates"].includes(activePage) ? <DocumentCenterPage key={activePage} initialSection={activePage === "documentCreate" ? "create" : activePage === "documentRecords" ? "documents" : activePage === "documentTemplates" ? "templates" : "workbench"} /> : activePage && ["agentWorkbench","agentMarket","agentOrchestration","agentConnections","agentRuns","agentApprovals","agentSettings"].includes(activePage) ? <AgentCenterPage section={activePage as "agentWorkbench" | "agentMarket" | "agentOrchestration" | "agentConnections" | "agentRuns" | "agentApprovals" | "agentSettings"} /> : activePage === "integrations" ? <IntegrationsSettingsPage /> : activePage === "searchExclusions" ? <SearchExclusionRulesPage /> : activePage === "agentAppearance" ? <AgentAppearanceSettingsPage /> : activePage === "discoveryTasks" ? <DiscoveryTasksPage /> : activePage === "discoveryResults" ? <DiscoveryResultsPage /> : activePage === "searchDiscovery" ? <SearchEngineDiscoveryPage /> : activePage === "facebookDiscovery" ? <FacebookDiscoveryPage /> : activePage === "instagramDiscovery" ? <InstagramDiscoveryPage /> : activePage === "leads" ? <LeadsPage /> : activePage === "crmContacts" ? <ContactsPage /> : ["crmAccounts","crmOpportunities","enterpriseConfig","productConfig","productCatalog"].includes(activePage??"") ? <MasterDataPage key={activePage} initialSection={activePage==="crmOpportunities"?"opportunities":activePage==="enterpriseConfig"?"company":activePage==="productConfig"?"categories":activePage==="productCatalog"?"products":"accounts"}/> : <MapLocalDiscoveryPage />}
-    <Toaster richColors position="top-right" />
+    <Toaster richColors position="top-right" /><NotifyViewport />
   </AppShell>;
 }
