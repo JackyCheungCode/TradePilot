@@ -305,16 +305,6 @@
   min-width: 0;
   overflow-x: clip;
 }
-.tp-page-root {
-  width: 100%;
-  min-width: 0;
-  max-width: 1600px;
-  margin-inline: auto;
-}
-.tp-page-root > * {
-  min-width: 0;
-  max-width: 100%;
-}
 
 /* Mobile navigation is an overlay, never part of the document flow. */
 .tp-carbon-mobile-nav {
@@ -342,9 +332,6 @@
   }
   .tp-carbon-header {
     padding-inline-end: env(safe-area-inset-right);
-  }
-  .tp-page-root {
-    padding: 12px;
   }
 }
 
@@ -410,22 +397,7 @@
 
 @media (max-width: 671px) {
   .tp-carbon-header.cds--header { width: 100%; }
-  .tp-page-root {
-    max-width: 100%;
-    padding: 16px;
-  }
-  .tp-control-panel {
-    margin: 0 0 16px;
-    padding: 0 0 16px;
-  }
 }
-@media (min-width: 672px) {
-  .tp-page-root { padding: 16px; }
-}
-@media (min-width: 1584px) {
-  .tp-page-root { padding-inline: 24px; }
-}
-
 
 /* Carbon v11 workspace foundation: theme tokens own all surface and text colors. */
 .tp-carbon-shell,
