@@ -208,8 +208,7 @@ main h1, .tp-page-canvas h1 {
 .tp-page-canvas textarea { min-height: 84px; }
 .tp-page-canvas label { color: #475467; font-size: 12px; font-weight: 500; }
 .tp-page-canvas button { transition: background-color .14s ease, border-color .14s ease, color .14s ease; }
-.tp-page-canvas button[class*="h-10"],
-.tp-page-canvas button[class*="h-9"] { min-height: 34px; height: 34px; }
+.tp-page-canvas button[data-tp-button][data-tp-size="default"] { min-height: 34px; height: 34px; }
 .tp-page-canvas .bg-muted\/50 { background-color: #f5f6f7; }
 .tp-page-canvas .bg-card { background-color: #fff; }
 .tp-page-canvas .bg-primary\/5 { background-color: #f4f5f6; }
