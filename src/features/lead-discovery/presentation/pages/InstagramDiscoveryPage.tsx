@@ -2,6 +2,7 @@ import {useEffect,useMemo,useState} from "react";
 import {Activity,ArrowRight,Check,ChevronDown,Clock3,Instagram,LoaderCircle,MessageCircle,Search,Sparkles,Terminal,Users,Wallet} from "lucide-react";
 import {toast} from "sonner";
 import {Badge,Button,Card,CardContent,CardDescription,CardHeader,CardTitle,Input,Popover,PopoverContent,PopoverTrigger,Progress,Checkbox,Textarea} from "@/shared/ui/primitives";
+import { PageControlPanel } from "@/shared/ui/page-layout";
 import {CountrySelect} from "../components/CountrySelect";
 import {discoveryApi,instagramDiscoveryApi} from "../../infrastructure/discovery-api";
 import {integrationsApi} from "@/features/settings/infrastructure/integrations-api";
@@ -22,7 +23,7 @@ export function InstagramDiscoveryPage(){
  const running=!!run&&["queued","running"].includes(run.status);
  const start=async()=>{if(!configured)return toast.error("请先在 AI 与 API 集成 → API 集成中配置 Apify API Token。");if(!tags.length)return toast.error("请输入至少一个关键词或话题标签。");if(!countries.length)return toast.error("请至少选择一个目标国家。");if(Number(minFollowers)<0||Number(maxFollowers)<Number(minFollowers))return toast.error("请检查粉丝数范围。");setBusy(true);try{const created=await instagramDiscoveryApi.start({keywords:tags,countries,languageCodes:languagesSelected,accountTypes:types,minFollowers:Number(minFollowers),maxFollowers:Number(maxFollowers),recentDays:Number(recent),requireContact,excludeTerms:exclude.split(/[\n,;]+/).map(x=>x.trim()).filter(Boolean),limit:cap,maxCostUsd:Number(maxCost)||undefined,includeCaptions});setRun(created);setLogs([]);toast.success("Instagram 任务已创建："+(created.taskCode??created.id));}catch(e){toast.error(e instanceof Error?e.message:"Instagram 任务创建失败");}finally{setBusy(false)}};
  return <div className="mx-auto w-full max-w-[1500px] space-y-5 p-3 sm:p-4 lg:p-6">
-  <div className="tp-page-heading flex flex-wrap items-start justify-between gap-3"><div><p className="mb-2 flex items-center gap-2 text-sm text-muted-foreground"><Instagram className="h-4 w-4"/>潜客发现 / Instagram 发现</p><h1 className="text-2xl font-semibold tracking-tight">Instagram 发现</h1><p className="mt-1 text-sm text-muted-foreground">发现二手服饰小批发商、小店和网店卖家；提取公开联系方式并评分，结果进入统一搜索结果中心。</p></div><Badge variant="outline" className="gap-1.5 py-1.5"><span className={"h-2 w-2 rounded-full "+(configured?"bg-emerald-500":"bg-amber-500")}/>{configured?"Apify 已连接":"Apify 未配置"}</Badge></div>
+  <PageControlPanel eyebrow="潜客发现 / Instagram 发现" title="Instagram 发现" description="发现二手服饰小批发商、小店和网店卖家；提取公开联系方式并评分，结果进入统一搜索结果中心。" actions={<Badge variant="outline" className="gap-1.5 py-1.5"><span className={"h-2 w-2 rounded-full "+(configured?"bg-emerald-500":"bg-amber-500")}/>{configured?"Apify 已连接":"Apify 未配置"}</Badge>}/>
   <div className="space-y-5">
    <Card><CardHeader><div className="flex items-center gap-2"><Search className="h-5 w-5"/><CardTitle>发现条件</CardTitle></div><CardDescription>通过公开话题标签和关键词发现潜在买家，默认筛选近 90 天活跃、200–50,000 粉丝的账号。</CardDescription></CardHeader><CardContent className="space-y-6">
     <div className="space-y-2"><label className="text-sm font-medium">关键词 / 话题标签</label><Textarea value={keywords} onChange={e=>setKeywords(e.target.value)} rows={3} placeholder="#usedclothing&#10;thrift shop&#10;second hand clothes"/><p className="text-xs text-muted-foreground">每行一个，支持批量粘贴；输入时可带 #。</p></div>
