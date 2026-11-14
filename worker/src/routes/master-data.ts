@@ -53,7 +53,7 @@ export async function handleMasterData(request:Request,env:Env):Promise<Response
     const rows=await db<Json[]>(env,table+"?id=eq."+encodeURIComponent(id)+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=representation"},body:JSON.stringify({is_archived:true,archived_at:new Date().toISOString(),updated_at:new Date().toISOString()})});
     return successResponse(request,{deleted:false,archived:true,id,record:rows[0]});
    }
-   const rows=await db<Json[]>(env,table+"?id=eq."+encodeURIComponent(id)+"&owner_id=eq."+ownerId,{method:"DELETE",headers:{Prefer:"return=representation"}});
+   await db<Json[]>(env,table+"?id=eq."+encodeURIComponent(id)+"&owner_id=eq."+ownerId,{method:"DELETE",headers:{Prefer:"return=representation"}});
    return successResponse(request,{deleted:true,id});
   }
   return errorResponse(request,"METHOD_NOT_ALLOWED","不支持的请求方法。",405);
