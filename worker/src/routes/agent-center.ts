@@ -282,7 +282,7 @@ async function generateAgentPlan(env:Env,ownerId:string,goal:string,country:stri
  }else{
    const normalized=goal.toLowerCase();
    if(/importer|buyer|distributor|wholesaler|采购商|进口商|经销商|批发商|买家|潜客|客户开发/.test(normalized)){
-     return {agentKey:"buyer_development",summary:"使用 TradePilot 原生搜索发现目标市场买家。",steps:["根据行业和目标市场构建搜索条件","调用搜索引擎发现企业官网与潜在买家","将结果写入统一搜索结果中心"],action:{type:"internal_discovery",query:goal,country,limitPerCountry:50},specialists:[],model:"deterministic-fallback",fallback:true};
+     return {agentKey:"buyer_development",summary:"使用 TradePilot 原生搜索发现目标市场买家。",steps:["根据行业和目标市场构建搜索条件","调用搜索引擎发现企业官网与潜在买家","将结果写入统一搜索结果中心"],action:{type:"internal_discovery",query:goal,country,limitPerCountry:50},specialists:[{agentKey:"company_research",instruction:"调查搜索发现的企业，整理主营业务、产品、官网和公开联系信息，并标注证据与缺失项。"},{agentKey:"lead_scoring",instruction:"基于用户目标和企业调查结果评估潜客匹配度，给出评分、等级、依据和待核实风险。"}],model:"deterministic-fallback",fallback:true};
    }
    return {agentKey:"company_research",summary:"当前未配置可用规划模型，无法可靠判断所需工具。",steps:["配置 AI 规划模型后重新提交任务"],action:{type:"needs_clarification",question:"请先在「AI 与 API 集成」配置一个可用模型，再由 Agent 自动规划此任务。"},specialists:[],model:"none",fallback:true};
  }
@@ -311,6 +311,7 @@ async function generateAgentPlan(env:Env,ownerId:string,goal:string,country:stri
  }else throw new Error("AGENT_PLANNER_INVALID_ACTION");
  const allowedSpecialists=new Set(["company_research","market_research","lead_scoring","trade_compliance"]);
  const specialists=Array.isArray(parsed.specialists)?parsed.specialists.slice(0,3).flatMap(item=>{const row=asRecord(item);const key=String(row.agentKey??"");const instruction=String(row.instruction??"").trim();return allowedSpecialists.has(key)&&instruction.length>0?[{agentKey:key,instruction:instruction.slice(0,1200)}]:[];}):[];
+ if(action.type==="internal_discovery"&&specialists.length===0)specialists.push({agentKey:"company_research",instruction:"调查搜索发现的企业，整理主营业务、产品、官网和公开联系信息，并标注证据与缺失项。"},{agentKey:"lead_scoring",instruction:"基于用户目标和企业调查结果评估潜客匹配度，给出评分、等级、依据和待核实风险。"});
  return {agentKey,summary,steps,action,specialists,model:selectedModel};
 }
 
@@ -582,7 +583,11 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
         if(!/^[A-Z]{2}$/.test(country))return errorResponse(request,"VALIDATION_ERROR","请选择有效的目标国家。",400);
         const available=await db<ConnectionRow[]>(env,"agent_connections?owner_id=eq."+ownerId+"&select=id,owner_id,name,protocol,endpoint_url,auth_mode,encrypted_credentials,capabilities,protocol_tools,protocol_metadata,status,last_tested_at,last_error,created_at,updated_at&order=created_at.desc&limit=100");
         planner=await generateAgentPlan(env,ownerId,goal,country,engine,available??[]);
-        if(requestedAgentKey)planner.agentKey=requestedAgentKey;
+        if(requestedAgentKey){
+          planner.agentKey=requestedAgentKey;
+          if(["company_research","market_research","lead_scoring","trade_compliance"].includes(requestedAgentKey)&&planner.action.type==="internal_discovery"&&!planner.specialists.some(item=>item.agentKey===requestedAgentKey))planner.specialists.unshift({agentKey:requestedAgentKey,instruction:"按照用户指定的专业角色，结合本次搜索结果和前序 Agent 分析完成专项任务。"});
+          planner.specialists=planner.specialists.slice(0,3);
+        }
         if(planner.action.type==="internal_discovery"){country=planner.action.country;limit=planner.action.limitPerCountry;}
         if(planner.action.type==="external_tool"){
           const externalAction=planner.action;
