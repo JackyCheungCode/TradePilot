@@ -1,0 +1,68 @@
+/* Single source of truth: Odoo 20-inspired neutral workspace tokens. */
+:root {
+  color-scheme: light;
+  --radius: 0;
+  --background: var(--cds-background, #f4f4f4);
+  --foreground: var(--cds-text-primary, #161616);
+  --card: var(--cds-layer, #ffffff);
+  --card-foreground: var(--cds-text-primary, #161616);
+  --popover: var(--cds-layer, #ffffff);
+  --popover-foreground: var(--cds-text-primary, #161616);
+  --primary: var(--cds-interactive, #0f62fe);
+  --primary-foreground: #ffffff;
+  --secondary: var(--cds-layer-02, #e8e8e8);
+  --secondary-foreground: var(--cds-text-primary, #161616);
+  --muted: var(--cds-layer-01, #e0e0e0);
+  --muted-foreground: var(--cds-text-secondary, #525252);
+  --accent: var(--cds-layer-hover-01, #e8e8e8);
+  --accent-foreground: var(--cds-text-primary, #161616);
+  --destructive: var(--cds-support-error, #da1e28);
+  --border: var(--cds-border-subtle, #e0e0e0);
+  --input: var(--cds-border-strong, #8d8d8d);
+  --ring: var(--cds-focus, #0f62fe);
+
+  --tp-sidebar: var(--cds-layer-01, #ffffff);
+  --tp-sidebar-muted: var(--cds-text-secondary, #525252);
+  --tp-surface: var(--cds-layer, #ffffff);
+  --tp-canvas: var(--cds-background, #f4f4f4);
+  --tp-border-subtle: var(--cds-border-subtle, #e0e0e0);
+  --tp-line: var(--cds-border-subtle, #e0e0e0);
+  --tp-text: var(--cds-text-primary, #161616);
+  --tp-text-muted: var(--cds-text-secondary, #525252);
+  --tp-radius: 0;
+  --tp-control-height: 40px;
+  --tp-sidebar-width: 256px;
+  --tp-topbar-height: 48px;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #17191c;
+  --foreground: #f4f5f6;
+  --card: #202328;
+  --card-foreground: #f4f5f6;
+  --popover: #202328;
+  --popover-foreground: #f4f5f6;
+  --primary: #f4f5f6;
+  --primary-foreground: #212529;
+  --secondary: #30343a;
+  --secondary-foreground: #f4f5f6;
+  --muted: #292d32;
+  --muted-foreground: #aab1b9;
+  --accent: #30343a;
+  --accent-foreground: #f4f5f6;
+  --destructive: #ef6b75;
+  --border: #3b4148;
+  --input: #454c55;
+  --ring: #89939e;
+  --tp-sidebar: #202328;
+  --tp-surface: #202328;
+  --tp-canvas: #17191c;
+  --tp-border-subtle: #3b4148;
+  --tp-line: #3b4148;
+  --tp-text: #f4f5f6;
+  --tp-text-muted: #aab1b9;
+}
+
+* { box-sizing: border-box; border-color: var(--border); }
+html, body, #root { min-height: 100%; }
