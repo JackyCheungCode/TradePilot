@@ -44,13 +44,13 @@ export function SearchControlPanel({
         ) : null}
         {filters}
         {activeFilters && onClear ? (
-          <Button type="button" variant="ghost" size="sm" onClick={onClear} className="h-9">
+          <Button type="button" variant="ghost" size="sm" onClick={onClear} >
             <Close aria-hidden="true" className="h-3.5 w-3.5" />清除筛选
           </Button>
         ) : null}
       </div>
       <div className="flex shrink-0 flex-wrap items-center gap-2">
-        {resultCount ? <span className="text-xs tabular-nums text-muted-foreground">{resultCount}</span> : null}
+        {resultCount ? <span className="cds--type-helper-text-01 tabular-nums">{resultCount}</span> : null}
         {actions}
       </div>
     </section>
@@ -61,7 +61,7 @@ export function ListViewShell({ children, footer, className }: { children: React
   return (
     <section className={cn("tp-list-view min-w-0", className)}>
       <div className="min-w-0">{children}</div>
-      {footer ? <footer className="mt-3 flex flex-wrap items-center justify-between gap-3 bg-muted/25 px-3 py-2.5">{footer}</footer> : null}
+      {footer ? <footer className="mt-3 flex flex-wrap items-center justify-between gap-3 bg-muted px-3 py-2.5">{footer}</footer> : null}
     </section>
   );
 }
@@ -74,8 +74,8 @@ export function FormSection({ title, description, children, className }: { title
   return (
     <section className={cn("tp-form-section space-y-3", className)}>
       <div className="space-y-1">
-        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-        {description ? <p className="text-xs leading-5 text-muted-foreground">{description}</p> : null}
+        <h3 className="cds--type-heading-compact-01">{title}</h3>
+        {description ? <p className="cds--type-helper-text-01">{description}</p> : null}
       </div>
       {children}
     </section>
@@ -93,14 +93,14 @@ export function FormField({ label, required = false, description, error, childre
   return (
     <div className={cn("min-w-0 space-y-1.5", className)}>
       <div className="flex min-w-0 flex-col gap-1.5">
-        <span className="flex items-center gap-1 text-[13px] font-medium text-foreground">
+        <span className="flex items-center gap-1 cds--label cds--type-label-01">
           {label}
           {required ? <span aria-label="必填" className="text-destructive">*</span> : null}
         </span>
         {children}
       </div>
-      {description ? <p className="text-xs leading-5 text-muted-foreground">{description}</p> : null}
-      {error ? <p role="alert" className="text-xs text-destructive">{error}</p> : null}
+      {description ? <p className="cds--form__helper-text cds--type-helper-text-01">{description}</p> : null}
+      {error ? <p role="alert" className="cds--type-helper-text-01 text-destructive">{error}</p> : null}
     </div>
   );
 }
