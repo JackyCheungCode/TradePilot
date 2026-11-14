@@ -463,7 +463,7 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
       await db(env,"agent_connections?id=eq."+connectionMatch[1]+"&owner_id=eq."+ownerId,{method:"DELETE",headers:{Prefer:"return=minimal"}});
       return successResponse(request,{id:connectionMatch[1],deleted:true});
     }
-    const runDetailMatch=path.match(/^\\/api\\/v1\\/agent\\/runs\\/([0-9a-f-]{36})$/i);
+    const runDetailMatch=path.match(/^\/api\/v1\/agent\/runs\/([0-9a-f-]{36})$/i);
     if(runDetailMatch&&request.method==="GET"){
       const runId=runDetailMatch[1];
       const runs=await db<Array<Record<string,unknown>>>(env,"agent_runs?id=eq."+runId+"&owner_id=eq."+ownerId+"&select=id,agent_key,goal,status,plan,result,error_message,estimated_cost_usd,actual_cost_usd,started_at,completed_at,created_at,updated_at&limit=1");
