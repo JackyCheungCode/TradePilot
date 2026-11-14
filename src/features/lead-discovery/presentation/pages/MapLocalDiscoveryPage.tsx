@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, Building2, CheckCircle2, ChevronDown, Languages, MapPinned, Play, Search, SlidersHorizontal, Sparkles, Terminal, Users } from "lucide-react";
+import { ArrowRight, Building2, CheckCircle2, Languages, MapPinned, Play, Search, SlidersHorizontal, Sparkles, Terminal, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, MultiSelect, Combobox } from "@/shared/ui/primitives";
 import { PageControlPanel } from "@/shared/ui/page-layout";
