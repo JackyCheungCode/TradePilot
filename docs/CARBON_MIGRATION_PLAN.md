@@ -169,3 +169,12 @@ The first change must be the dependency/lockfile and theme foundation, not broad
 ### Validation
 - CI workflow run `43593394933` was observed in progress at the time this record was updated; npm install was still running. No passing build or production deployment is claimed.
 - Package lockfile generation and review remain required; CI uses npm install and must produce a reproducible lockfile before release.
+
+
+### Shared control migration update (latest)
+- [x] Card wrapper now uses Carbon Tile.
+- [x] Progress wrapper now uses Carbon ProgressBar with bounded 0–100 values.
+- [x] Resolved the first CI TypeScript error by excluding the native numeric HTML input `size` attribute from Carbon TextInput props.
+- [ ] Verify the newest CI run after the Card/ProgressBar conversion.
+- [ ] Continue with Carbon Checkbox/Radio/Switch, DatePicker, Select/Dropdown/MultiSelect, Dialog/Modal and notification wrappers after auditing their existing call-site contracts.
+- [ ] Carbon SideNav/Header migration is still outstanding; current shell navigation and Material Symbols icons have not yet been fully replaced.
