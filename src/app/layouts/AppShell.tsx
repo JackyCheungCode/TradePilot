@@ -273,7 +273,7 @@ export function AppShell({
         </SideNavLink>
         </SideNavItems>
         <div className="tp-carbon-side-nav__footer">
-          <div className="tp-carbon-side-nav__user" title={userEmail}>{userEmail}</div>
+          <div className="tp-carbon-side-nav__user cds--type-helper-text-01" title={userEmail}>{userEmail}</div>
           <ul className="tp-carbon-side-nav__footer-items">
           <SideNavLink
             href="#"
@@ -355,7 +355,7 @@ export function AppShell({
           <HeaderName href="#" prefix="" className="tp-carbon-header__brand" onClick={(event) => event.preventDefault()}>
             <img src={tradePilotLogo} alt="TradePilot" className="tp-carbon-header__logo" />
           </HeaderName>
-          <div className="tp-carbon-header__context">
+          <div className="tp-carbon-header__context cds--type-label-01">
             <span>工作区</span>
             <span aria-hidden="true">/</span>
             <span>{isSettingsPage ? "设置" : isAgentPage ? "Agent" : activePage.startsWith("order") ? "订单中心" : activePage === "productCatalog" ? "产品资料" : activePage.startsWith("document") ? "单据中心" : isDiscoveryPage ? "潜客发现" : isCrmPage ? "客户关系管理" : "业务数据"}</span>
