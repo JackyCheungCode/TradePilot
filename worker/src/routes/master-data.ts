@@ -39,8 +39,9 @@ async function validateRefs(env:Env,ownerId:string,key:string,body:Json):Promise
 export async function handleMasterData(request:Request,env:Env):Promise<Response>{
  const ownerId=await ownerFromRequest(request,env);if(!ownerId)return errorResponse(request,"UNAUTHORIZED","请先登录 TradePilot。",401);
  const url=new URL(request.url),path=url.pathname.replace(/^\/api\/v1\/master-data\/?/,"").replace(/\/$/,""),parts=path.split("/"),key=parts.slice(0,2).join("/"),id=parts[2],table=tables[key],method=request.method;
- if(!table)return errorResponse(request,"NOT_FOUND","主数据接口不存在。",404);
  try{
+  if(path==="crm/convert-lead"&&method==="POST"){const body=obj(await request.json());const leadId=str(body.lead_id,64);if(!leadId)return errorResponse(request,"VALIDATION_ERROR","缺少线索 ID。",400);const result=await db<Json>(env,"rpc/convert_lead_to_crm",{method:"POST",body:JSON.stringify({p_owner_id:ownerId,p_lead_id:leadId,p_account_id:body.account_id?str(body.account_id,64):null,p_create_account:body.create_account===true,p_contact:body.contact&&typeof body.contact==="object"?body.contact:null,p_opportunity:body.opportunity&&typeof body.opportunity==="object"?body.opportunity:null})});return successResponse(request,result,200);}
+  if(!table)return errorResponse(request,"NOT_FOUND","主数据接口不存在。",404);
   if(method==="GET"){const params=new URLSearchParams({select:"*",owner_id:"eq."+ownerId,order:"updated_at.desc",limit:"200"});if(id)params.set("id","eq."+id);if(["crm/contacts","crm/addresses","crm/activities"].includes(key)&&url.searchParams.has("account_id"))params.set("account_id","eq."+url.searchParams.get("account_id"));
   if(key==="crm/addresses"&&url.searchParams.has("address_type"))params.set("address_type","eq."+url.searchParams.get("address_type"));
   if(key==="product/attribute-values"&&url.searchParams.has("attribute_id"))params.set("attribute_id","eq."+url.searchParams.get("attribute_id"));
