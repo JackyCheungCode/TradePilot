@@ -129,7 +129,7 @@ export function AgentAppearanceSettingsPage() {
                 <Button className="tp-agent-appearance-save" renderIcon={Save} disabled={busy || loading || Boolean(loadError) || !dirty} onClick={() => void save()}>
                   {busy ? "保存中…" : "保存形象"}
                 </Button>
-                <Button kind="tertiary" renderIcon={RotateCcw} disabled={busy || loading} onClick={reset}>
+                <Button kind="tertiary" renderIcon={RotateCcw} disabled={busy || loading || Boolean(loadError) || (activeAgent !== "default" && isInherited)} onClick={reset}>
                   {activeAgent === "default" ? "恢复系统默认" : "恢复全局默认"}
                 </Button>
               </div>
@@ -179,7 +179,7 @@ export function AgentAppearanceSettingsPage() {
                     </div>
                   </Stack>
                   <Dropdown id="agent-appearance-variant" disabled={loading || Boolean(loadError) || busy} titleText="画风变体" label="选择画风变体" items={[...variants]}
-                    selectedItem={current.variant} itemToString={(item) => item ?? ""}
+                    selectedItem={current.variant} itemToString={(item) => item ? localized("variant", item) : ""}
                     onChange={({ selectedItem }) => { if (selectedItem) setCurrent({ ...current, variant: selectedItem }); }} />
                   <Dropdown id="agent-appearance-face" disabled={loading || Boolean(loadError) || busy} titleText="脸型" label="选择脸型" items={[...faces]}
                     selectedItem={faces.find((item) => item.id === current.face) ?? faces[0]} itemToString={(item) => item?.label ?? ""}
