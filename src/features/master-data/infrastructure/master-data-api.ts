@@ -6,5 +6,6 @@ export const masterDataApi={
  list:(resource:string,query?:Record<string,string>)=>request<MasterRecord[]>(base+resource+(query?"?"+new URLSearchParams(query).toString():"")),
  create:(resource:string,input:Record<string,unknown>)=>request<MasterRecord>(base+resource,{method:"POST",body:JSON.stringify(input)}),
  update:(resource:string,id:string,input:Record<string,unknown>)=>request<MasterRecord>(base+resource+"/"+encodeURIComponent(id),{method:"PATCH",body:JSON.stringify(input)}),
+ convertLead:(input:{lead_id:string;account_id?:string|null;create_account:boolean;contact?:Record<string,unknown>|null;opportunity?:Record<string,unknown>|null})=>request<{lead_id:string;account:MasterRecord;contact:MasterRecord|null;opportunity:MasterRecord|null;already_converted:boolean}>(base+"crm/convert-lead",{method:"POST",body:JSON.stringify(input)}),
  remove:(resource:string,id:string)=>request<{deleted:boolean;archived?:boolean;id:string}>(base+resource+"/"+encodeURIComponent(id),{method:"DELETE"})
 };
