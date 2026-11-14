@@ -1,5 +1,5 @@
 import { Fragment, useEffect,useMemo,useState } from "react";
-import { ArrowLeft, Check, RefreshCw, Trash2, XCircle, DownloadCloud, LoaderCircle } from "lucide-react";
+import { ArrowLeft, Checkmark as Check, Renew as RefreshCw, TrashCan as Trash2, Misuse as XCircle, Download, Renew as LoaderCircle } from "@carbon/icons-react";
 import { toast } from "sonner";
 import { Badge,Button,Card,CardContent,CardDescription,CardHeader,CardTitle,Combobox,Checkbox } from "@/shared/ui/primitives";
 import { PageControlPanel } from "@/shared/ui/page-layout";
