@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Archive, Building2, FilePlus2, FileText, LayoutTemplate, Languages, Package, Plus, Printer, RefreshCw } from "lucide-react";
+import { Archive, Building as Building2, DocumentAdd as FilePlus2, Document as FileText, Catalog as LayoutTemplate, Translate as Languages, Package, Add as Plus, Printer, Renew as RefreshCw } from "@carbon/icons-react";
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Combobox, Input } from "@/shared/ui/primitives";
 import { PageControlPanel } from "@/shared/ui/page-layout";
 import { SearchControlPanel } from "@/shared/ui/data-views";
