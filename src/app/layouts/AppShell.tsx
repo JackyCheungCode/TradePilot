@@ -1,5 +1,6 @@
 import { useEffect, useState, type ElementType, type ReactNode } from "react";
 import {
+  Button as CarbonButton,
   Header,
   HeaderGlobalAction,
   HeaderGlobalBar,
@@ -295,12 +296,14 @@ export function AppShell({
 
       {mobileOpen && (
         <div className="tp-carbon-mobile-nav md:hidden">
-          <button
-            type="button"
-            aria-label="关闭导航菜单"
+          <CarbonButton
+            kind="ghost"
             className="tp-carbon-mobile-nav__backdrop"
+            aria-label="关闭导航菜单"
             onClick={closeMobile}
-          />
+          >
+            <span className="sr-only">关闭导航菜单</span>
+          </CarbonButton>
           <aside className="tp-carbon-mobile-nav__panel">
             <div className="tp-carbon-sidebar__brand">
               <img src={tradePilotLogo} alt="TradePilot" />
