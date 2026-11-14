@@ -219,7 +219,6 @@ main h1, .tp-page-canvas h1 {
 .tp-page-canvas .border-primary\/30 { border-color: #d9dde2; }
 .tp-page-canvas .ring-primary { --tw-ring-color: #98a2b3; }
 .tp-page-canvas .max-w-7xl,
-.tp-page-canvas .max-w-\\[1500px\\] { max-width: 1600px; }
 .tp-page-canvas [role="dialog"] {
   border-radius: 7px;
   border-color: var(--tp-line);
