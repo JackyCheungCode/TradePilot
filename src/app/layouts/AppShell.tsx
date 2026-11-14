@@ -86,10 +86,10 @@ export function AppShell({
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") closeMobile();
+      if (event.key === "Escape") setMobileOpen(false);
     };
     const onResize = () => {
-      if (window.matchMedia("(min-width: 768px)").matches) closeMobile();
+      if (window.matchMedia("(min-width: 768px)").matches) setMobileOpen(false);
     };
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("resize", onResize);
