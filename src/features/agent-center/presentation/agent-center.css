@@ -314,3 +314,194 @@
     min-width: 0;
   }
 }
+
+
+/* Agent Market responsive refinement — Carbon-native controls and compact mobile density. */
+.tp-agent-market-page {
+  max-width: 1440px;
+  padding: 0 24px 32px;
+  gap: 24px;
+  font-family: "IBM Plex Sans", var(--cds-body-compact-01-font-family, sans-serif);
+}
+.tp-agent-market-header {
+  align-items: center;
+  padding: 24px;
+  gap: 24px;
+}
+.tp-agent-market-header h1 {
+  font-size: 24px;
+  line-height: 1.25;
+  font-weight: 600;
+}
+.tp-agent-market-header__content > p:last-child {
+  font-size: 14px;
+  line-height: 20px;
+}
+.tp-agent-market-header > .cds--btn {
+  width: auto;
+  min-width: max-content;
+  flex: 0 0 auto;
+}
+.tp-agent-market-summary {
+  column-gap: 16px;
+  row-gap: 16px;
+}
+.tp-agent-market-summary .cds--css-grid-column {
+  display: flex;
+  min-width: 0;
+}
+.tp-agent-market-metric {
+  min-height: 104px;
+  padding: 16px;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--cds-border-subtle, #e0e0e0);
+  background: var(--cds-layer, #fff);
+}
+.tp-agent-market-metric__value {
+  color: var(--cds-text-primary, #161616);
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.tp-agent-market-metric__label {
+  color: var(--cds-text-secondary, #525252);
+  font-size: 12px;
+  line-height: 16px;
+}
+.tp-agent-market-controls-grid {
+  align-items: end;
+  column-gap: 16px;
+  row-gap: 8px;
+}
+.tp-agent-market-controls-grid .cds--css-grid-column {
+  min-width: 0;
+}
+.tp-agent-market-controls .cds--search,
+.tp-agent-market-controls .cds--dropdown {
+  width: 100%;
+}
+.tp-agent-market-agent-tile {
+  padding: 16px;
+  gap: 16px;
+  border: 1px solid var(--cds-border-subtle, #e0e0e0);
+  background: var(--cds-layer, #fff);
+}
+.tp-agent-market-card-heading {
+  min-height: 24px;
+}
+.tp-agent-market-agent-tile h3 {
+  color: var(--cds-text-primary, #161616);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+}
+.tp-agent-market-card-description {
+  color: var(--cds-text-secondary, #525252);
+  font-size: 14px;
+  line-height: 20px;
+}
+.tp-agent-market-capabilities {
+  gap: 8px;
+}
+.tp-agent-market-card-actions {
+  padding-top: 16px;
+  border-top: 1px solid var(--cds-border-subtle, #e0e0e0);
+}
+.tp-agent-market-section-heading h2 {
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+}
+.tp-agent-market-section-heading p {
+  font-size: 14px;
+  line-height: 20px;
+}
+.tp-agent-market-page .cds--css-grid {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin-inline: 0;
+  padding-inline: 0;
+}
+.tp-agent-market-page .cds--css-grid-column,
+.tp-agent-market-page .cds--tile,
+.tp-agent-market-page section,
+.tp-agent-market-page header {
+  min-width: 0;
+  max-width: 100%;
+}
+.tp-agent-market-page .cds--tag {
+  max-width: 100%;
+}
+@media (max-width: 671px) {
+  .tp-agent-market-page {
+    padding: 0 16px 24px;
+    gap: 24px;
+  }
+  .tp-agent-market-header {
+    align-items: flex-start;
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 16px;
+    gap: 16px;
+  }
+  .tp-agent-market-header__content {
+    flex: 1 1 100%;
+  }
+  .tp-agent-market-header > .cds--btn {
+    width: auto;
+    max-width: 100%;
+    min-height: 40px;
+  }
+  .tp-agent-market-summary {
+    column-gap: 8px;
+    row-gap: 8px;
+  }
+  .tp-agent-market-summary .cds--css-grid-column {
+    grid-column: span 1;
+  }
+  .tp-agent-market-metric {
+    min-height: 88px;
+    padding: 12px 8px;
+    gap: 8px;
+  }
+  .tp-agent-market-metric__value {
+    font-size: 28px;
+  }
+  .tp-agent-market-metric__label {
+    font-size: 11px;
+    line-height: 14px;
+    overflow-wrap: anywhere;
+  }
+  .tp-agent-market-controls-grid {
+    column-gap: 8px;
+    row-gap: 8px;
+  }
+  .tp-agent-market-controls-grid .cds--css-grid-column {
+    grid-column: span 2;
+  }
+  .tp-agent-market-result-column {
+    grid-column: 1 / -1 !important;
+  }
+  .tp-agent-market-result-count {
+    padding-top: 4px;
+  }
+  .tp-agent-market-agent-tile {
+    min-height: 0;
+    padding: 16px;
+    gap: 16px;
+  }
+  .tp-agent-market-card-actions {
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+  .tp-agent-market-card-actions .cds--toggle {
+    flex: 0 0 auto;
+  }
+  .tp-agent-market-section-heading {
+    gap: 8px;
+  }
+}
