@@ -1,0 +1,79 @@
+/* Mobile adaptation for the master-data Carbon Table only. */
+@media (max-width: 767px) {
+  .tp-master-data-page .tp-responsive-table {
+    display: block;
+    width: 100%;
+    min-width: 0 !important;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  .tp-master-data-page .tp-responsive-table thead { display: none; }
+  .tp-master-data-page .tp-responsive-table tbody { display: block; }
+  .tp-master-data-page .tp-responsive-table tbody tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 12px;
+    margin: 0 0 9px;
+    padding: 12px;
+    overflow: hidden;
+    background: var(--tp-surface);
+    border: 1px solid var(--tp-line);
+    border-radius: 6px;
+  }
+  .tp-master-data-page .tp-responsive-table tbody td {
+    display: block;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    overflow-wrap: anywhere;
+    border: 0;
+    font-size: 12px;
+    white-space: normal;
+  }
+  .tp-master-data-page .tp-responsive-table tbody td::before {
+    display: block;
+    margin-bottom: 3px;
+    color: var(--tp-text-muted);
+    font-size: 10px;
+    font-weight: 500;
+  }
+  .tp-master-data-page .tp-responsive-table--master tbody td:nth-child(1) { grid-column: 1 / -1; }
+  .tp-master-data-page .tp-responsive-table--master tbody td:nth-child(1)::before { content: "记录名称"; }
+  .tp-master-data-page .tp-responsive-table--master tbody td:nth-child(2)::before { content: "主要信息"; }
+  .tp-master-data-page .tp-responsive-table--master tbody td:nth-child(3)::before { content: "状态 / 类型"; }
+  .tp-master-data-page .tp-responsive-table--master tbody td:nth-child(4)::before { content: "记录 ID"; }
+  .tp-master-data-page .tp-responsive-table--master tbody td:nth-child(5) {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+  .tp-master-data-page .tp-responsive-table--master tbody td:nth-child(5)::before { content: "操作"; margin-right: auto; align-self: center; }
+  .tp-master-data-page .tp-responsive-table--products tbody td:nth-child(1) { grid-column: 1 / -1; font-weight: 600; }
+  .tp-master-data-page .tp-responsive-table--products tbody td:nth-child(1)::before { content: "产品名称"; }
+  .tp-master-data-page .tp-responsive-table--products tbody td:nth-child(2)::before { content: "SKU / HS Code"; }
+  .tp-master-data-page .tp-responsive-table--products tbody td:nth-child(3)::before { content: "品牌 / 型号"; }
+  .tp-master-data-page .tp-responsive-table--products tbody td:nth-child(4)::before { content: "产品类型"; }
+  .tp-master-data-page .tp-responsive-table--products tbody td:nth-child(5)::before { content: "销售价格"; }
+  .tp-master-data-page .tp-responsive-table--products tbody td:nth-child(6)::before { content: "库存追踪"; }
+  .tp-master-data-page .tp-responsive-table--products tbody td:nth-child(7)::before { content: "状态"; }
+  .tp-master-data-page .tp-responsive-table--products tbody td:nth-child(8) {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+  .tp-master-data-page .tp-responsive-table--products tbody td:nth-child(8)::before { content: "操作"; margin-right: auto; align-self: center; }
+  .tp-master-data-page .tp-responsive-table--products tbody td:nth-child(5) { text-align: left; }
+
+  .tp-master-data-page .tp-responsive-table--master tbody tr:has(td[colspan]) {
+    display: block;
+    margin: 10px 0 6px;
+    padding: 7px 10px;
+    background: #f1f3f5;
+    border: 0;
+    border-radius: 4px;
+  }
+  .tp-master-data-page .tp-responsive-table--master tbody tr:has(td[colspan]) td::before { content: none; }
+}
+}
