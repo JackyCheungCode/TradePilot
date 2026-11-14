@@ -128,14 +128,14 @@ button { -webkit-tap-highlight-color: transparent; }
   background: #f3f4f6;
   color: #212529;
 }
-.tp-sidebar nav button[class*="bg-secondary"] {
+.tp-sidebar nav button[data-tp-variant="secondary"] {
   background: #f0f1f3 !important;
   color: #212529 !important;
   font-weight: 600;
   box-shadow: inset 2px 0 0 #212529;
 }
 .tp-sidebar nav button svg { color: #6c757d; }
-.tp-sidebar nav button[class*="bg-secondary"] svg { color: #212529; }
+.tp-sidebar nav button[data-tp-variant="secondary"] svg { color: #212529; }
 .tp-sidebar .border-b,
 .tp-sidebar .border-t,
 .tp-sidebar .border-l { border-color: #eceef0; }
