@@ -425,3 +425,31 @@
 @media (min-width: 1584px) {
   .tp-page-root { padding-inline: 24px; }
 }
+
+
+/* Carbon v11 workspace foundation: theme tokens own all surface and text colors. */
+.tp-carbon-shell,
+.tp-carbon-main,
+.tp-page-canvas {
+  color: var(--cds-text-primary, #161616);
+  background: var(--cds-background, #f4f4f4);
+}
+.tp-carbon-header.cds--header,
+.tp-carbon-sidebar,
+.tp-carbon-mobile-nav__panel {
+  color: var(--cds-text-primary, #161616);
+  background: var(--cds-layer-01, #ffffff);
+  border-color: var(--cds-border-subtle, #e0e0e0);
+}
+.tp-carbon-header .cds--header__name,
+.tp-carbon-header .cds--header__global {
+  background: transparent;
+}
+
+.tp-page-canvas {
+  min-height: calc(100vh - var(--tp-topbar-height));
+  background: var(--tp-canvas);
+  padding: 0;
+}
+.tp-page-canvas > * { max-width: 100%; }
+main { min-width: 0; background: var(--tp-canvas); }
