@@ -629,7 +629,7 @@ code, pre, kbd, samp, .font-mono {
 /* Agent market cards need readable text and full-width actions on narrow screens. */
 @media (max-width: 767px) {
   .tp-page-canvas .tp-agent-market-grid {
-    grid-template-columns: minmax(0, 1fr) !important;
+    /* Keep Carbon's 4/8/16-column responsive spans intact. */
     gap: 12px;
   }
   .tp-page-canvas .tp-agent-market-grid > * {
