@@ -143,8 +143,8 @@ export function OrderCenterPage({ onCreateQuotation, initialView = "quotations" 
   return <div className="space-y-6">
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div>
-        <div className="flex items-center gap-2"><ClipboardList className="h-5 w-5 text-muted-foreground" /><h1 className="text-2xl font-semibold tracking-tight">订单中心</h1></div>
-        <p className="mt-1 text-sm text-muted-foreground">统一管理销售报价、采购询价、销售订单与采购订单，跟踪从报价到履约的业务状态。</p>
+        <div className="flex items-center gap-2"><ClipboardList className="h-5 w-5 text-muted-foreground" /><h1 className="text-2xl font-semibold tracking-tight">{view === "quotations" ? "报价与询价" : view === "sales" ? "销售业务" : "采购业务"}</h1></div>
+        <p className="mt-1 text-sm text-muted-foreground">{view === "quotations" ? "集中管理销售报价与采购询价，跟踪确认状态及关联业务单据。" : view === "sales" ? "管理销售订单、客户交付条件与订单履约进度。" : "管理采购订单、供应商交付条件与采购执行进度。"}</p>
       </div>
       <div className="flex flex-wrap gap-2">
         <Button variant="outline" onClick={() => void refresh()} disabled={loading}><RefreshCw className={"mr-2 h-4 w-4 " + (loading ? "animate-spin" : "")} />刷新</Button>
@@ -162,13 +162,10 @@ export function OrderCenterPage({ onCreateQuotation, initialView = "quotations" 
           <div><CardTitle>业务单据</CardTitle><CardDescription>报价单确认后会同步激活其关联订单；历史版本与模板快照保留在单据中心。</CardDescription></div>
           <div className="relative w-full sm:w-72"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input className="pl-9" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="搜索编号、名称或客户" /></div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {([{ key: "quotations", label: "报价与询价" }, { key: "sales", label: "销售业务" }, { key: "purchase", label: "采购业务" }] as const).map((item) => <Button key={item.key} size="sm" variant={view === item.key ? "default" : "outline"} onClick={() => setView(item.key)}>{item.label}</Button>)}
-        </div>
       </CardHeader>
       <CardContent className="space-y-6">
         {view !== "quotations" && <section className="space-y-3">
-          <div className="flex items-center justify-between"><h2 className="font-semibold">订单</h2><span className="text-xs text-muted-foreground">{filteredOrders.length} 条</span></div>
+          <div className="flex items-center justify-between"><h2 className="font-semibold">{view === "sales" ? "销售订单" : "采购订单"}</h2><span className="text-xs text-muted-foreground">{filteredOrders.length} 条</span></div>
           {filteredOrders.map((order) => <div key={order.id} className="rounded-lg bg-muted/40 p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
@@ -227,8 +224,7 @@ export function OrderCenterPage({ onCreateQuotation, initialView = "quotations" 
           {!filteredOrders.length && <p className="rounded-lg bg-muted/30 py-8 text-center text-sm text-muted-foreground">没有符合条件的订单。</p>}
         </section>}
 
-        {view !== "sales" && view !== "purchase" && <div className="border-t" />}
-        {view !== "sales" && view !== "purchase" && <section className="space-y-3">
+        {view === "quotations" && <section className="space-y-3">
           <div className="flex items-center justify-between"><h2 className="font-semibold">报价与询价</h2><span className="text-xs text-muted-foreground">{filteredQuotes.length} 份</span></div>
           {filteredQuotes.map((quote) => <div key={quote.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-muted/40 p-4">
             <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="font-semibold">{quote.title}</p><Badge variant={quote.status === "issued" ? "success" : "secondary"}>{statusLabels[quote.status] ?? quote.status}</Badge><Badge variant="outline">{typeLabels[quote.document_type] ?? quote.document_type}</Badge></div><p className="mt-1 text-xs text-muted-foreground">{quote.document_number} · 关联订单 {quote.trade_orders?.order_number ?? "—"} · {quote.currency_code} · {dateLabel(quote.created_at)}</p></div>
