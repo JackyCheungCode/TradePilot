@@ -259,8 +259,11 @@
   box-shadow: 0 12px 32px rgb(0 0 0 / 20%);
 }
 
-.tp-carbon-mobile-nav__panel .tp-carbon-side-nav {
+ .tp-carbon-mobile-nav__panel .tp-carbon-side-nav {
+  position: static;
   width: 100%;
+  border: 0;
+  box-shadow: none;
   height: calc(100vh - 48px);
 }
 
