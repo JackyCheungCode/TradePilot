@@ -4,6 +4,7 @@ import * as SeparatorPrimitive from "@radix-ui/react-separator";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 import {
   Button as CarbonButton,
+  Checkbox as CarbonCheckbox,
   TextInput as CarbonTextInput,
   TextArea as CarbonTextArea,
   Tag as CarbonTag,
@@ -117,19 +118,25 @@ export const Input = React.forwardRef<
   );
 });
 
+type CarbonCompatibleCheckboxProps = React.InputHTMLAttributes<HTMLInputElement> & {
+  labelText?: React.ReactNode;
+};
+
 export const Checkbox = React.forwardRef<
   HTMLInputElement,
-  React.InputHTMLAttributes<HTMLInputElement>
->(function Checkbox({ className, ...props }, ref) {
-  // Keep the native input contract for existing controlled forms while Carbon styles
-  // are applied through the global Carbon token layer; migration of label semantics
-  // is tracked separately because call sites use both standalone and wrapped labels.
+  CarbonCompatibleCheckboxProps
+>(function Checkbox({ className, id, labelText, onChange, ...props }, ref) {
+  const generatedId = React.useId();
+  const accessibleLabel = labelText ?? props["aria-label"] ?? "";
   return (
-    <input
+    <CarbonCheckbox
       ref={ref}
-      type="checkbox"
+      id={id ?? generatedId}
+      labelText={accessibleLabel}
+      hideLabel={!labelText}
       data-tp-control="true"
-      className={cn("cds--checkbox", className)}
+      className={className}
+      onChange={onChange as React.ComponentProps<typeof CarbonCheckbox>["onChange"]}
       {...props}
     />
   );
