@@ -1,5 +1,5 @@
 import {Fragment,useCallback,useEffect,useState} from "react";
-import {Plus,RefreshCw,Trash2} from "lucide-react";
+import {Add as Plus,Renew as RefreshCw,TrashCan as Trash2} from "@carbon/icons-react";
 import {toast} from "sonner";
 import {Badge,Button,Card,CardContent,CardDescription,CardHeader,CardTitle,Input,Combobox,Checkbox,Textarea} from "@/shared/ui/primitives";
 import { PageControlPanel } from "@/shared/ui/page-layout";
