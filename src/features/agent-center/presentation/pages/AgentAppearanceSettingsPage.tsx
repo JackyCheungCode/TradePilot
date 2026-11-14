@@ -29,7 +29,6 @@ export function AgentAppearanceSettingsPage(){
  const variants=styles.find(item=>item.id===current.styleId)?.variants??styles[0].variants;
  return <div className="mx-auto w-full min-w-0 max-w-7xl space-y-5 overflow-x-hidden p-3 sm:p-4 lg:p-6">
  <PageControlPanel eyebrow="系统设置 / Agent 形象" title="Agent 形象设计" description="为 TradePilot 的每个专业智能体设置专属角色形象" actions={<Badge variant="success">实时预览</Badge>}/>
- <div className="grid
  <div className="grid min-w-0 gap-5 2xl:grid-cols-[minmax(0,1fr)_320px]"><div className="min-w-0 space-y-5">
  <Card><CardHeader><CardTitle className="text-base">选择要设计的 Agent</CardTitle></CardHeader><CardContent className="flex flex-wrap gap-2"><Button size="sm" variant={activeAgent==="default"?"default":"outline"} onClick={()=>setActiveAgent("default")}>全局默认形象</Button>{AGENT_APPEARANCE_PROFILES.map(item=><Button key={item.id} size="sm" variant={activeAgent===item.id?"default":"outline"} onClick={()=>setActiveAgent(item.id)}>{item.name}</Button>)}</CardContent></Card>
  <Card><CardHeader><CardTitle className="text-base">角色与配色</CardTitle></CardHeader><CardContent className="min-w-0 space-y-4 overflow-hidden"><p className="text-sm text-muted-foreground">选择角色造型与主色。修改会同步到右侧预览，保存后在 Agent 菜单、工作台和 Agent 市场中统一显示。</p><AgentCharacterSelector value={{shape:current.shape as ShapeId,color:current.color as ColorId,face:current.face}} onCommit={choice=>setCurrent({...current,shape:choice.shape,color:choice.color,face:choice.face??"cute"})} immediate actions={false} shapes={SAFE_SHAPES} colors={COLOR_IDS} layout="grid"/></CardContent></Card>
