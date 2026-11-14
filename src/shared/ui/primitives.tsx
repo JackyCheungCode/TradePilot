@@ -11,6 +11,7 @@ import {
   TextArea as CarbonTextArea,
   Tag as CarbonTag,
   ComboBox as CarbonComboBox,
+  MultiSelect as CarbonMultiSelect,
   Tile as CarbonTile,
   ProgressBar as CarbonProgressBar,
 } from "@carbon/react";
@@ -263,6 +264,41 @@ export function Combobox({
       placeholder={searchPlaceholder || placeholder}
       titleText=""
       aria-label={placeholder}
+      disabled={disabled}
+      className={className}
+    />
+  );
+}
+
+export type MultiSelectOption = { value: string; label: string; description?: string };
+
+export function MultiSelect({
+  value,
+  onValueChange,
+  options,
+  placeholder = "请选择",
+  disabled = false,
+  className,
+}: {
+  value: string[];
+  onValueChange: (value: string[]) => void;
+  options: MultiSelectOption[];
+  placeholder?: string;
+  disabled?: boolean;
+  className?: string;
+}) {
+  const id = React.useId();
+  const selectedItems = options.filter((option) => value.includes(option.value));
+  return (
+    <CarbonMultiSelect
+      id={id}
+      label={placeholder}
+      hideLabel
+      items={options}
+      selectedItems={selectedItems}
+      itemToString={(item) => item?.label ?? ""}
+      onChange={({ selectedItems: nextItems }) => onValueChange((nextItems ?? []).map((item) => item.value))}
+      selectionFeedback="fixed"
       disabled={disabled}
       className={className}
     />
