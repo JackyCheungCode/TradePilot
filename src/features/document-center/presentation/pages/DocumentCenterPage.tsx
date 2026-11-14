@@ -18,8 +18,8 @@ const groups = [
   { title: "装运与出口", items: ["装箱单 Packing List", "装运指示书 Shipping Instructions", "托运人指示书 SLI", "VGM 声明", "包装声明 Packing Declaration"] },
   { title: "贸易证明", items: ["原产地证申请资料", "原产地声明 Declaration of Origin", "非石棉声明", "汇票 Bill of Exchange"] },
 ];
-export function DocumentCenterPage() {
-  const [section, setSection] = useState<Section>("workbench");
+export function DocumentCenterPage({ initialSection = "workbench" }: { initialSection?: Section }) {
+  const [section, setSection] = useState<Section>(initialSection);
   const [query, setQuery] = useState("");
   const current = sections.find((item) => item.key === section) ?? sections[0];
   return <div className="min-h-full space-y-6 p-4 md:p-6">
