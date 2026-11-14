@@ -109,7 +109,7 @@ body {
 button, input, textarea, select { font: inherit; }
 button { -webkit-tap-highlight-color: transparent; }
 ::selection { background: #dce3ea; color: #17202a; }
-:focus-visible { outline: 2px solid #64748b; outline-offset: 2px; }
+:focus-visible:not([class*="cds--"]) { outline: 2px solid #64748b; outline-offset: 2px; }
 
 /* Application shell */
 .tp-sidebar {
@@ -197,17 +197,19 @@ main h1:not([class*="cds--type-"]), .tp-page-canvas h1:not([class*="cds--type-"]
 .tp-page-canvas table tbody tr { transition: background-color .12s ease; }
 .tp-page-canvas table tbody tr:hover { background: #f7f8f9; }
 .tp-page-canvas table tbody tr:last-child td { border-bottom: 0; }
-.tp-page-canvas input:not([type="checkbox"]):not([type="radio"]),
-.tp-page-canvas textarea,
-.tp-page-canvas select {
+/* Generic form styling is intentionally limited to non-Carbon controls.
+   Carbon React owns its controls' dimensions, typography, borders and focus states. */
+.tp-page-canvas input:not([type="checkbox"]):not([type="radio"]):not([class*="cds--"]),
+.tp-page-canvas textarea:not([class*="cds--"]),
+.tp-page-canvas select:not([class*="cds--"]) {
   min-height: var(--tp-control-height);
-  border-radius: 5px;
+  border-radius: 0;
 }
-.tp-page-canvas input[type="checkbox"],
-.tp-page-canvas input[type="radio"] { accent-color: #343a40; }
-.tp-page-canvas textarea { min-height: 84px; }
-.tp-page-canvas label { color: #475467; font-size: 12px; font-weight: 500; }
-.tp-page-canvas button { transition: background-color .14s ease, border-color .14s ease, color .14s ease; }
+.tp-page-canvas input[type="checkbox"]:not([class*="cds--"]),
+.tp-page-canvas input[type="radio"]:not([class*="cds--"]) { accent-color: #343a40; }
+.tp-page-canvas textarea:not([class*="cds--"]) { min-height: 84px; }
+.tp-page-canvas label:not([class*="cds--"]) { color: #475467; font-size: 12px; font-weight: 500; }
+.tp-page-canvas button:not([class*="cds--"]) { transition: background-color .14s ease, border-color .14s ease, color .14s ease; }
 .tp-page-canvas button[data-tp-button][data-tp-size="default"] { min-height: 34px; height: 34px; }
 .tp-page-canvas .bg-muted\/50 { background-color: #f5f6f7; }
 .tp-page-canvas .bg-card { background-color: #fff; }
