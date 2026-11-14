@@ -337,3 +337,9 @@ main { background: var(--tp-canvas); }
     justify-content: flex-start;
   }
 }
+
+
+.tp-page-canvas > .mx-auto {
+  width: 100%;
+  max-width: 1600px;
+}
