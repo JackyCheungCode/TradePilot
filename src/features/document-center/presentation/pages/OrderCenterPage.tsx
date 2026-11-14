@@ -22,6 +22,7 @@ export function OrderCenterPage({ onCreateQuotation, initialView = "quotations" 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
+  const [listPage, setListPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [busyId, setBusyId] = useState("");
   const [editingOrderId, setEditingOrderId] = useState("");
@@ -61,6 +62,13 @@ export function OrderCenterPage({ onCreateQuotation, initialView = "quotations" 
     return (!statusFilter || item.status === statusFilter) && (item.document_number + " " + item.title + " " + related).toLowerCase().includes(search.toLowerCase());
   }).sort((a,b) => { const diff = new Date(a.created_at).getTime() - new Date(b.created_at).getTime(); return sortOrder === "newest" ? -diff : diff; }), [quotations, search, statusFilter, sortOrder]);
   
+
+  const pageSize = 20;
+  const currentRows = view === "quotations" ? filteredQuotes : filteredOrders;
+  const pageCount = Math.max(1, Math.ceil(currentRows.length / pageSize));
+  const pagedOrders = useMemo(() => filteredOrders.slice((listPage - 1) * pageSize, listPage * pageSize), [filteredOrders, listPage]);
+  const pagedQuotes = useMemo(() => filteredQuotes.slice((listPage - 1) * pageSize, listPage * pageSize), [filteredQuotes, listPage]);
+  useEffect(() => { setListPage(1); }, [view, search, statusFilter, sortOrder]);
 
   const beginEditOrder = (order: TradeOrder) => {
     const invoice = order.invoice_address && Object.keys(order.invoice_address).length ? order.invoice_address : order.crm_account?.billing_address ?? {}; const delivery = order.delivery_address && Object.keys(order.delivery_address).length ? order.delivery_address : order.crm_account?.shipping_address ?? {};
@@ -142,7 +150,7 @@ export function OrderCenterPage({ onCreateQuotation, initialView = "quotations" 
     active: orders.filter((item) => item.status === "active").length,
   };
 
-  return <div className="space-y-6">
+  return <div className="space-y-5 p-3 sm:p-4 lg:p-6">
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div>
         <div className="flex items-center gap-2"><ClipboardList className="h-5 w-5 text-muted-foreground" /><h1 className="text-2xl font-semibold tracking-tight">{view === "quotations" ? "报价与询价" : view === "sales" ? "销售业务" : "采购业务"}</h1></div>
@@ -172,7 +180,7 @@ export function OrderCenterPage({ onCreateQuotation, initialView = "quotations" 
       <CardContent className="space-y-6">
         {view !== "quotations" && <section className="space-y-3">
           <div className="flex items-center justify-between"><h2 className="font-semibold">{view === "sales" ? "销售订单" : "采购订单"}</h2><span className="text-xs text-muted-foreground">{filteredOrders.length} 条</span></div>
-          {filteredOrders.map((order) => <div key={order.id} className="tp-list-row rounded-md border bg-white p-3">
+          {pagedOrders.map((order) => <div key={order.id} className="tp-list-row rounded-md border bg-white p-3">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2"><p className="font-semibold">{order.title}</p><Badge variant={order.status === "active" ? "success" : "secondary"}>{statusLabels[order.status] ?? order.status}</Badge><Badge variant="outline">{order.order_type === "sales" ? "销售订单" : "采购订单"}</Badge></div>
@@ -228,15 +236,17 @@ export function OrderCenterPage({ onCreateQuotation, initialView = "quotations" 
 
           </div>)}
           {!filteredOrders.length && <p className="rounded-lg bg-muted/30 py-8 text-center text-sm text-muted-foreground">没有符合条件的订单。</p>}
+          {filteredOrders.length > 0 && <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-3"><p className="text-xs text-muted-foreground">第 {listPage} / {pageCount} 页 · 共 {filteredOrders.length} 条订单</p><div className="flex gap-2"><Button size="sm" variant="outline" disabled={listPage <= 1} onClick={() => setListPage(value => Math.max(1, value - 1))}>上一页</Button><Button size="sm" variant="outline" disabled={listPage >= pageCount} onClick={() => setListPage(value => Math.min(pageCount, value + 1))}>下一页</Button></div></div>}
         </section>}
 
         {view === "quotations" && <section className="space-y-3">
           <div className="flex items-center justify-between"><h2 className="font-semibold">报价与询价</h2><span className="text-xs text-muted-foreground">{filteredQuotes.length} 份</span></div>
-          {filteredQuotes.map((quote) => <div key={quote.id} className="tp-list-row flex flex-wrap items-center justify-between gap-3 rounded-md border bg-white p-3">
+          {pagedQuotes.map((quote) => <div key={quote.id} className="tp-list-row flex flex-wrap items-center justify-between gap-3 rounded-md border bg-white p-3">
             <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="font-semibold">{quote.title}</p><Badge variant={quote.status === "issued" ? "success" : "secondary"}>{statusLabels[quote.status] ?? quote.status}</Badge><Badge variant="outline">{typeLabels[quote.document_type] ?? quote.document_type}</Badge></div><p className="mt-1 text-xs text-muted-foreground">{quote.document_number} · 关联订单 {quote.trade_orders?.order_number ?? "—"} · {quote.currency_code} · {dateLabel(quote.created_at)}</p></div>
             <div className="flex flex-wrap gap-2">{quote.status !== "issued" && quote.status !== "void" && quote.status !== "archived" && <Button size="sm" onClick={() => void confirmQuote(quote)} disabled={busyId === quote.id}>确认并生成订单</Button>}<Button size="sm" variant="outline" onClick={onCreateQuotation}>制作后续单据</Button></div>
           </div>)}
           {!filteredQuotes.length && <p className="rounded-lg bg-muted/30 py-8 text-center text-sm text-muted-foreground">还没有报价单或采购询价单。可从单据制作创建。</p>}
+          {filteredQuotes.length > 0 && <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-3"><p className="text-xs text-muted-foreground">第 {listPage} / {pageCount} 页 · 共 {filteredQuotes.length} 份报价与询价</p><div className="flex gap-2"><Button size="sm" variant="outline" disabled={listPage <= 1} onClick={() => setListPage(value => Math.max(1, value - 1))}>上一页</Button><Button size="sm" variant="outline" disabled={listPage >= pageCount} onClick={() => setListPage(value => Math.min(pageCount, value + 1))}>下一页</Button></div></div>}
         </section>}
       </CardContent>
     </Card>
