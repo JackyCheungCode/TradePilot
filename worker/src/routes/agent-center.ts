@@ -10,7 +10,8 @@ interface Env {
   AGENT_ENCRYPTION_KEY?: string;
   SERPER_API_KEY?: string;
   SERPAPI_API_KEY?: string;
-  AI?: {run(model:string,input:Record<string,unknown>):Promise<unknown>};\n  LEAD_DISCOVERY_WORKFLOW?: { create(options:{id:string;params:{runId:string;ownerId:string;input:DiscoveryRunInput}}):Promise<{id:string}> };
+  AI?: {run(model:string,input:Record<string,unknown>):Promise<unknown>};
+  LEAD_DISCOVERY_WORKFLOW?: { create(options:{id:string;params:{runId:string;ownerId:string;input:DiscoveryRunInput}}):Promise<{id:string}> };
 }
 type ConnectionRow = {
   id:string; owner_id:string; name:string; protocol:Protocol; endpoint_url:string;
@@ -307,7 +308,8 @@ async function generateAgentPlan(env:Env,ownerId:string,goal:string,country:stri
  }else throw new Error("AGENT_PLANNER_INVALID_ACTION");
  return {agentKey,summary,steps,action,model:selectedModel};
 }
-\nexport async function handleAgentCenter(request:Request,env:Env):Promise<Response>{
+
+export async function handleAgentCenter(request:Request,env:Env):Promise<Response>{
   const ownerId=await ownerFromRequest(request,env);
   if(!ownerId)return errorResponse(request,"UNAUTHORIZED","请先登录 TradePilot。",401);
   const url=new URL(request.url);
