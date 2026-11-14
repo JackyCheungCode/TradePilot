@@ -24,9 +24,10 @@ const states: Array<{ id: CharacterState; label: string }> = [
   { id: "working", label: "执行" }, { id: "happy", label: "开心" }, { id: "celebrate", label: "完成" },
   { id: "sleeping", label: "休眠" }, { id: "alerting", label: "异常提醒" },
 ];
-const shapeLabels: Record<string, string> = { mochi: "团子", bot: "机器人", cat: "猫咪", bear: "小熊", rabbit: "兔子", dog: "小狗", blob: "软团", gem: "宝石" };
-const colorLabels: Record<string, string> = { cream: "奶油白", blue: "蓝色", pink: "粉色", purple: "紫色", green: "绿色", yellow: "黄色", orange: "橙色", red: "红色", black: "黑色", white: "白色" };
-const readable = (value: string, labels: Record<string, string> = {}) => labels[value] ?? value.replace(/[_-]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+const localized = (family: string, value: string) => {
+  const key = `${family}.${value}` as keyof typeof zhCN;
+  return zhCN[key] ?? value.replace(/[_-]+/g, " ").replace(/\\b\\w/g, (letter) => letter.toUpperCase());
+};
 const equalConfig = (a: AgentAppearanceConfig, b: AgentAppearanceConfig) => JSON.stringify(a) === JSON.stringify(b);
 
 export function AgentAppearanceSettingsPage() {
