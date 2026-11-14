@@ -71,7 +71,7 @@ export async function handleTradeDocuments(request:Request,env:Env):Promise<Resp
       const filter=requestedVariantId?"id=eq."+encodeURIComponent(requestedVariantId):"sku=eq."+encodeURIComponent(skuSnapshot);
       const variantRows=await db<Json[]>(env,"trade_product_variants?select=id,sku,name,attribute_value_ids,weight,volume,is_active,is_archived&product_id=eq."+encodeURIComponent(productId)+"&owner_id=eq."+ownerId+"&"+filter+"&limit=1");
       const variant=variantRows[0];if(!variant||variant.is_active===false||variant.is_archived===true)return errorResponse(request,"INVALID_REFERENCE","所选 SKU 不属于该产品，或该变体已停用。",400);
-      productVariantId=str(variant.id,64);skuSnapshot=str(variant.sku,100)||null;
+      productVariantId=str(variant.id,64);skuSnapshot=str(variant.sku,100);
       productNameSnapshot=str(product.name)+" / "+str(variant.name||variant.sku);
       descriptionSnapshot=str(variant.name||"")+ (Array.isArray(variant.attribute_value_ids)?" · 属性值 "+variant.attribute_value_ids.join(", "):"");
       netWeightSnapshot=variant.weight??product.net_weight??null;
