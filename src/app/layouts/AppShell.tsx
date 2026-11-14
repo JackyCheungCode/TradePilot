@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type ElementType, type ReactNode } from "react";
 import {
   Header,
   HeaderGlobalAction,
@@ -28,7 +28,7 @@ type AppPage =
 type NavItem = { page: AppPage; label: string };
 type NavGroup = { id: string; title: string; icon: string; pages: AppPage[]; items: NavItem[]; navigateOnExpand?: boolean };
 
-const carbonNavIcons: Record<string, React.ElementType> = {
+const carbonNavIcons: Record<string, ElementType> = {
   smart_toy: Bot,
   assignment: Task,
   folder_copy: Folder,
