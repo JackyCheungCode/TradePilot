@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Activity, ArrowRight, Clock3, LoaderCircle } from "lucide-react";
-import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Progress } from "@/shared/ui/primitives";
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Progress } from "@/shared/ui/primitives";
+import { StatusBadge } from "@/shared/ui/data-views";
 
 const statusLabels: Record<string, string> = {
   queued: "排队中",
@@ -65,7 +66,7 @@ export function TaskExecutionPanel({
             </div>
             <CardDescription>{description}</CardDescription>
           </div>
-          {status ? <Badge variant={status === "completed" ? "success" : status === "failed" ? "outline" : "secondary"}>{statusLabels[status] ?? status}</Badge> : null}
+          {status ? <StatusBadge status={status} label={statusLabels[status] ?? status} /> : null}
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
