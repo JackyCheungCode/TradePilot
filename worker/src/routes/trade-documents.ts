@@ -55,7 +55,28 @@ export async function handleTradeDocuments(request:Request,env:Env):Promise<Resp
   if(path.length===2&&path[0]==="orders"&&path[1]){
    const id=path[1];
    if(method==="GET"){const rows=await db<Json[]>(env,"trade_orders?select=*,trade_order_items(*),crm_account:crm_accounts(*),crm_contact:crm_contacts(*),enterprise_profile:enterprise_profiles(*),opportunity:crm_opportunities(*)&id=eq."+encodeURIComponent(id)+"&owner_id=eq."+ownerId+"&limit=1");if(!rows.length)return errorResponse(request,"NOT_FOUND","业务档案不存在。",404);return successResponse(request,rows[0]);}
-   if(method==="PATCH"){const b=jsonBody(await request.json());const allowed=["title","status","seller_party_id","buyer_party_id","supplier_party_id","currency_code","payment_terms","incoterms_code","incoterms_version","named_place","trade_date","delivery_date","origin_location","destination_location","shipping","packaging","notes","metadata"];const patch:Json={updated_at:new Date().toISOString()};for(const k of allowed)if(k in b)patch[k]=b[k];const rows=await db<Json[]>(env,"trade_orders?id=eq."+encodeURIComponent(id)+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=representation"},body:JSON.stringify(patch)});if(!rows.length)return errorResponse(request,"NOT_FOUND","业务档案不存在。",404);return successResponse(request,rows[0]);}
+   if(method==="PATCH"){
+    const b=jsonBody(await request.json());
+    const currentRows=await db<Json[]>(env,"trade_orders?select=id,status,order_type&id=eq."+encodeURIComponent(id)+"&owner_id=eq."+ownerId+"&limit=1");
+    const current=currentRows[0];if(!current)return errorResponse(request,"NOT_FOUND","订单不存在。",404);
+    if("status" in b){
+     const next=str(b.status,24),prior=str(current.status,24);
+     const transitions:Record<string,string[]>={draft:["active","cancelled"],active:["completed","cancelled","archived"],completed:["archived"],cancelled:["archived"],archived:[]};
+     if(!transitions[prior]?.includes(next))return errorResponse(request,"INVALID_STATUS_TRANSITION","当前订单状态不允许执行此操作。",409);
+     if(next==="active"){
+      const lines=await db<Json[]>(env,"trade_order_items?select=id&order_id=eq."+encodeURIComponent(id)+"&owner_id=eq."+ownerId+"&limit=1");
+      if(!lines.length)return errorResponse(request,"ORDER_HAS_NO_LINES","订单至少需要一条产品明细才能确认。",400);
+     }
+    }
+    if("currency_code" in b&&!/^[A-Za-z]{3}$/.test(str(b.currency_code,3)))return errorResponse(request,"VALIDATION_ERROR","币种必须是 3 位 ISO 代码。",400);
+    if("prepayment_percent" in b&&b.prepayment_percent!==null&&(typeof b.prepayment_percent!=="number"||b.prepayment_percent<0||b.prepayment_percent>100))return errorResponse(request,"VALIDATION_ERROR","预付款比例必须在 0 到 100 之间。",400);
+    if("shipping_policy" in b&&!["","asap","when_ready"].includes(str(b.shipping_policy,24)))return errorResponse(request,"VALIDATION_ERROR","发货策略值无效。",400);
+    for(const key of ["invoice_address","delivery_address"])if(key in b&&(!b[key]||typeof b[key]!=="object"||Array.isArray(b[key])))return errorResponse(request,"VALIDATION_ERROR","开票地址和交付地址必须是对象。",400);
+    const allowed=["title","status","seller_party_id","buyer_party_id","supplier_party_id","currency_code","payment_terms","incoterms_code","incoterms_version","named_place","trade_date","validity_date","delivery_date","customer_reference","invoice_address","delivery_address","pricelist_name","fiscal_position","shipping_policy","salesperson_name","sales_team","source_document","campaign","medium","source","signature_required","payment_required","prepayment_percent","shipping_weight","internal_notes","origin_location","destination_location","shipping","packaging","notes","metadata"];
+    const patch:Json={updated_at:new Date().toISOString()};for(const k of allowed)if(k in b)patch[k]=b[k];
+    const rows=await db<Json[]>(env,"trade_orders?id=eq."+encodeURIComponent(id)+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=representation"},body:JSON.stringify(patch)});
+    if(!rows.length)return errorResponse(request,"NOT_FOUND","订单不存在。",404);return successResponse(request,rows[0]);
+   }
   }
   if(path.length===3&&path[0]==="orders"&&path[2]==="items"){
    const orderId=path[1];const ownedOrder=await db<Json[]>(env,"trade_orders?select=id&id=eq."+encodeURIComponent(orderId)+"&owner_id=eq."+ownerId+"&limit=1");if(!ownedOrder.length)return errorResponse(request,"NOT_FOUND","业务档案不存在。",404);
@@ -101,6 +122,19 @@ export async function handleTradeDocuments(request:Request,env:Env):Promise<Resp
     const rows=await db<Json[]>(env,"trade_documents",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({owner_id:ownerId,order_id:orderId,document_type:type,document_number:number,title,status:"draft",locale,currency_code:str(b.currency_code,3).toUpperCase()||"USD",source_document_id:b.source_document_id??null,template_id:templateId||null,current_version:1,content,totals})});
     const doc=rows[0];await db(env,"trade_document_versions",{method:"POST",body:JSON.stringify({owner_id:ownerId,document_id:doc.id,version_number:1,content_snapshot:content,totals_snapshot:totals,template_snapshot:templateSnapshot,locale,created_by:ownerId})});
     await db(env,"trade_document_events",{method:"POST",body:JSON.stringify({owner_id:ownerId,document_id:doc.id,order_id:orderId,event_type:"document.created",payload:{document_number:number,document_type:type}})});return successResponse(request,doc,201);}
+  }
+  if(path.length===3&&path[0]==="documents"&&path[2]==="confirm"&&method==="POST"){
+   try{
+    const rows=await db<Json[]>(env,"rpc/confirm_trade_quotation",{method:"POST",body:JSON.stringify({p_owner_id:ownerId,p_document_id:path[1]})});
+    if(!rows.length)return errorResponse(request,"CONFIRMATION_FAILED","报价单确认未返回结果。",409);
+    return successResponse(request,rows[0]);
+   }catch(error){
+    const reason=String(error);
+    if(reason.includes("ORDER_HAS_NO_LINES"))return errorResponse(request,"ORDER_HAS_NO_LINES","报价单至少需要一条产品明细才能确认。",400);
+    if(reason.includes("NOT_FOUND"))return errorResponse(request,"NOT_FOUND","报价单或关联订单不存在。",404);
+    if(reason.includes("STATUS_NOT_CONFIRMABLE")||reason.includes("TYPE_MISMATCH")||reason.includes("NOT_A_QUOTATION"))return errorResponse(request,"INVALID_QUOTATION_STATE","报价单或关联订单当前状态不允许确认。",409);
+    throw error;
+   }
   }
   if(path.length===2&&path[0]==="documents"){
    const id=path[1];
