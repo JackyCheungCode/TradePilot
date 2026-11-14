@@ -4,8 +4,6 @@ import { describe, expect, it } from "vitest";
 const globalStyles = readFileSync(new URL("./globals.css", import.meta.url), "utf8");
 const resetStyles = readFileSync(new URL("./reset.css", import.meta.url), "utf8");
 const designTokens = readFileSync(new URL("./design-tokens.css", import.meta.url), "utf8");
-const designTokens = readFileSync(new URL("./design-tokens.css", import.meta.url), "utf8");
-const resetStyles = readFileSync(new URL("./reset.css", import.meta.url), "utf8");
 const appShellStyles = readFileSync(new URL("../app/layouts/app-shell.css", import.meta.url), "utf8");
 const pageLayoutStyles = readFileSync(new URL("../shared/ui/page-layout.css", import.meta.url), "utf8");
 const agentMarketStyles = readFileSync(new URL("../features/agent-center/presentation/agent-center.css", import.meta.url), "utf8");
@@ -25,15 +23,8 @@ describe("stylesheet ownership boundaries", () => {
     expect(designTokens).not.toContain("--tp-");
   });
 
-  it("does not reset typography on native controls", () => {
-    expect(resetStyles).not.toMatch(/(?:button|input|textarea|select)\\s*\\{[^}]*font\\s*:/s);
-  });
-
   it("does not style native controls or data tables globally", () => {
     expect(globalStyles).not.toMatch(/^\s*(?:button|input|textarea|select|table|label)\s*[{,]/m);
-  });
-
-  it("does not reset typography on native controls or Carbon control internals", () => {
     expect(resetStyles).not.toMatch(/(?:button|input|textarea|select)\s*\{[^}]*font\s*:/s);
   });
 
