@@ -5,6 +5,8 @@ import * as PopoverPrimitive from "@radix-ui/react-popover";
 import {
   Button as CarbonButton,
   Checkbox as CarbonCheckbox,
+  DatePicker as CarbonDatePicker,
+  DatePickerInput as CarbonDatePickerInput,
   TextInput as CarbonTextInput,
   TextArea as CarbonTextArea,
   Tag as CarbonTag,
@@ -102,6 +104,36 @@ export const Input = React.forwardRef<
 >(function Input({ className, id, defaultValue, value, onClick, size: _nativeSize, ...props }, ref) {
   const generatedId = React.useId();
   void _nativeSize;
+  if (props.type === "date") {
+    const dateValue = String(value ?? defaultValue ?? "");
+    const { min, max, disabled, required, placeholder, name, autoComplete, "aria-label": ariaLabel } = props;
+    return (
+      <CarbonDatePicker
+        datePickerType="single"
+        dateFormat="Y-m-d"
+        value={dateValue || undefined}
+        minDate={min}
+        maxDate={max}
+        className={className}
+        onChange={(_dates, dateString) => {
+          const target = { value: dateString } as HTMLInputElement;
+          onChange?.({ target, currentTarget: target } as React.ChangeEvent<HTMLInputElement>);
+        }}
+      >
+        <CarbonDatePickerInput
+          id={id ?? generatedId}
+          labelText={ariaLabel ?? ""}
+          hideLabel
+          type="text"
+          placeholder={placeholder ?? "YYYY-MM-DD"}
+          disabled={disabled}
+          required={required}
+          name={name}
+          autoComplete={autoComplete}
+        />
+      </CarbonDatePicker>
+    );
+  }
   return (
     <CarbonTextInput
       ref={ref}
