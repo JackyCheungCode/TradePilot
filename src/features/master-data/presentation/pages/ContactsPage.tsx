@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Modal } from "@carbon/react";
 import {
   At as AtSign, LogoFacebook as Facebook, Earth as Globe, LogoInstagram as Instagram, LogoLinkedin as Linkedin, Email as Mail, Chat as MessageCircle, Chat as MessageSquare,
   Music as Music2, Phone, Add as Plus, Renew as RefreshCw, Search, Send, Mobile as Smartphone, TrashCan as Trash2, User as UserRound,
@@ -82,6 +83,8 @@ export function ContactsPage() {
   const [showEditor, setShowEditor] = useState(false);
   const [editingId, setEditingId] = useState("");
   const [contact, setContact] = useState<ContactDraft>(blankContact());
+  const [archiveTarget, setArchiveTarget] = useState<MasterRecord | null>(null);
+  const [archiveBusy, setArchiveBusy] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -193,10 +196,20 @@ export function ContactsPage() {
     } finally { setSaving(false); }
   };
 
-  const archive = async (row: MasterRecord) => {
-    if (!window.confirm("确定归档该联系人？联系方式会保留在归档联系人记录中。")) return;
-    try { await masterDataApi.remove("crm/contacts",row.id); toast.success("联系人已归档"); await load(); }
-    catch (error) { toast.error(error instanceof Error ? error.message : "归档失败"); }
+  const archive = (row: MasterRecord) => setArchiveTarget(row);
+  const confirmArchive = async () => {
+    if (!archiveTarget) return;
+    setArchiveBusy(true);
+    try {
+      await masterDataApi.remove("crm/contacts", archiveTarget.id);
+      toast.success("联系人已归档");
+      setArchiveTarget(null);
+      await load();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "归档失败");
+    } finally {
+      setArchiveBusy(false);
+    }
   };
 
   return (
@@ -240,6 +253,18 @@ export function ContactsPage() {
           </article>;
         })}</div> : <div className="py-12 text-center text-sm text-muted-foreground">暂无联系人，点击「新建联系人」开始添加。</div>}
       </CardContent></Card>
+      <Modal
+        open={Boolean(archiveTarget)}
+        modalHeading="归档联系人"
+        primaryButtonText={archiveBusy ? "正在归档…" : "确认归档"}
+        secondaryButtonText="取消"
+        danger
+        primaryButtonDisabled={archiveBusy}
+        onRequestClose={() => { if (!archiveBusy) setArchiveTarget(null); }}
+        onRequestSubmit={() => void confirmArchive()}
+      >
+        <p>确定归档「{String(archiveTarget?.full_name ?? [archiveTarget?.first_name, archiveTarget?.last_name].filter(Boolean).join(" ") ?? "该联系人")}」？联系方式会保留在归档联系人记录中。</p>
+      </Modal>
     </div>
   );
 }
