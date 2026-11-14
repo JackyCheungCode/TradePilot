@@ -185,3 +185,15 @@ The first change must be the dependency/lockfile and theme foundation, not broad
 - Lint found one unused compatibility variable for the native input `size` attribute; that variable is now explicitly consumed in the follow-up commit. A fresh CI run is required to verify lint and the remaining build stages.
 - Carbon Sass is configured with `$use-per-family-plex: true`, which uses the Carbon/IBM Plex font assets locally instead of relying on an external font CDN, following Carbon's IBM Plex integration guidance.
 - Added Noto Sans TC ahead of the existing Noto Sans SC fallback for Traditional Chinese UI text.
+
+
+### Shared UI migration expansion
+- [x] Shared semantic StatusBadge now renders Carbon Tag with Carbon semantic color types.
+- [x] Shared search/clear icons now use Carbon Icons React.
+- [x] Declared `@carbon/icons-react@11.92.0` as a direct dependency rather than relying on a transitive dependency.
+- [x] Carbon Card wrapper now renders Carbon Tile.
+- [x] Carbon ProgressBar wrapper now renders Carbon ProgressBar.
+- [x] SearchControlPanel continues to use the Carbon-backed shared Button and TextInput wrappers.
+- [ ] Newest changes to StatusBadge and Carbon icons still need a CI run.
+- [ ] Existing page-local icon usage (Lucide/Material Symbols) remains to be inventoried and replaced; this migration is not yet globally icon-complete.
+- [ ] Existing raw native inputs and page-local selector controls remain to be inventoried and migrated.
