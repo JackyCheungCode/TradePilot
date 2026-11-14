@@ -216,3 +216,13 @@ The first change must be the dependency/lockfile and theme foundation, not broad
 - [ ] Migrate and verify all remaining page-local data tables, pagination, menus, drawers/dialogs and notification surfaces.
 - [ ] Add route-by-route authenticated desktop/mobile visual smoke evidence for every nested and conditional state.
 - [ ] Review reproducible dependency lockfile strategy before release.
+
+
+### Data table and confirmation migration (2026-11-14)
+- [x] Migrated the native table structures on Leads, Document Center, Order Center, Discovery Results, Discovery Tasks and Master Data pages to official Carbon Table, TableHead, TableBody, TableRow, TableHeader and TableCell components. Existing columns, row actions, mobile cards, pagination and data behavior remain intact.
+- [x] Replaced native `window.confirm` archive/delete prompts in Contacts and Master Data with Carbon Modal confirmation flows.
+- [x] Corrected the shared Carbon Checkbox adapter to preserve the previous React ChangeEvent contract for existing `event.target.checked` call sites.
+- [x] The table migration and Carbon Modal changes passed CI runs `43597066406` and `43597006249` respectively (typecheck, tests, lint, frontend build and Worker build).
+- [ ] Current Checkbox event-contract fix is awaiting its own CI result.
+- [ ] Customer Account Form's full-screen contact-management mode and its internal tab panel still need review against Carbon layout/navigation patterns.
+- [ ] Continue auditing all page-local conditional controls, inline actions, responsive states, and the remaining Carbon Table variants; the presence of Carbon primitives does not by itself constitute a completed visual acceptance pass.
