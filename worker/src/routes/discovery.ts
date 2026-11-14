@@ -1,5 +1,6 @@
 import { errorResponse, successResponse } from "../lib/http";
 import { buildLeadDedupeKey, normalizeBusinessName } from "../lib/deduplication";
+import { discoveryRunQuery } from "../lib/owner-scoped-query";
 
 export interface DiscoveryEnv {
   SUPABASE_URL: string;
@@ -75,8 +76,8 @@ async function log(env: DiscoveryEnv, runId: string, ownerId: string, level: str
     body: JSON.stringify({ run_id: runId, owner_id: ownerId, level, message }),
   });
 }
-async function updateRun(env: DiscoveryEnv, id: string, patch: Record<string, unknown>) {
-  await db(env, "discovery_runs?id=eq." + id, {
+async function updateRun(env: DiscoveryEnv, id: string, ownerId: string, patch: Record<string, unknown>) {
+  await db(env, discoveryRunQuery(id, ownerId), {
     method: "PATCH",
     headers: { Prefer: "return=minimal" },
     body: JSON.stringify({ ...patch, updated_at: new Date().toISOString() }),
@@ -198,7 +199,7 @@ function calculateConfidence(input:{provider:DiscoveryProvider;address?:string|n
   return Math.min(100,score);
 }
 export async function markRunFailed(env: DiscoveryEnv, runId: string, ownerId: string, error: unknown) {
-  await updateRun(env, runId, { status: "failed", message: "任务执行失败" });
+  await updateRun(env, runId, ownerId, { status: "failed", message: "任务执行失败" });
   await log(env, runId, ownerId, "error", "任务异常终止：" + String(error).slice(0, 300));
 }
 
@@ -261,7 +262,7 @@ export async function processRun(env: DiscoveryEnv, runId: string, ownerId: stri
   const providers = input.providers?.length ? input.providers : ["google_maps", "openstreetmap"];
   const totalUnits = input.countries.length * providers.length;
   let doneUnits = 0, discovered = 0, created = 0, googleCount = 0, osmCount = 0, failures = 0;
-  await updateRun(env, runId, { status: "running", message: "正在执行所选数据源：" + providers.join("、") });
+  await updateRun(env, runId, ownerId, { status: "running", message: "正在执行所选数据源：" + providers.join("、") });
   await log(env, runId, ownerId, "info", "任务开始；关键词：" + input.query + "；业务类型：" + (input.businessTypes ?? []).join("、") + "；筛选条件：" + JSON.stringify(input.filters ?? {}) + "；数据源：" + providers.join("、"));
   if (providers.includes("openstreetmap")) await log(env, runId, ownerId, "info", "OSM 标签映射：" + (input.osmTags ?? []).map(tag => tag.key + "=" + tag.value).join("、") + "；地区范围：" + [input.city, input.state, countryName(input.countries[0])].filter(Boolean).join(" · "));
   for (const code of input.countries) {
@@ -329,10 +330,10 @@ export async function processRun(env: DiscoveryEnv, runId: string, ownerId: stri
       if (!matched) created++;
     }
     discovered = osmCount + googleCount;
-    await updateRun(env,runId,{progress:Math.round(doneUnits/totalUnits*100),discovered_count:discovered,created_lead_count:created,message:"已处理 "+scope+" · 发现记录已保存"});
+    await updateRun(env,runId,ownerId,{progress:Math.round(doneUnits/totalUnits*100),discovered_count:discovered,created_lead_count:created,message:"已处理 "+scope+" · 发现记录已保存"});
   }
   const status = failures===0 ? "completed" : failures<totalUnits ? "partial" : "failed";
-  await updateRun(env,runId,{status,progress:100,discovered_count:discovered,created_lead_count:created,message:"任务结束：OSM "+osmCount+" 条，Google "+googleCount+" 条；发现记录已归档"});
+  await updateRun(env,runId,ownerId,{status,progress:100,discovered_count:discovered,created_lead_count:created,message:"任务结束：OSM "+osmCount+" 条，Google "+googleCount+" 条；发现记录已归档"});
   await log(env,runId,ownerId,status==="completed"?"success":"warning","任务结束。所有发现记录及关键词、来源已保存。");
   return {status,discovered,created,googleCount,osmCount};
 }
