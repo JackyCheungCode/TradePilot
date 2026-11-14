@@ -390,10 +390,10 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
       let body:Record<string,unknown>;try{body=await request.json() as Record<string,unknown>;}catch{return errorResponse(request,"INVALID_JSON","请求内容不是有效 JSON。",400);}
       const name=typeof body.name==="string"?body.name.trim():"",description=typeof body.description==="string"?body.description.trim():"";
       const definition=asRecord(body.definition),steps=Array.isArray(definition.steps)?definition.steps:[];
-      if(name.length<2||name.length>120||description.length>1000||steps.length<1||steps.length>12)return errorResponse(request,"VALIDATION_ERROR","工作流名称、描述或步骤数量无效（1–12 步）。",400);
+      if(name.length<2||name.length>120||description.length>1000||steps.length<1||steps.length>4)return errorResponse(request,"VALIDATION_ERROR","工作流名称、描述或步骤数量无效（1–4 步）。",400);
       const validKeys=new Set(["buyer_development","market_research","company_research","lead_scoring","multilingual_sales","follow_up","trade_compliance"]);
       const normalized=steps.map((step,index)=>{const item=asRecord(step);return {id:typeof item.id==="string"?item.id:"step-"+(index+1),agentKey:typeof item.agentKey==="string"?item.agentKey:"",instruction:typeof item.instruction==="string"?item.instruction.trim():""};});
-      if(normalized.some(step=>!validKeys.has(step.agentKey)||step.instruction.length>2000))return errorResponse(request,"WORKFLOW_STEP_INVALID","步骤包含不支持的 Agent 或指令过长。",400);
+      if(normalized.some(step=>!validKeys.has(step.agentKey)||!step.instruction||step.instruction.length>2000)||normalized[0]?.agentKey!=="buyer_development"||normalized.slice(1).some(step=>!["company_research","market_research","lead_scoring","trade_compliance"].includes(step.agentKey)))return errorResponse(request,"WORKFLOW_STEP_INVALID","工作流必须以买家开发 Agent 开始，后续最多配置三个企业调查、市场研究、客户评估或贸易合规 Agent，且每步必须填写指令。",400);
       const rows=await db<Array<Record<string,unknown>>>(env,"agent_workflows?select=id,name,description,enabled,definition,created_at,updated_at",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({owner_id:ownerId,name,description,enabled:false,definition:{steps:normalized},updated_at:new Date().toISOString()})});
       return successResponse(request,rows?.[0]??{},201);
     }
@@ -436,10 +436,10 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
       let body:Record<string,unknown>;try{body=await request.json() as Record<string,unknown>;}catch{return errorResponse(request,"INVALID_JSON","请求内容不是有效 JSON。",400);}
       const name=typeof body.name==="string"?body.name.trim():"",description=typeof body.description==="string"?body.description.trim():"";
       const definition=asRecord(body.definition),steps=Array.isArray(definition.steps)?definition.steps:[];
-      if(name.length<2||name.length>120||steps.length<1||steps.length>12)return errorResponse(request,"VALIDATION_ERROR","工作流名称或步骤数量无效。",400);
+      if(name.length<2||name.length>120||steps.length<1||steps.length>4)return errorResponse(request,"VALIDATION_ERROR","工作流名称或步骤数量无效（1–4 步）。",400);
       const validKeys=new Set(["buyer_development","market_research","company_research","lead_scoring","multilingual_sales","follow_up","trade_compliance"]);
       const normalized=steps.map((step,index)=>{const item=asRecord(step);return {id:typeof item.id==="string"?item.id:"step-"+(index+1),agentKey:typeof item.agentKey==="string"?item.agentKey:"",instruction:typeof item.instruction==="string"?item.instruction.trim():""};});
-      if(normalized.some(step=>!validKeys.has(step.agentKey)||!step.instruction||step.instruction.length>2000))return errorResponse(request,"WORKFLOW_STEP_INVALID","每个步骤必须选择有效 Agent 并填写执行指令。",400);
+      if(normalized.some(step=>!validKeys.has(step.agentKey)||!step.instruction||step.instruction.length>2000)||normalized[0]?.agentKey!=="buyer_development"||normalized.slice(1).some(step=>!["company_research","market_research","lead_scoring","trade_compliance"].includes(step.agentKey)))return errorResponse(request,"WORKFLOW_STEP_INVALID","工作流必须以买家开发 Agent 开始，后续最多配置三个企业调查、市场研究、客户评估或贸易合规 Agent，且每步必须填写指令。",400);
       const rows=await db<Array<Record<string,unknown>>>(env,"agent_workflows?id=eq."+workflowMatch[1]+"&owner_id=eq."+ownerId+"&select=id,name,description,enabled,definition,created_at,updated_at",{method:"PATCH",headers:{Prefer:"return=representation"},body:JSON.stringify({name,description,definition:{steps:normalized},enabled:body.enabled===true,updated_at:new Date().toISOString()})});
       if(!rows?.length)return errorResponse(request,"NOT_FOUND","工作流不存在。",404);
       return successResponse(request,rows[0]);
@@ -451,7 +451,7 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
       const profiles=await db<Array<{agent_key:string;enabled:boolean}>>(env,"agent_profiles?owner_id=eq."+ownerId+"&select=agent_key,enabled");
       const disabled=new Set((profiles??[]).filter(x=>!x.enabled).map(x=>x.agent_key));
       const unavailable=steps.map(asRecord).filter(x=>disabled.has(String(x.agentKey))).map(x=>String(x.agentKey));
-      return successResponse(request,{valid:steps.length>0&&unavailable.length===0,stepCount:steps.length,disabledAgents:[...new Set(unavailable)],mode:"validation_only",message:unavailable.length?"存在已停用的 Agent，请启用后再运行。":"结构校验通过；此测试不会启动真实任务。"});
+      const ordered=steps.map(asRecord),validShape=ordered.length>=1&&ordered.length<=4&&ordered[0]?.agentKey==="buyer_development"&&ordered.slice(1).every(x=>["company_research","market_research","lead_scoring","trade_compliance"].includes(String(x.agentKey))&&typeof x.instruction==="string"&&String(x.instruction).trim().length>0);return successResponse(request,{valid:validShape&&unavailable.length===0,stepCount:steps.length,disabledAgents:[...new Set(unavailable)],mode:"validation_only",message:unavailable.length?"存在已停用的 Agent，请启用后再运行。":!validShape?"工作流顺序或步骤配置不符合执行要求。":"结构校验通过；此测试不会启动真实任务。"});
     }
     if(workflowMatch&&request.method==="DELETE"){
       const rows=await db<Array<{id:string}>>(env,"agent_workflows?id=eq."+workflowMatch[1]+"&owner_id=eq."+ownerId+"&select=id",{method:"DELETE",headers:{Prefer:"return=representation"}});
