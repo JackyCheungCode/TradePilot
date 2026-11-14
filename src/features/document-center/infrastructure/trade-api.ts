@@ -5,6 +5,7 @@ export interface TradeOrderItem {id:string;product_id?:string|null;product_name:
 export interface TradeOrder {id:string;order_number:string;order_type:"sales"|"purchase";title:string;status:string;currency_code:string;created_at:string;updated_at:string;trade_order_items?:TradeOrderItem[];}
 export interface TradeDocument {id:string;document_number:string;document_type:string;title:string;status:string;locale:string;currency_code:string;order_id:string;current_version:number;created_at:string;content?:Record<string,unknown>;totals?:Record<string,unknown>;}
 export interface TradeDocumentDetail extends TradeDocument {trade_document_versions?:Array<{version_number:number;content_snapshot:Record<string,unknown>;totals_snapshot:Record<string,unknown>;created_at:string}>;}
+export interface TradeDocumentTemplate {id:string;name:string;document_type:string;locale:string;description:string;is_default:boolean;is_active:boolean;template_config:Record<string,unknown>;created_at:string;updated_at:string;}
 async function request<T>(path:string,init?:RequestInit):Promise<T>{
  const {data:{session}}=await getSupabaseClient().auth.getSession();if(!session?.access_token)throw new Error("请先登录 TradePilot。");
  const response=await fetch(path,{...init,signal:init?.signal??AbortSignal.timeout(20000),headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token,...init?.headers}});
@@ -26,4 +27,8 @@ export const tradeApi={
  getDocument:(id:string)=>request<TradeDocumentDetail>("/api/v1/trade/documents/"+encodeURIComponent(id)),
  updateDocument:(id:string,input:{content:Record<string,unknown>;totals:Record<string,unknown>;locale:string;currency_code:string;current_version:number})=>request<TradeDocument>("/api/v1/trade/documents/"+encodeURIComponent(id),{method:"PATCH",body:JSON.stringify(input)}),
  createDocument:(input:{order_id:string;document_type:string;title?:string;locale?:string;currency_code?:string;source_document_id?:string;content?:Record<string,unknown>;totals?:Record<string,unknown>})=>request<TradeDocument>("/api/v1/trade/documents",{method:"POST",body:JSON.stringify(input)}),
+ listTemplates:()=>request<TradeDocumentTemplate[]>("/api/v1/trade/templates"),
+ createTemplate:(input:{name:string;document_type:string;locale?:string;description?:string;is_default?:boolean;template_config?:Record<string,unknown>})=>request<TradeDocumentTemplate>("/api/v1/trade/templates",{method:"POST",body:JSON.stringify(input)}),
+ updateTemplate:(id:string,input:Partial<TradeDocumentTemplate>)=>request<TradeDocumentTemplate>("/api/v1/trade/templates/"+encodeURIComponent(id),{method:"PATCH",body:JSON.stringify(input)}),
+ deleteTemplate:(id:string)=>request<{deleted:boolean;id:string}>("/api/v1/trade/templates/"+encodeURIComponent(id),{method:"DELETE"}),
 };
