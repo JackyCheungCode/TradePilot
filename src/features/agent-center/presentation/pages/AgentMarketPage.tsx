@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { Dropdown, Tile, Toggle } from "@carbon/react";
 import { ArrowRight, Bot, Checkmark, Edit, Plug } from "@carbon/icons-react";
-import { Button, Card, CardContent, Combobox, Textarea, Badge } from "@/shared/ui/primitives";
-import { Input } from "@/shared/ui/primitives";
+import { Button, Input, Textarea, Badge } from "@/shared/ui/primitives";
 import { PageControlPanel } from "@/shared/ui/page-layout";
 import { agentApi, type AgentProfile } from "../../infrastructure/agent-api";
 
@@ -15,13 +15,21 @@ const agentCatalog = [
   { id: "trade_compliance", name: "贸易合规 Agent", description: "辅助核查贸易限制、HS 编码和国家合规要求。", capabilities: ["贸易限制", "HS 编码", "合规核查"], detail: "辅助整理贸易合规相关信息，结果应由专业人员结合最新法规复核。" },
 ] as const;
 
+const statusItems = [
+  { id: "", text: "全部状态" },
+  { id: "enabled", text: "已启用" },
+  { id: "disabled", text: "已停用" },
+];
+
 export function AgentMarketPage() {
   const [profiles, setProfiles] = useState<AgentProfile[]>([]);
+  const [profilesLoaded, setProfilesLoaded] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [prompt, setPrompt] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [savingPrompt, setSavingPrompt] = useState(false);
   const [notice, setNotice] = useState("");
   const [loadError, setLoadError] = useState("");
 
@@ -30,17 +38,21 @@ export function AgentMarketPage() {
     agentApi.listProfiles().then(rows => {
       if (!alive) return;
       setProfiles(rows);
+      setProfilesLoaded(true);
       setLoadError("");
     }).catch(error => {
-      if (alive) setLoadError(error instanceof Error ? error.message : "加载 Agent 目录失败。");
+      if (alive) {
+        setLoadError(error instanceof Error ? error.message : "加载 Agent 目录失败。");
+        setProfilesLoaded(true);
+      }
     });
     return () => { alive = false; };
   }, []);
 
-  const enabledCount = agentCatalog.filter(agent => profiles.find(row => row.agent_key === agent.id)?.enabled ?? true).length;
+  const isEnabled = (id: string) => profiles.find(row => row.agent_key === id)?.enabled ?? true;
+  const enabledCount = profilesLoaded ? agentCatalog.filter(agent => isEnabled(agent.id)).length : null;
   const visibleAgents = useMemo(() => agentCatalog.filter(agent => {
-    const profile = profiles.find(row => row.agent_key === agent.id);
-    const enabled = profile?.enabled ?? true;
+    const enabled = profiles.find(row => row.agent_key === agent.id)?.enabled ?? true;
     const matchesStatus = !statusFilter || (statusFilter === "enabled" ? enabled : !enabled);
     const matchesSearch = [agent.name, agent.description, ...agent.capabilities].join(" ").toLocaleLowerCase().includes(search.toLocaleLowerCase());
     return matchesStatus && matchesSearch;
@@ -60,7 +72,7 @@ export function AgentMarketPage() {
   const toggleAgent = async (id: string) => {
     const current = profiles.find(row => row.agent_key === id);
     const enabled = current?.enabled ?? true;
-    setBusy(true);
+    setBusyId(id);
     setNotice("");
     try {
       const agent = agentCatalog.find(item => item.id === id);
@@ -73,18 +85,18 @@ export function AgentMarketPage() {
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "更新 Agent 状态失败。");
     } finally {
-      setBusy(false);
+      setBusyId(null);
     }
   };
 
   const savePrompt = async () => {
     if (!selectedAgent || !selectedId) return;
-    setBusy(true);
+    setSavingPrompt(true);
     setNotice("");
     try {
       const saved = await agentApi.saveProfile(selectedId, {
         enabled: selectedEnabled,
-        config: { ...(selectedProfile?.config ?? {}), systemPrompt: prompt.trim(), description: selectedAgent.description },
+        config: { ...(selectedProfile?.config ?? { systemPrompt: "", description: selectedAgent.description }), systemPrompt: prompt.trim(), description: selectedAgent.description },
       });
       setProfiles(rows => [...rows.filter(row => row.agent_key !== selectedId), saved]);
       setPrompt(saved.config?.systemPrompt ?? prompt.trim());
@@ -92,7 +104,7 @@ export function AgentMarketPage() {
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "保存专业指令失败。");
     } finally {
-      setBusy(false);
+      setSavingPrompt(false);
     }
   };
 
@@ -106,48 +118,72 @@ export function AgentMarketPage() {
       />
 
       <section className="tp-agent-market-summary" aria-label="Agent 目录概览">
-        <div><strong>{agentCatalog.length}</strong><span>内置 Agent</span></div>
-        <div><strong>{enabledCount}</strong><span>已启用</span></div>
-        <div><strong>REST API · MCP · Webhook</strong><span>外部接入协议</span></div>
+        <Tile className="tp-agent-market-metric">
+          <span className="tp-agent-market-metric__value">{agentCatalog.length}</span>
+          <span className="tp-agent-market-metric__label">内置 Agent</span>
+        </Tile>
+        <Tile className="tp-agent-market-metric">
+          <span className="tp-agent-market-metric__value">{profilesLoaded ? enabledCount : "—"}</span>
+          <span className="tp-agent-market-metric__label">{profilesLoaded ? "已启用" : "正在读取启用状态"}</span>
+        </Tile>
+        <Tile className="tp-agent-market-metric">
+          <span className="tp-agent-market-metric__value">3 种协议</span>
+          <span className="tp-agent-market-metric__label">REST API · MCP · Webhook</span>
+        </Tile>
       </section>
 
       <section className="tp-agent-market-controls" aria-label="搜索和筛选 Agent">
-        <div className="tp-agent-market-search">
+        <div className="tp-agent-market-field tp-agent-market-search">
           <label htmlFor="agent-market-search">搜索 Agent</label>
           <Input id="agent-market-search" value={search} onChange={event => setSearch(event.currentTarget.value)} placeholder="按名称、业务能力或用途搜索" />
         </div>
-        <div className="tp-agent-market-status">
-          <label htmlFor="agent-market-status">启用状态</label>
-          <Combobox value={statusFilter} onValueChange={setStatusFilter} placeholder="全部状态" searchPlaceholder="输入状态名称" filterable options={[
-            { value: "", label: "全部状态" }, { value: "enabled", label: "已启用" }, { value: "disabled", label: "已停用" },
-          ]} />
+        <div className="tp-agent-market-field tp-agent-market-status">
+          <label id="agent-market-status-label">启用状态</label>
+          <Dropdown
+            id="agent-market-status"
+            titleText=""
+            label="全部状态"
+            items={statusItems}
+            itemToString={item => item?.text ?? ""}
+            selectedItem={statusItems.find(item => item.id === statusFilter) ?? statusItems[0]}
+            onChange={({ selectedItem }) => setStatusFilter(selectedItem?.id ?? "")}
+            aria-labelledby="agent-market-status-label"
+          />
         </div>
         <p className="tp-agent-market-result-count">{visibleAgents.length} 个 Agent</p>
       </section>
 
       {loadError && <p className="tp-agent-market-feedback" role="alert">{loadError}</p>}
       <section className="tp-agent-market-catalog" aria-label="内置 Agent 目录">
-        <div className="tp-agent-market-section-heading"><div><h2>内置 Agent</h2><p>选择一个 Agent 查看能力、执行边界和配置。</p></div></div>
+        <div className="tp-agent-market-section-heading">
+          <div><h2>内置 Agent</h2><p>选择一个 Agent 查看能力、执行边界和配置。</p></div>
+        </div>
         <div className="tp-agent-market-grid">
           {visibleAgents.map(agent => {
-            const profile = profiles.find(row => row.agent_key === agent.id);
-            const enabled = profile?.enabled ?? true;
+            const enabled = isEnabled(agent.id);
             return (
-              <Card key={agent.id} className="tp-agent-market-card">
-                <CardContent>
-                  <div className="tp-agent-market-card-heading">
-                    <span className="tp-agent-market-icon"><Bot size={20} /></span>
-                    <Badge variant={enabled ? "success" : "outline"}>{enabled ? "已启用" : "已停用"}</Badge>
-                  </div>
-                  <h3>{agent.name}</h3>
-                  <p className="tp-agent-market-card-description">{agent.description}</p>
-                  <div className="tp-agent-market-capabilities">{agent.capabilities.map(capability => <span key={capability}>{capability}</span>)}</div>
-                  <div className="tp-agent-market-card-actions">
-                    <Button size="sm" variant="outline" onClick={() => openDetails(agent.id)}><Edit size={14} />查看详情</Button>
-                    <Button size="sm" variant={enabled ? "outline" : "default"} disabled={busy} onClick={() => void toggleAgent(agent.id)}>{enabled ? "停用" : "启用"}</Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <Tile key={agent.id} className="tp-agent-market-agent-tile">
+                <div className="tp-agent-market-card-heading">
+                  <span className="tp-agent-market-icon"><Bot size={20} /></span>
+                  <Badge variant={enabled ? "success" : "secondary"}>{enabled ? "已启用" : "已停用"}</Badge>
+                </div>
+                <h3>{agent.name}</h3>
+                <p className="tp-agent-market-card-description">{agent.description}</p>
+                <div className="tp-agent-market-capabilities">{agent.capabilities.map(capability => <span key={capability}>{capability}</span>)}</div>
+                <div className="tp-agent-market-card-actions">
+                  <Button size="sm" variant="ghost" onClick={() => openDetails(agent.id)}><Edit size={14} />查看详情</Button>
+                  <Toggle
+                    id={"agent-enabled-" + agent.id}
+                    size="sm"
+                    labelText="启用"
+                    labelA="关"
+                    labelB="开"
+                    toggled={enabled}
+                    disabled={!profilesLoaded || Boolean(loadError) || busyId !== null}
+                    onToggle={() => void toggleAgent(agent.id)}
+                  />
+                </div>
+              </Tile>
             );
           })}
           {visibleAgents.length === 0 && <div className="tp-agent-market-empty">没有匹配的 Agent，请调整搜索或筛选条件。</div>}
@@ -167,14 +203,18 @@ export function AgentMarketPage() {
           <div className="tp-agent-market-prompt">
             <label htmlFor="agent-system-prompt">专业指令（System Prompt）</label>
             <Textarea id="agent-system-prompt" rows={7} value={prompt} onChange={event => setPrompt(event.currentTarget.value)} placeholder="定义该 Agent 的专业职责、分析规则和输出要求。" />
-            <div className="tp-agent-market-prompt-actions"><span>修改后需明确保存，未保存内容不会自动提交。</span><Button disabled={busy} onClick={() => void savePrompt()}><Checkmark size={16} />保存专业指令</Button></div>
+            <div className="tp-agent-market-prompt-actions"><span>修改后需明确保存，未保存内容不会自动提交。</span><Button disabled={savingPrompt || Boolean(loadError)} onClick={() => void savePrompt()}><Checkmark size={16} />保存专业指令</Button></div>
           </div>
         </section>
       )}
 
       <section className="tp-agent-market-external">
         <div><h2>外部 Agent</h2><p>仅展示已登记并通过协议验证的连接。尚未接入的服务不会作为可用 Agent 展示。</p></div>
-        <div className="tp-agent-market-external-empty"><Plug size={22} /><div><strong>外部 Agent 通过连接管理接入</strong><p>支持 REST API、MCP 和 Webhook。连接验证通过后，再纳入可用服务目录。</p></div><Button variant="outline" onClick={() => { window.location.href = "/agent/connections"; }}>管理连接 <ArrowRight size={16} /></Button></div>
+        <Tile className="tp-agent-market-external-empty">
+          <Plug size={22} />
+          <div><strong>外部 Agent 通过连接管理接入</strong><p>连接验证通过后，再纳入可用服务目录。</p></div>
+          <Button variant="ghost" onClick={() => { window.location.href = "/agent/connections"; }}>管理连接 <ArrowRight size={16} /></Button>
+        </Tile>
       </section>
       {notice && <p className="tp-agent-market-feedback" role="status">{notice}</p>}
     </div>

@@ -9,289 +9,67 @@
 @media(prefers-reduced-motion:reduce){.agent-workbench-hero{animation:none}.agent-particle{animation:none;opacity:.22}}
 
 
-/* Agent Market page — page-scoped Carbon layout and responsive composition. */
-.tp-agent-market-page {
-  width: 100%;
-  width: 100%;
-  max-width: none;
-  min-width: 0;
-  padding: 16px;
-  margin-inline: 0;
-  color: var(--cds-text-primary, #161616);
-  background: var(--cds-background, #f4f4f4);
-}
-.tp-agent-market-page > .tp-control-panel {
-  margin: -16px -16px 0;
-  padding: 20px 16px 16px;
-  background: var(--cds-layer-01, #ffffff);
-  border-bottom: 1px solid var(--cds-border-subtle, #e0e0e0);
-}
-.tp-agent-market-page .tp-control-panel h1 {
-  font-size: 24px;
-  line-height: 1.25;
-  font-weight: 400;
-  letter-spacing: 0;
-}
-.tp-agent-market-page .tp-control-panel__description {
-  margin-top: 8px;
-  font-size: 14px;
-  line-height: 1.5;
-}
-.tp-agent-market-intro,
-.tp-agent-market-ecosystem {
-  background: var(--cds-layer-01, #ffffff);
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-}
-.tp-agent-market-intro .tp-page-section__header,
-.tp-agent-market-ecosystem .tp-page-section__header {
-  margin-bottom: 0;
-}
-.tp-agent-market-intro .tp-page-section__header h2,
-.tp-agent-market-ecosystem .tp-page-section__header h2 {
-  font-size: 16px;
-  line-height: 1.4;
-  font-weight: 600;
-}
-.tp-agent-market-intro .tp-page-section__header p,
-.tp-agent-market-ecosystem .tp-page-section__header p {
-  font-size: 13px;
-  line-height: 1.5;
-}
-.tp-agent-market-page .tp-search-control-panel {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 16px;
-  min-width: 0;
-}
-.tp-agent-market-page .tp-search-control-panel > div:first-child {
-  flex: 1 1 320px;
-  min-width: 0;
-}
-.tp-agent-market-filter {
-  width: 200px;
-  min-width: 160px;
-}
-.tp-agent-market-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  align-items: stretch;
-  gap: 16px;
-  min-width: 0;
-}
-.tp-agent-role-card {
-  min-width: 0;
-  height: 100%;
-  padding: 0;
-  background: var(--cds-layer, #ffffff);
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-}
-.tp-agent-role-card__content {
-  display: flex;
-  height: 100%;
-  min-width: 0;
-  flex-direction: column;
-  gap: 16px;
-  padding: 16px;
-}
-.tp-agent-role-card__heading {
-  display: flex;
-  min-width: 0;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-.tp-agent-role-card__identity {
-  min-width: 0;
-  flex: 1 1 auto;
-}
-.tp-agent-role-card__title {
-  margin: 0;
-  color: var(--cds-text-primary, #161616);
-  font-size: 16px;
-  line-height: 1.4;
-  font-weight: 600;
-  overflow-wrap: anywhere;
-}
-.tp-agent-role-card__description {
-  margin: 8px 0 0;
-  color: var(--cds-text-secondary, #525252);
-  font-size: 13px;
-  line-height: 1.55;
-  overflow-wrap: anywhere;
-}
-.tp-agent-role-card__tags {
-  display: flex;
-  flex: 0 0 auto;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 6px;
-}
-.tp-agent-role-card__action {
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding-block: 12px;
-  border-top: 1px solid var(--cds-border-subtle, #e0e0e0);
-}
-.tp-agent-role-card__status {
-  color: var(--cds-text-secondary, #525252);
-  font-size: 12px;
-  line-height: 1.4;
-}
-.tp-agent-role-card .tp-agent-role-card__prompt {
-  width: 100%;
-  min-height: 128px;
-  color: var(--cds-text-primary, #161616);
-  background: var(--cds-field, #ffffff);
-  font-size: 13px;
-  line-height: 1.5;
-}
-.tp-agent-role-card .tp-agent-role-card__prompt:focus {
-  outline: 2px solid var(--cds-focus, #0f62fe);
-  outline-offset: -2px;
-}
-.tp-agent-ecosystem-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-  margin-top: 16px;
-}
-.tp-agent-ecosystem-item {
-  min-width: 0;
-  padding: 0;
-  background: var(--cds-layer, #ffffff);
-  border: 0;
-  border-left: 3px solid var(--cds-border-strong, #8d8d8d);
-  border-radius: 0;
-  box-shadow: none;
-}
-.tp-agent-ecosystem-item__title {
-  color: var(--cds-text-primary, #161616);
-  font-size: 14px;
-  font-weight: 600;
-}
-.tp-agent-ecosystem-item__description {
-  margin-top: 8px;
-  color: var(--cds-text-secondary, #525252);
-  font-size: 12px;
-  line-height: 1.5;
-}
-.tp-agent-market-empty {
-  grid-column: 1 / -1;
-  padding: 24px 16px;
-  color: var(--cds-text-secondary, #525252);
-  background: var(--cds-layer-01, #ffffff);
-  font-size: 14px;
-}
-.tp-agent-market-notice {
-  padding: 12px 16px;
-  color: var(--cds-text-primary, #161616);
-  background: var(--cds-layer-01, #ffffff);
-  border-left: 3px solid var(--cds-support-success, #24a148);
-  font-size: 13px;
-}
-@media (min-width: 1584px) {
-  .tp-agent-market-page { padding-inline: 24px; }
-  .tp-agent-market-page > .tp-control-panel { margin-inline: -24px; }
-  .tp-agent-market-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-}
-@media (min-width: 672px) and (max-width: 1055px) {
-  .tp-agent-market-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .tp-agent-ecosystem-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-@media (max-width: 671px) {
-  .tp-agent-market-page {
-    width: 100%;
-    max-width: 100%;
-    padding: 12px;
-    gap: 16px;
-  }
-  .tp-agent-market-page > .tp-control-panel {
-    margin: -12px -12px 0;
-    padding: 16px 12px;
-  }
-  .tp-agent-market-page .tp-control-panel h1 { font-size: 20px; }
-  .tp-agent-market-page .tp-control-panel__description { font-size: 13px; }
-  .tp-agent-market-intro,
-  .tp-agent-market-ecosystem { padding: 12px; }
-  .tp-agent-market-page .tp-search-control-panel {
-    align-items: stretch;
-    flex-direction: column;
-    gap: 12px;
-  }
-  .tp-agent-market-page .tp-search-control-panel > div:first-child {
-    width: 100%;
-    flex-basis: auto;
-  }
-  .tp-agent-market-filter {
-    width: 100%;
-    min-width: 0;
-  }
-  .tp-agent-market-grid,
-  .tp-agent-ecosystem-grid {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 12px;
-  }
-  .tp-agent-role-card__content { gap: 14px; padding: 16px; }
-  .tp-agent-role-card__title { font-size: 15px; }
-  .tp-agent-role-card__description { font-size: 13px; }
-  .tp-agent-role-card__action { align-items: center; }
-  .tp-agent-role-card__prompt { min-height: 144px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .tp-agent-market-page * { scroll-behavior: auto; }
-}
 
-
-/* Agent Market — IBM Carbon catalog composition */
-.tp-agent-market-page{width:100%;max-width:none;min-width:0;margin:0;padding:0 1rem 2rem;background:var(--cds-background,#f4f4f4);color:var(--cds-text-primary,#161616);display:flex;flex-direction:column;gap:1.5rem}
-.tp-agent-market-page>.tp-control-panel{margin:0 -1rem;padding:1.5rem 1rem;background:var(--cds-layer-01,#fff);border-bottom:1px solid var(--cds-border-subtle,#e0e0e0)}
-.tp-agent-market-page .tp-control-panel h1{font-size:1.75rem;line-height:1.25;font-weight:400}
-.tp-agent-market-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));background:var(--cds-layer-01,#fff);border-bottom:1px solid var(--cds-border-subtle,#e0e0e0)}
-.tp-agent-market-summary>div{display:flex;flex-direction:column;gap:.35rem;padding:1rem 1.25rem;border-right:1px solid var(--cds-border-subtle,#e0e0e0);min-width:0}
-.tp-agent-market-summary>div:last-child{border-right:0}
-.tp-agent-market-summary strong{font-size:1.25rem;font-weight:600;overflow-wrap:anywhere}
-.tp-agent-market-summary span,.tp-agent-market-result-count{font-size:.75rem;color:var(--cds-text-secondary,#525252)}
-.tp-agent-market-controls{display:flex;align-items:flex-end;gap:1rem;flex-wrap:wrap;background:var(--cds-layer-01,#fff);padding:1rem}
-.tp-agent-market-search{flex:1 1 20rem;min-width:12rem}
-.tp-agent-market-status{flex:0 1 15rem;min-width:12rem}
-.tp-agent-market-search label,.tp-agent-market-status label,.tp-agent-market-prompt>label{display:block;margin-bottom:.5rem;font-size:.875rem;font-weight:600}
-.tp-agent-market-result-count{margin:0 0 .65rem auto;white-space:nowrap}
+/* Agent Market — Carbon G10 composition. All styles are scoped to this page. */
+.tp-agent-market-shell{width:100%;max-width:none;min-width:0;margin:0;padding:0}
+.tp-agent-market-page{display:flex;flex-direction:column;gap:1.5rem;width:100%;max-width:none;min-width:0;margin:0;padding:0 1rem 2rem;background:var(--cds-background);color:var(--cds-text-primary)}
+.tp-agent-market-page>.tp-control-panel{width:calc(100% + 2rem);margin:0 -1rem;padding:1.5rem 1rem;background:var(--cds-layer-01);border:0;border-bottom:1px solid var(--cds-border-subtle)}
+.tp-agent-market-page .tp-control-panel__main{width:100%;max-width:none}
+.tp-agent-market-page .tp-control-panel h1{font-size:1.75rem;line-height:1.25;font-weight:400;letter-spacing:0}
+.tp-agent-market-page .tp-control-panel__description{margin-top:.5rem;font-size:.875rem;line-height:1.5}
+.tp-agent-market-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;min-width:0}
+.tp-agent-market-metric.cds--tile{display:flex;min-height:6rem;flex-direction:column;justify-content:center;gap:.5rem;padding:1rem;background:var(--cds-layer-01);border:0;border-radius:0;box-shadow:none}
+.tp-agent-market-metric__value{font-size:1.5rem;font-weight:600;line-height:1.25;color:var(--cds-text-primary)}
+.tp-agent-market-metric__label{font-size:.875rem;line-height:1.4;color:var(--cds-text-secondary)}
+.tp-agent-market-controls{display:grid;grid-template-columns:minmax(16rem,1fr) minmax(13rem,17rem) auto;align-items:end;gap:1rem;min-width:0;padding:1rem;background:var(--cds-layer-01)}
+.tp-agent-market-field{display:flex;min-width:0;flex-direction:column;gap:.5rem}
+.tp-agent-market-field>label{font-size:.875rem;font-weight:400;line-height:1.25;color:var(--cds-text-primary)}
+.tp-agent-market-search .cds--text-input__field-wrapper,.tp-agent-market-search .cds--text-input{width:100%;min-width:0}
+.tp-agent-market-status .cds--list-box__wrapper,.tp-agent-market-status .cds--dropdown{width:100%;min-width:0}
+.tp-agent-market-result-count{margin:0 0 .75rem auto;white-space:nowrap;font-size:.75rem;color:var(--cds-text-secondary)}
 .tp-agent-market-section-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1rem}
 .tp-agent-market-section-heading h2,.tp-agent-market-external h2{font-size:1.125rem;font-weight:600;line-height:1.4}
-.tp-agent-market-section-heading p,.tp-agent-market-external>div>p{margin-top:.25rem;font-size:.875rem;color:var(--cds-text-secondary,#525252)}
-.tp-agent-market-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;align-items:stretch}
-.tp-agent-market-card{min-width:0;background:var(--cds-layer-01,#fff);border:0;border-bottom:1px solid var(--cds-border-subtle,#e0e0e0);border-radius:0;box-shadow:none}
-.tp-agent-market-card .tp-tile-content,.tp-agent-market-card>div{height:100%}
-.tp-agent-market-card .tp-card-content,.tp-agent-market-card [class*=CardContent]{display:flex;flex-direction:column;gap:1rem;height:100%;padding:1rem}
+.tp-agent-market-section-heading p,.tp-agent-market-external>div>p{margin-top:.25rem;font-size:.875rem;line-height:1.5;color:var(--cds-text-secondary)}
+.tp-agent-market-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;gap:1rem;min-width:0}
+.tp-agent-market-agent-tile.cds--tile{display:flex;min-width:0;min-height:17rem;flex-direction:column;gap:1rem;padding:1rem;background:var(--cds-layer-01);border:0;border-radius:0;box-shadow:none}
 .tp-agent-market-card-heading{display:flex;align-items:center;justify-content:space-between;gap:.75rem}
-.tp-agent-market-icon{display:grid;place-items:center;width:2.5rem;height:2.5rem;background:var(--cds-layer-02,#e8e8e8);color:var(--cds-icon-primary,#161616)}
-.tp-agent-market-card h3{font-size:1rem;font-weight:600;line-height:1.4}
-.tp-agent-market-card-description{min-height:3.25rem;font-size:.875rem;line-height:1.5;color:var(--cds-text-secondary,#525252)}
+.tp-agent-market-icon{display:grid;width:2.5rem;height:2.5rem;place-items:center;background:var(--cds-layer-02);color:var(--cds-icon-primary)}
+.tp-agent-market-agent-tile h3{font-size:1rem;font-weight:600;line-height:1.4;color:var(--cds-text-primary)}
+.tp-agent-market-card-description{min-height:3.25rem;margin:0;font-size:.875rem;line-height:1.5;color:var(--cds-text-secondary)}
 .tp-agent-market-capabilities{display:flex;flex-wrap:wrap;gap:.375rem}
-.tp-agent-market-capabilities span{padding:.25rem .5rem;background:var(--cds-layer-02,#e8e8e8);font-size:.75rem;color:var(--cds-text-secondary,#525252)}
-.tp-agent-market-card-actions{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-top:auto;padding-top:.75rem;border-top:1px solid var(--cds-border-subtle,#e0e0e0)}
-.tp-agent-market-detail,.tp-agent-market-external{padding:1.25rem;background:var(--cds-layer-01,#fff);border-bottom:1px solid var(--cds-border-subtle,#e0e0e0)}
+.tp-agent-market-capabilities span{padding:.25rem .5rem;background:var(--cds-layer-02);font-size:.75rem;line-height:1.4;color:var(--cds-text-secondary)}
+.tp-agent-market-card-actions{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-top:auto;padding-top:.75rem}
+.tp-agent-market-card-actions .cds--toggle{margin:0}
+.tp-agent-market-detail,.tp-agent-market-external{min-width:0;padding:1.25rem;background:var(--cds-layer-01)}
 .tp-agent-market-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.5rem;padding:1rem 0}
-.tp-agent-market-detail-grid h3{font-size:.875rem;font-weight:600;margin-bottom:.5rem}
-.tp-agent-market-detail-grid p{font-size:.875rem;line-height:1.55;color:var(--cds-text-secondary,#525252)}
-.tp-agent-market-prompt{padding-top:1rem;border-top:1px solid var(--cds-border-subtle,#e0e0e0)}
+.tp-agent-market-detail-grid h3{margin-bottom:.5rem;font-size:.875rem;font-weight:600}
+.tp-agent-market-detail-grid p{font-size:.875rem;line-height:1.55;color:var(--cds-text-secondary)}
+.tp-agent-market-prompt{padding-top:1rem;border-top:1px solid var(--cds-border-subtle)}
+.tp-agent-market-prompt>label{display:block;margin-bottom:.5rem;font-size:.875rem;font-weight:600}
 .tp-agent-market-prompt textarea{width:100%}
 .tp-agent-market-prompt-actions{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-top:.75rem}
-.tp-agent-market-prompt-actions>span{font-size:.75rem;color:var(--cds-text-secondary,#525252)}
-.tp-agent-market-external-empty{display:flex;align-items:center;gap:1rem;margin-top:1rem;padding:1rem;background:var(--cds-layer-02,#e8e8e8)}
+.tp-agent-market-prompt-actions>span{font-size:.75rem;color:var(--cds-text-secondary)}
+.tp-agent-market-external-empty.cds--tile{display:flex;align-items:center;gap:1rem;margin-top:1rem;padding:1rem;background:var(--cds-layer-02);border:0;border-radius:0;box-shadow:none}
 .tp-agent-market-external-empty>div{flex:1;min-width:0}
 .tp-agent-market-external-empty strong{font-size:.875rem}
-.tp-agent-market-external-empty p{margin-top:.25rem;font-size:.75rem;color:var(--cds-text-secondary,#525252)}
-.tp-agent-market-feedback{padding:.75rem 1rem;background:var(--cds-layer-01,#fff);border-left:3px solid var(--cds-support-success,#24a148);font-size:.875rem}
-.tp-agent-market-empty{grid-column:1/-1;padding:2rem;background:var(--cds-layer-01,#fff);color:var(--cds-text-secondary,#525252)}
+.tp-agent-market-external-empty p{margin-top:.25rem;font-size:.75rem;line-height:1.5;color:var(--cds-text-secondary)}
+.tp-agent-market-feedback{padding:.75rem 1rem;background:var(--cds-layer-01);border-inline-start:3px solid var(--cds-support-success);font-size:.875rem}
+.tp-agent-market-empty{grid-column:1/-1;padding:2rem;background:var(--cds-layer-01);color:var(--cds-text-secondary)}
 @media(min-width:1312px){.tp-agent-market-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-width:1055px){.tp-agent-market-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:671px){.tp-agent-market-page{padding:0 .75rem 1.5rem;gap:1rem}.tp-agent-market-page>.tp-control-panel{margin:0 -.75rem;padding:1rem .75rem}.tp-agent-market-page .tp-control-panel h1{font-size:1.375rem}.tp-agent-market-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.tp-agent-market-summary>div:nth-child(2){border-right:0}.tp-agent-market-summary>div:last-child{grid-column:1/-1;border-top:1px solid var(--cds-border-subtle,#e0e0e0)}.tp-agent-market-controls{align-items:stretch;flex-direction:column;gap:.75rem}.tp-agent-market-search,.tp-agent-market-status{width:100%;min-width:0}.tp-agent-market-result-count{margin:.25rem 0 0 auto}.tp-agent-market-grid,.tp-agent-market-detail-grid{grid-template-columns:minmax(0,1fr)}.tp-agent-market-card-description{min-height:0}.tp-agent-market-external-empty{align-items:flex-start;flex-wrap:wrap}.tp-agent-market-external-empty>div{flex-basis:calc(100% - 3rem)}.tp-agent-market-prompt-actions{align-items:stretch;flex-direction:column}.tp-agent-market-prompt-actions button{width:100%}}
+@media(max-width:671px){
+ .tp-agent-market-page{gap:1rem;padding:0 .75rem 1.5rem}
+ .tp-agent-market-page>.tp-control-panel{width:calc(100% + 1.5rem);margin:0 -.75rem;padding:1rem .75rem}
+ .tp-agent-market-page .tp-control-panel h1{font-size:1.375rem}
+ .tp-agent-market-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}
+ .tp-agent-market-metric:last-child{grid-column:1/-1}
+ .tp-agent-market-controls{grid-template-columns:minmax(0,1fr);gap:1rem;padding:1rem}
+ .tp-agent-market-result-count{margin:0 0 0 auto}
+ .tp-agent-market-grid,.tp-agent-market-detail-grid{grid-template-columns:minmax(0,1fr)}
+ .tp-agent-market-agent-tile.cds--tile{min-height:0}
+ .tp-agent-market-card-description{min-height:0}
+ .tp-agent-market-external-empty.cds--tile{align-items:flex-start;flex-wrap:wrap}
+ .tp-agent-market-external-empty>div{flex-basis:calc(100% - 3rem)}
+ .tp-agent-market-prompt-actions{align-items:stretch;flex-direction:column}
+ .tp-agent-market-prompt-actions button{width:100%}
+}
