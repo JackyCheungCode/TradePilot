@@ -100,7 +100,7 @@ export function RegionCityPicker({ countryCode, state, city, onStateChange, onCi
    <SearchablePicker label="省 / 州" value={state} options={states} placeholder={countryCode ? (statesLoaded && !states.length ? "该国家暂无省州数据" : "全部省州（可选）") : "请先选择国家"} disabled={!countryCode || !states.length} loading={loadingStates} onChange={(next) => { onStateChange(next); onCityChange(""); }} />
    <SearchablePicker label="城市" value={city} options={cities} placeholder={state ? "全部城市（可选）" : cityAvailable ? "选择城市（可选）" : "请先选择省州"} disabled={!cityAvailable || !cities.length} loading={loadingCities} onChange={onCityChange} />
   </div>
-  {error && <p className="flex items-start gap-1.5 text-xs text-amber-700 dark:text-amber-300"><AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />{error}</p>}
+  {error && <p className="flex items-start gap-1.5 text-xs text-amber-700"><AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />{error}</p>}
   <p className="text-xs text-muted-foreground">省州与城市由免费 CountriesNow 开放数据自动加载；无省州层级的国家会直接提供城市列表，覆盖范围因国家而异。</p>
  </div>;
 }
