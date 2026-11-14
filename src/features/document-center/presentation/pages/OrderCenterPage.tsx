@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ArrowUpRight, CheckCircle2, ClipboardList, FileText, Pencil, RefreshCw, Search, ShoppingCart, Truck } from "lucide-react";
-import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input } from "@/shared/ui/primitives";
+import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Combobox } from "@/shared/ui/primitives";
 import { tradeApi, type TradeDocument, type TradeOrder } from "@/features/document-center/infrastructure/trade-api";
 
 type View = "all" | "quotations" | "sales" | "purchase";
@@ -20,6 +20,8 @@ export function OrderCenterPage({ onCreateQuotation, initialView = "quotations" 
   const [view, setView] = useState<View>(initialView);
   useEffect(() => { setView(initialView); }, [initialView]);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   const [loading, setLoading] = useState(false);
   const [busyId, setBusyId] = useState("");
   const [editingOrderId, setEditingOrderId] = useState("");
@@ -52,12 +54,12 @@ export function OrderCenterPage({ onCreateQuotation, initialView = "quotations" 
     if (view === "sales" && order.order_type !== "sales") return false;
     if (view === "purchase" && order.order_type !== "purchase") return false;
     const account = order.crm_account?.account_name ?? "";
-    return (order.order_number + " " + order.title + " " + account).toLowerCase().includes(search.toLowerCase());
-  }), [orders, view, search]);
+    return (!statusFilter || order.status === statusFilter) && (order.order_number + " " + order.title + " " + account).toLowerCase().includes(search.toLowerCase());
+  }).sort((a,b) => { const diff = new Date(a.created_at).getTime() - new Date(b.created_at).getTime(); return sortOrder === "newest" ? -diff : diff; }), [orders, view, search, statusFilter, sortOrder]);
   const filteredQuotes = useMemo(() => quotations.filter((item) => {
     const related = item.trade_orders?.order_number ?? "";
-    return (item.document_number + " " + item.title + " " + related).toLowerCase().includes(search.toLowerCase());
-  }), [quotations, search]);
+    return (!statusFilter || item.status === statusFilter) && (item.document_number + " " + item.title + " " + related).toLowerCase().includes(search.toLowerCase());
+  }).sort((a,b) => { const diff = new Date(a.created_at).getTime() - new Date(b.created_at).getTime(); return sortOrder === "newest" ? -diff : diff; }), [quotations, search, statusFilter, sortOrder]);
   
 
   const beginEditOrder = (order: TradeOrder) => {
@@ -161,12 +163,16 @@ export function OrderCenterPage({ onCreateQuotation, initialView = "quotations" 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div><CardTitle>业务单据</CardTitle><CardDescription>报价单确认后会同步激活其关联订单；历史版本与模板快照保留在单据中心。</CardDescription></div>
           <div className="relative w-full sm:w-72"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input className="pl-9" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="搜索编号、名称或客户" /></div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Combobox value={statusFilter} onValueChange={setStatusFilter} placeholder="全部状态" options={[{value:"",label:"全部状态"},...Object.entries(statusLabels).map(([value,label])=>({value,label}))]}/>
+            <Combobox value={sortOrder} onValueChange={value=>setSortOrder(value==="oldest"?"oldest":"newest")} placeholder="最新创建" options={[{value:"newest",label:"最新创建"},{value:"oldest",label:"最早创建"}]}/>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
         {view !== "quotations" && <section className="space-y-3">
           <div className="flex items-center justify-between"><h2 className="font-semibold">{view === "sales" ? "销售订单" : "采购订单"}</h2><span className="text-xs text-muted-foreground">{filteredOrders.length} 条</span></div>
-          {filteredOrders.map((order) => <div key={order.id} className="rounded-lg bg-muted/40 p-4">
+          {filteredOrders.map((order) => <div key={order.id} className="tp-list-row rounded-md border bg-white p-3">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2"><p className="font-semibold">{order.title}</p><Badge variant={order.status === "active" ? "success" : "secondary"}>{statusLabels[order.status] ?? order.status}</Badge><Badge variant="outline">{order.order_type === "sales" ? "销售订单" : "采购订单"}</Badge></div>
@@ -226,7 +232,7 @@ export function OrderCenterPage({ onCreateQuotation, initialView = "quotations" 
 
         {view === "quotations" && <section className="space-y-3">
           <div className="flex items-center justify-between"><h2 className="font-semibold">报价与询价</h2><span className="text-xs text-muted-foreground">{filteredQuotes.length} 份</span></div>
-          {filteredQuotes.map((quote) => <div key={quote.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-muted/40 p-4">
+          {filteredQuotes.map((quote) => <div key={quote.id} className="tp-list-row flex flex-wrap items-center justify-between gap-3 rounded-md border bg-white p-3">
             <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="font-semibold">{quote.title}</p><Badge variant={quote.status === "issued" ? "success" : "secondary"}>{statusLabels[quote.status] ?? quote.status}</Badge><Badge variant="outline">{typeLabels[quote.document_type] ?? quote.document_type}</Badge></div><p className="mt-1 text-xs text-muted-foreground">{quote.document_number} · 关联订单 {quote.trade_orders?.order_number ?? "—"} · {quote.currency_code} · {dateLabel(quote.created_at)}</p></div>
             <div className="flex flex-wrap gap-2">{quote.status !== "issued" && quote.status !== "void" && quote.status !== "archived" && <Button size="sm" onClick={() => void confirmQuote(quote)} disabled={busyId === quote.id}>确认并生成订单</Button>}<Button size="sm" variant="outline" onClick={onCreateQuotation}>制作后续单据</Button></div>
           </div>)}
