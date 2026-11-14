@@ -178,3 +178,10 @@ The first change must be the dependency/lockfile and theme foundation, not broad
 - [ ] Verify the newest CI run after the Card/ProgressBar conversion.
 - [ ] Continue with Carbon Checkbox/Radio/Switch, DatePicker, Select/Dropdown/MultiSelect, Dialog/Modal and notification wrappers after auditing their existing call-site contracts.
 - [ ] Carbon SideNav/Header migration is still outstanding; current shell navigation and Material Symbols icons have not yet been fully replaced.
+
+
+### CI feedback and typography validation
+- The CI run for the Card/ProgressBar change passed TypeScript typecheck and all 21 tests.
+- Lint found one unused compatibility variable for the native input `size` attribute; that variable is now explicitly consumed in the follow-up commit. A fresh CI run is required to verify lint and the remaining build stages.
+- Carbon Sass is configured with `$use-per-family-plex: true`, which uses the Carbon/IBM Plex font assets locally instead of relying on an external font CDN, following Carbon's IBM Plex integration guidance.
+- Added Noto Sans TC ahead of the existing Noto Sans SC fallback for Traditional Chinese UI text.
