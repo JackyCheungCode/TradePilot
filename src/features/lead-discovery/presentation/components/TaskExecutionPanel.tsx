@@ -23,6 +23,8 @@ export function TaskExecutionPanel({
   message,
   count,
   countLabel = "个发现对象",
+  summary,
+  progressNote,
   isRunning = false,
   emptyTitle,
   emptyDescription,
@@ -41,6 +43,8 @@ export function TaskExecutionPanel({
   message?: string;
   count?: number;
   countLabel?: string;
+  summary?: ReactNode;
+  progressNote?: string;
   isRunning?: boolean;
   emptyTitle: string;
   emptyDescription: string;
@@ -79,9 +83,10 @@ export function TaskExecutionPanel({
               {isRunning ? <LoaderCircle aria-label="任务执行中" className="h-4 w-4 shrink-0 animate-spin text-primary" /> : null}
               <Progress value={clampedProgress} className="h-2.5 flex-1" />
             </div>
+            {isRunning && clampedProgress === 0 && progressNote ? <p className="text-xs text-muted-foreground">{progressNote}</p> : null}
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
               <span>{message ?? "任务已创建"}</span>
-              {count !== undefined ? <span className="tabular-nums">{count} {countLabel}</span> : null}
+              {summary ?? (count !== undefined ? <span className="tabular-nums">{count} {countLabel}</span> : null)}
             </div>
             <div className="flex flex-wrap gap-2">
               {resultsHref ? <Button size="sm" variant="outline" onClick={() => { window.location.href = resultsHref; }}>查看搜索结果<ArrowRight className="h-4 w-4" /></Button> : null}
