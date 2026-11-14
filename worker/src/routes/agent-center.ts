@@ -84,7 +84,7 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
         if(!credentials||typeof credentials!=="object"||Array.isArray(credentials)||!Object.keys(credentials as Record<string,unknown>).length)return errorResponse(request,"CREDENTIALS_REQUIRED","此认证方式需要提供连接凭据。",400);
         try{encryptedCredentials=await encryptCredentials(credentials,ownerId,env.AGENT_ENCRYPTION_KEY);}catch(error){return errorResponse(request,"ENCRYPTION_CONFIG_INVALID",error instanceof Error?error.message:"凭据加密失败。",503);}
       }
-      const rows=await db<ConnectionRow[]>(env,"agent_connections",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({owner_id:ownerId,name,protocol,endpoint_url:endpoint,auth_mode:authMode,encrypted_credentials:encryptedCredentials,capabilities,status:"pending"})});
+      const rows=await db<ConnectionRow[]>(env,"agent_connections?select="+publicConnectionFields,{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({owner_id:ownerId,name,protocol,endpoint_url:endpoint,auth_mode:authMode,encrypted_credentials:encryptedCredentials,capabilities,status:"pending"})});
       const created=rows?.[0];if(!created)return errorResponse(request,"CONNECTION_CREATE_FAILED","连接登记失败。",500);
       const {owner_id:_owner,...safe}=created as ConnectionRow;
       return successResponse(request,safe,201);

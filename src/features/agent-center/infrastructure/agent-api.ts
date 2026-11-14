@@ -2,7 +2,7 @@ import { getSupabaseClient } from "@/shared/lib/supabase";
 export type AgentProtocol="rest_api"|"mcp"|"webhook";
 export type AgentAuthMode="none"|"bearer"|"header"|"oauth2"|"webhook_secret";
 export interface AgentConnection {id:string;name:string;protocol:AgentProtocol;endpoint_url:string;auth_mode:AgentAuthMode;capabilities:string[];status:string;last_tested_at:string|null;last_error:string|null;created_at:string;updated_at:string;}
-export interface AgentRun {id:string;agent_key:string;goal:string;status:string;plan:Record<string,unknown>;result:Record<string,unknown>|null;error_message:string|null;estimated_cost_usd:number|null;actual_cost_usd:number|null;created_at:string;updated_at:string;}
+export interface AgentRun {id:string;agent_key:string;goal:string;status:string;plan?:Record<string,unknown>;result?:Record<string,unknown>|null;error_message?:string|null;estimated_cost_usd?:number|null;actual_cost_usd?:number|null;created_at:string;updated_at:string;}
 async function request<T>(path:string,init?:RequestInit):Promise<T>{
  const {data:{session}}=await getSupabaseClient().auth.getSession();
  if(!session?.access_token)throw new Error("请先登录 TradePilot。");
