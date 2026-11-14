@@ -1,5 +1,5 @@
 import { useEffect,useMemo,useState } from "react";
-import { Activity,ArrowRight,Building2,Check,CheckCircle2,Globe2,Languages,LoaderCircle,Search,SlidersHorizontal,Sparkles,Terminal,Users } from "lucide-react";
+import { Activity,ArrowRight,Building as Building2,Checkmark as Check,CheckmarkFilled as CheckCircle2,Earth as Globe2,Translate as Languages,Renew as LoaderCircle,Search,SettingsAdjust as SlidersHorizontal,MagicWand as Sparkles,Terminal,UserMultiple as Users } from "@carbon/icons-react";
 import { toast } from "sonner";
 import { Badge,Button,Card,CardContent,CardDescription,CardHeader,CardTitle,Input,MultiSelect,Combobox } from "@/shared/ui/primitives";
 import { PageControlPanel } from "@/shared/ui/page-layout";
