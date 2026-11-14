@@ -230,7 +230,7 @@ export function AppShell({
       className="tp-carbon-side-nav"
     >
       <div className="tp-carbon-side-nav__inner">
-        <SideNavItems>
+        <SideNavItems className="tp-carbon-side-nav__items">
         {groups.map((group) => (
           <SideNavMenu
             key={`${group.id}-${activePage}-${groupExpanded[group.id]}`}
@@ -274,7 +274,7 @@ export function AppShell({
         </SideNavItems>
         <div className="tp-carbon-side-nav__footer">
           <div className="tp-carbon-side-nav__user" title={userEmail}>{userEmail}</div>
-          <ul className="cds--side-nav__items">
+          <ul className="tp-carbon-side-nav__footer-items">
           <SideNavLink
             href="#"
             renderIcon={() => <MaterialIcon name="logout" />}
@@ -352,7 +352,7 @@ export function AppShell({
               onClick={() => setCollapsed((value) => !value)}
             />
           </div>
-          <HeaderName href="#" prefix="" onClick={(event) => event.preventDefault()}>
+          <HeaderName href="#" prefix="" className="tp-carbon-header__brand" onClick={(event) => event.preventDefault()}>
             <img src={tradePilotLogo} alt="TradePilot" className="tp-carbon-header__logo" />
           </HeaderName>
           <div className="tp-carbon-header__context">
