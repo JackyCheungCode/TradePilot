@@ -105,7 +105,7 @@ export const Input = React.forwardRef<
   void _nativeSize;
   if (props.type === "date") {
     const dateValue = String(value ?? defaultValue ?? "");
-    const { min, max, disabled, placeholder, name, autoComplete, "aria-label": ariaLabel } = props;
+    const { min, max, disabled, placeholder, autoComplete, "aria-label": ariaLabel } = props;
     return (
       <CarbonDatePicker
         datePickerType="single"
@@ -126,7 +126,6 @@ export const Input = React.forwardRef<
           type="text"
           placeholder={placeholder ?? "YYYY-MM-DD"}
           disabled={disabled}
-          name={name}
           autoComplete={autoComplete}
         />
       </CarbonDatePicker>
