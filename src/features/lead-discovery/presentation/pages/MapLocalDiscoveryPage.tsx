@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { Activity, ArrowRight, Building2, CheckCircle2, ChevronDown, Clock3, Languages, LoaderCircle, MapPinned, Play, Search, SlidersHorizontal, Sparkles, Terminal, Users } from "lucide-react";
+import { ArrowRight, Building2, CheckCircle2, ChevronDown, Languages, MapPinned, Play, Search, SlidersHorizontal, Sparkles, Terminal, Users } from "lucide-react";
 import { toast } from "sonner";
-import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Popover, PopoverContent, PopoverTrigger, Progress, Separator } from "@/shared/ui/primitives";
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/primitives";
 import { PageControlPanel } from "@/shared/ui/page-layout";
 import { TaskExecutionPanel } from "../components/TaskExecutionPanel";
 import { CountrySelect } from "../components/CountrySelect";
