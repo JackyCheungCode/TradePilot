@@ -301,3 +301,24 @@ main { background: var(--tp-canvas); }
     flex: 1 1 100%;
   }
 }
+
+
+/* Odoo control panel spans the work area and keeps its title/actions anchored */
+.tp-topbar { height: 48px; min-height: 48px; }
+.tp-page-canvas { min-height: calc(100vh - 48px); }
+.tp-page-canvas .tp-page-heading {
+  margin: -12px -12px 20px;
+  padding: 16px 12px;
+  background: var(--tp-surface);
+  border-bottom: 1px solid var(--tp-line);
+}
+@media (min-width: 640px) {
+  .tp-page-canvas .tp-page-heading { margin-inline: -16px; padding-inline: 16px; }
+}
+@media (min-width: 1024px) {
+  .tp-page-canvas .tp-page-heading { margin-inline: -24px; padding-inline: 24px; }
+}
+@media (max-width: 639px) {
+  .tp-page-canvas { min-height: calc(100vh - 48px); }
+  .tp-page-canvas .tp-page-heading { padding-block: 14px 12px; }
+}
