@@ -6,6 +6,7 @@ import {
   DatePickerInput as CarbonDatePickerInput,
   TextInput as CarbonTextInput,
   TextArea as CarbonTextArea,
+  NumberInput as CarbonNumberInput,
   Tag as CarbonTag,
   ComboBox as CarbonComboBox,
   MultiSelect as CarbonMultiSelect,
@@ -87,6 +88,30 @@ export const Input = React.forwardRef<
 >(function Input({ className, id, defaultValue, value, onClick, onChange, size: _nativeSize, ...props }, ref) {
   const generatedId = React.useId();
   void _nativeSize;
+  if (props.type === "number") {
+    const { min, max, step, disabled, placeholder, readOnly, required, name, "aria-label": ariaLabel } = props;
+    return (
+      <CarbonNumberInput
+        id={id ?? generatedId}
+        label=""
+        hideLabel
+        data-tp-control="true"
+        className={className}
+        min={min === undefined ? undefined : Number(min)}
+        max={max === undefined ? undefined : Number(max)}
+        step={step === undefined ? undefined : Number(step)}
+        disabled={disabled}
+        readOnly={readOnly}
+        required={required}
+        name={name}
+        placeholder={placeholder}
+        aria-label={ariaLabel ?? placeholder}
+        value={value === undefined ? undefined : String(value)}
+        defaultValue={defaultValue === undefined ? undefined : String(defaultValue)}
+        onChange={(event) => onChange?.(event as React.ChangeEvent<HTMLInputElement>)}
+      />
+    );
+  }
   if (props.type === "date") {
     const dateValue = String(value ?? defaultValue ?? "");
     const { min, max, disabled, placeholder, "aria-label": ariaLabel } = props;
