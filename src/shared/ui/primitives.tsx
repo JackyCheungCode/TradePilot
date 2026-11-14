@@ -100,6 +100,7 @@ export const Input = React.forwardRef<
   React.InputHTMLAttributes<HTMLInputElement>
 >(function Input({ className, id, defaultValue, value, onClick, size: _nativeSize, ...props }, ref) {
   const generatedId = React.useId();
+  void _nativeSize;
   return (
     <CarbonTextInput
       ref={ref}
