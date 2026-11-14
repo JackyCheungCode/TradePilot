@@ -220,31 +220,11 @@ main h1, .tp-page-canvas h1 {
   border-color: var(--tp-line);
   box-shadow: 0 12px 36px rgba(16,24,40,.16);
 }
-.tp-page-canvas svg.lucide { stroke-width: 1.7; }
 .tp-page-canvas .text-sm { font-size: 13px; }
 .tp-page-canvas .text-xs { font-size: 11px; }
 
 /* Google Material Symbols used by the app shell. */
-.material-symbols-outlined {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-family: "Material Symbols Outlined";
-  font-weight: 400;
-  font-style: normal;
-  font-size: 20px;
-  line-height: 1;
-  letter-spacing: normal;
-  text-transform: none;
-  white-space: nowrap;
-  word-wrap: normal;
-  direction: ltr;
-  font-feature-settings: "liga";
-  -webkit-font-feature-settings: "liga";
-  -webkit-font-smoothing: antialiased;
-  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 20;
-  vertical-align: middle;
-}
+
 
 /* Odoo-style page control panel */
 .tp-page-canvas .tp-page-heading {
