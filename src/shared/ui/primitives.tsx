@@ -148,7 +148,7 @@ export const Checkbox = React.forwardRef<
       hideLabel={!labelText}
       data-tp-control="true"
       className={className}
-      onChange={onChange as React.ComponentProps<typeof CarbonCheckbox>["onChange"]}
+      onChange={(_checked, _id, event) => onChange?.(event as React.ChangeEvent<HTMLInputElement>)}
       {...props}
     />
   );
