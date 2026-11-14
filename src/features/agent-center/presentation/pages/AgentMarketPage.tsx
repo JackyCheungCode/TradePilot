@@ -143,8 +143,8 @@ export function AgentMarketPage() {
                   <p className="tp-agent-market-card-description">{agent.description}</p>
                   <div className="tp-agent-market-capabilities">{agent.capabilities.map(capability => <span key={capability}>{capability}</span>)}</div>
                   <div className="tp-agent-market-card-actions">
-                    <Button size="sm" kind="tertiary" variant="outline" onClick={() => openDetails(agent.id)}><Edit size={14} />查看详情</Button>
-                    <Button size="sm" kind={enabled ? "tertiary" : "primary"} variant={enabled ? "outline" : "default"} disabled={busy} onClick={() => void toggleAgent(agent.id)}>{enabled ? "停用" : "启用"}</Button>
+                    <Button size="sm" variant="outline" onClick={() => openDetails(agent.id)}><Edit size={14} />查看详情</Button>
+                    <Button size="sm" variant={enabled ? "outline" : "default"} disabled={busy} onClick={() => void toggleAgent(agent.id)}>{enabled ? "停用" : "启用"}</Button>
                   </div>
                 </CardContent>
               </Card>
@@ -174,7 +174,7 @@ export function AgentMarketPage() {
 
       <section className="tp-agent-market-external">
         <div><h2>外部 Agent</h2><p>仅展示已登记并通过协议验证的连接。尚未接入的服务不会作为可用 Agent 展示。</p></div>
-        <div className="tp-agent-market-external-empty"><Plug size={22} /><div><strong>外部 Agent 通过连接管理接入</strong><p>支持 REST API、MCP 和 Webhook。连接验证通过后，再纳入可用服务目录。</p></div><Button kind="tertiary" variant="outline" onClick={() => { window.location.href = "/agent/connections"; }}>管理连接 <ArrowRight size={16} /></Button></div>
+        <div className="tp-agent-market-external-empty"><Plug size={22} /><div><strong>外部 Agent 通过连接管理接入</strong><p>支持 REST API、MCP 和 Webhook。连接验证通过后，再纳入可用服务目录。</p></div><Button variant="outline" onClick={() => { window.location.href = "/agent/connections"; }}>管理连接 <ArrowRight size={16} /></Button></div>
       </section>
       {notice && <p className="tp-agent-market-feedback" role="status">{notice}</p>}
     </div>
