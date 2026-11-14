@@ -42,6 +42,18 @@ export default tseslint.config(
           selector: "JSXAttribute[name.name='className'] > Literal[value=/\\b(?:flex|grid|block|inline-flex|items-|justify-|gap-|space-|p-|px-|py-|m-|mx-|my-|w-|h-|rounded-|shadow-|bg-|text-|border-)/]",
           message: "公共 Carbon 封装不得使用 Tailwind utility class；布局与视觉必须由 Carbon 官方组件及主题负责。",
         },
+        {
+          selector: "JSXAttribute[name.name='className'] > JSXExpressionContainer > TemplateLiteral",
+          message: "公共 Carbon 封装不得通过模板字符串注入 Tailwind 布局或视觉工具类。",
+        },
+        {
+          selector: "JSXAttribute[name.name='labelText'][value.value='']",
+          message: "公共 Carbon 表单控件不得使用空 labelText；必须提供可访问的字段名称。",
+        },
+        {
+          selector: "JSXAttribute[name.name='hideLabel'][value.expression.value=true]",
+          message: "公共 Carbon 表单控件不得隐藏唯一字段名称；请提供可见 labelText。",
+        },
       ],
     },
   },
