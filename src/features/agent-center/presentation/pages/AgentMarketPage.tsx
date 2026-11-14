@@ -196,10 +196,12 @@ export function AgentMarketPage() {
       {notice && <InlineNotification kind={notice.kind} title={notice.title} subtitle={notice.subtitle} lowContrast hideCloseButton />}
 
       <section className="tp-agent-market-catalog" aria-label="内置 Agent 目录">
-        <div className="tp-agent-market-section-heading">
-          <div><h2 className="cds--type-heading-03">内置 Agent</h2><p className="cds--type-body-compact-01">选择一个 Agent 查看能力、执行边界和配置。</p></div>
-        </div>
         <Grid fullWidth className="tp-agent-market-grid">
+          <Column sm={4} md={8} lg={16}>
+            <div className="tp-agent-market-section-heading">
+              <div><h2 className="cds--type-heading-03">内置 Agent</h2><p className="cds--type-body-compact-01">选择一个 Agent 查看能力、执行边界和配置。</p></div>
+            </div>
+          </Column>
           {visibleAgents.map((agent) => {
             const enabled = isEnabled(agent.id);
             return (
@@ -234,10 +236,14 @@ export function AgentMarketPage() {
 
       {selectedAgent && (
         <section className="tp-agent-market-detail" aria-label="Agent 详情与配置">
-          <div className="tp-agent-market-section-heading">
-            <div><h2 className="cds--type-heading-03">{selectedAgent.name}</h2><p className="cds--type-body-compact-01">Agent 详情与专业指令配置</p></div>
-            <Button kind="ghost" size="sm" onClick={() => setSelectedId(null)}>关闭</Button>
-          </div>
+          <Grid fullWidth className="tp-agent-market-detail-heading-grid">
+            <Column sm={4} md={8} lg={16}>
+              <div className="tp-agent-market-section-heading">
+                <div><h2 className="cds--type-heading-03">{selectedAgent.name}</h2><p className="cds--type-body-compact-01">Agent 详情与专业指令配置</p></div>
+                <Button kind="ghost" size="sm" onClick={() => setSelectedId(null)}>关闭</Button>
+              </div>
+            </Column>
+          </Grid>
           <Grid fullWidth className="tp-agent-market-detail-grid">
             <Column sm={4} md={4} lg={8}>
               <h3 className="cds--type-heading-compact-01">业务能力</h3>
@@ -267,14 +273,20 @@ export function AgentMarketPage() {
       )}
 
       <section className="tp-agent-market-external">
-        <div className="tp-agent-market-section-heading">
-          <div><h2 className="cds--type-heading-03">外部 Agent</h2><p className="cds--type-body-compact-01">仅统计已登记并通过连接验证的外部 Agent。尚未接入的服务不会作为可用 Agent 展示。</p></div>
-        </div>
-        <Tile className="tp-agent-market-external-empty">
+        <Grid fullWidth className="tp-agent-market-external-grid">
+          <Column sm={4} md={8} lg={16}>
+            <div className="tp-agent-market-section-heading">
+              <div><h2 className="cds--type-heading-03">外部 Agent</h2><p className="cds--type-body-compact-01">仅统计已登记并通过连接验证的外部 Agent。尚未接入的服务不会作为可用 Agent 展示。</p></div>
+            </div>
+          </Column>
+          <Column sm={4} md={8} lg={16}>
+            <Tile className="tp-agent-market-external-empty">
           <Plug size={22} aria-hidden="true" />
           <div><strong className="cds--type-heading-compact-01">外部 Agent 通过连接管理接入</strong><p className="cds--type-body-compact-01">连接验证通过后，将在此目录统计并管理。</p></div>
           <Button kind="ghost" onClick={openConnections} renderIcon={ArrowRight}>管理连接</Button>
-        </Tile>
+            </Tile>
+          </Column>
+        </Grid>
       </section>
     </main>
   );
