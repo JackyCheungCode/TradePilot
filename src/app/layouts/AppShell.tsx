@@ -26,6 +26,7 @@ export function AppShell({ children, activePage, onNavigate, userEmail, onSignOu
      <Button variant={activePage==="agentSettings"?"secondary":"ghost"} onClick={()=>{onNavigate("agentSettings");setMobileOpen(false);}} className={childNavClass}><Settings2 className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>Agent 设置</span>}</Button>
     </div>}
    </div>
+   <div>
     <Button variant="ghost" onClick={()=>setDiscoveryExpanded(!discoveryExpanded)} className={navClass}><Compass className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<><span className="flex-1 text-left">潜客发现</span>{discoveryExpanded?<ChevronDown className="ml-auto h-4 w-4"/>:<ChevronRight className="ml-auto h-4 w-4"/>}</>}</Button>
     {discoveryExpanded&&<div className={`ml-5 space-y-1 pl-3 ${collapsed&&!mobileOpen?"":"border-l"}`}>
      <Button variant={activePage==="discovery"?"secondary":"ghost"} onClick={()=>{onNavigate("discovery");setMobileOpen(false);}} className={childNavClass}><MapPinned className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<span>地图与本地商家</span>}</Button>

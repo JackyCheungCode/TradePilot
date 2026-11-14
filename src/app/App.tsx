@@ -97,7 +97,7 @@ export function App() {
   if (checkingSession) return <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">正在检查登录状态…</div>;
   if (!session || path === "/login") return <><LoginPage /><Toaster richColors position="top-right" /></>;
   return <AppShell activePage={activePage ?? "discovery"} onNavigate={navigate} userEmail={session.user.email ?? ""} onSignOut={() => void getSupabaseClient().auth.signOut()}>
-    {activePage.startsWith("agent") ? <AgentCenterPage section={activePage} /> : activePage === "integrations" ? <IntegrationsSettingsPage /> : activePage === "searchExclusions" ? <SearchExclusionRulesPage /> : activePage === "discoveryTasks" ? <DiscoveryTasksPage /> : activePage === "discoveryResults" ? <DiscoveryResultsPage /> : activePage === "searchDiscovery" ? <SearchEngineDiscoveryPage /> : activePage === "facebookDiscovery" ? <FacebookDiscoveryPage /> : activePage === "instagramDiscovery" ? <InstagramDiscoveryPage /> : activePage === "leads" ? <LeadsPage /> : <MapLocalDiscoveryPage />}
+    {activePage && activePage.startsWith("agent") ? <AgentCenterPage section={activePage} /> : activePage === "integrations" ? <IntegrationsSettingsPage /> : activePage === "searchExclusions" ? <SearchExclusionRulesPage /> : activePage === "discoveryTasks" ? <DiscoveryTasksPage /> : activePage === "discoveryResults" ? <DiscoveryResultsPage /> : activePage === "searchDiscovery" ? <SearchEngineDiscoveryPage /> : activePage === "facebookDiscovery" ? <FacebookDiscoveryPage /> : activePage === "instagramDiscovery" ? <InstagramDiscoveryPage /> : activePage === "leads" ? <LeadsPage /> : <MapLocalDiscoveryPage />}
     <Toaster richColors position="top-right" />
   </AppShell>;
 }
