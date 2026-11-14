@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Compass, Facebook, Instagram, KeyRound, LogOut, MapPinned, Menu, PanelLeftClose, PanelLeftOpen, Radar, Search, Settings, ShieldBan, Users, X, ChevronDown, ChevronRight, ListTodo, Files, ContactRound, Building2, Handshake, Factory, Landmark, Package } from "lucide-react";
+import { Compass, Facebook, Instagram, KeyRound, LogOut, MapPinned, Menu, PanelLeftClose, PanelLeftOpen, Radar, Search, Settings, Settings2, ShieldBan, Users, X, ChevronDown, ChevronRight, ListTodo, Files, ContactRound, Building2, Handshake, Factory, Landmark, Package } from "lucide-react";
 import { Button } from "@/shared/ui/primitives";
 import { AgentOrbIcon } from "@/features/agent-center/presentation/components/AgentOrbIcon";
 import { Sparkles, Workflow, PlugZap, ClipboardCheck, Bot, Activity, FileStack, FilePlus2, Archive, LayoutTemplate } from "lucide-react";
