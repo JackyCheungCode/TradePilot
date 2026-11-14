@@ -486,8 +486,9 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
         planner=await generateAgentPlan(env,ownerId,goal,country,engine,available??[]);
         if(planner.action.type==="internal_discovery"){country=planner.action.country;limit=planner.action.limitPerCountry;}
         if(planner.action.type==="external_tool"){
-          connection=available?.find(row=>row.id===planner!.action.connectionId);
-          selectedTool=connection?.protocol_tools?.find(tool=>tool.name===(planner!.action as Extract<PlannerAction,{type:"external_tool"}>).toolName);
+          const externalAction=planner.action;
+          connection=available?.find(row=>row.id===externalAction.connectionId);
+          selectedTool=connection?.protocol_tools?.find(tool=>tool.name===externalAction.toolName);
           if(!connection||!selectedTool)return errorResponse(request,"AGENT_PLAN_TOOL_INVALID","规划器选择的工具已不可用，请重新规划。",409);
         }
       }
