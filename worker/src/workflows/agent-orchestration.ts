@@ -94,9 +94,16 @@ export class AgentOrchestrationWorkflow extends WorkflowEntrypoint<WorkflowEnv,P
    return finalResult;
   }catch(error){
    const message=error instanceof Error?error.message:"多 Agent 协作执行失败。";
-   await patchRun(this.env,runId,ownerId,{status:"failed",error_message:message,completed_at:new Date().toISOString(),plan:{...plan,execution_state:"failed"}});
+   const failedAt=new Date().toISOString();
+   const executionSteps=Array.isArray(plan.execution_steps)?[...(plan.execution_steps as Array<Record<string,unknown>>)]:[];
+   const activeIndex=executionSteps.findIndex(item=>item.status==="running");
+   const failedStep=activeIndex>=0?String(executionSteps[activeIndex].agentKey??"unknown"):null;
+   if(activeIndex>=0)executionSteps[activeIndex]={...executionSteps[activeIndex],status:"failed",failedAt,error:message.slice(0,1000)};
+   const preserved=executionSteps.filter(item=>item.status==="completed").length;
+   const failedPlan={...plan,execution_state:"failed",execution_steps:executionSteps,failure:{message:message.slice(0,2000),failedAt,failedStep,preservedCompletedSteps:preserved}};
+   await patchRun(this.env,runId,ownerId,{status:"failed",error_message:message,completed_at:failedAt,plan:failedPlan});
    await patchDiscovery(this.env,runId,ownerId,{status:"failed",progress:100,message});
-   await log(this.env,runId,ownerId,"多 Agent 协作失败："+message,{error:true});
+   await log(this.env,runId,ownerId,"多 Agent 协作失败："+message,{error:true,failedStep,preservedCompletedSteps:preserved,failedAt});
    throw error;
   }
  }
