@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { ArrowRight, Clock3, RefreshCw } from "lucide-react";
+import { ArrowRight, Time as Clock3, Renew as RefreshCw } from "@carbon/icons-react";
 import { toast } from "sonner";
 import { PageControlPanel } from "@/shared/ui/page-layout";
 import { SearchControlPanel } from "@/shared/ui/data-views";
