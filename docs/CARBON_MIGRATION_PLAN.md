@@ -197,3 +197,8 @@ The first change must be the dependency/lockfile and theme foundation, not broad
 - [ ] Newest changes to StatusBadge and Carbon icons still need a CI run.
 - [ ] Existing page-local icon usage (Lucide/Material Symbols) remains to be inventoried and replaced; this migration is not yet globally icon-complete.
 - [ ] Existing raw native inputs and page-local selector controls remain to be inventoried and migrated.
+
+
+### Current-head verification gate
+- The completed CI run #1337 passed typecheck, 21 tests, lint, frontend build, and Worker build for the earlier shared-primitive snapshot.
+- The subsequent Carbon Tag / Carbon icon updates must be included in a fresh CI run before this PR can be considered merge-ready.
