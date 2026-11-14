@@ -33,7 +33,10 @@
     "sonner": "2.0.7",
     "tailwind-merge": "3.3.1",
     "zod": "4.1.12",
-    "@carbon/icons-react": "11.92.0"
+    "@carbon/icons-react": "11.92.0",
+    "@carbon/charts-react": "1.27.24",
+    "@ibm/plex-sans": "1.1.0",
+    "@ibm/plex-mono": "2.5.0"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.13.0",
