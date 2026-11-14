@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const globalStyles = readFileSync(new URL("./globals.css", import.meta.url), "utf8");
+const resetStyles = readFileSync(new URL("./reset.css", import.meta.url), "utf8");
+const designTokens = readFileSync(new URL("./design-tokens.css", import.meta.url), "utf8");
 const designTokens = readFileSync(new URL("./design-tokens.css", import.meta.url), "utf8");
 const resetStyles = readFileSync(new URL("./reset.css", import.meta.url), "utf8");
 const appShellStyles = readFileSync(new URL("../app/layouts/app-shell.css", import.meta.url), "utf8");
@@ -12,6 +14,19 @@ describe("stylesheet ownership boundaries", () => {
   it("keeps application and feature selectors out of the global entry", () => {
     expect(globalStyles).not.toContain(".tp-");
     expect(globalStyles).not.toContain("[role=");
+  });
+
+  it("does not load Tailwind preflight alongside Carbon resets", () => {
+    expect(globalStyles).not.toContain('@import "tailwindcss";');
+    expect(globalStyles).not.toContain("preflight.css");
+  });
+
+  it("keeps only active semantic tokens in the shared token layer", () => {
+    expect(designTokens).not.toContain("--tp-");
+  });
+
+  it("does not reset typography on native controls", () => {
+    expect(resetStyles).not.toMatch(/(?:button|input|textarea|select)\\s*\\{[^}]*font\\s*:/s);
   });
 
   it("does not style native controls or data tables globally", () => {
