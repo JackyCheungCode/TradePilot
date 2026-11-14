@@ -1,6 +1,5 @@
 import * as React from "react";
 import * as Slot from "@radix-ui/react-slot";
-import * as ProgressPrimitive from "@radix-ui/react-progress";
 import * as SeparatorPrimitive from "@radix-ui/react-separator";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 import {
