@@ -302,6 +302,7 @@ export function AppShell({
           <SkipToContent href="#main-content">跳转到主要内容</SkipToContent>
           <div className="md:hidden">
             <HeaderMenuButton
+              isCollapsible
               aria-label="打开侧边栏菜单"
               isActive={mobileOpen}
               onClick={() => setMobileOpen(true)}
@@ -309,6 +310,7 @@ export function AppShell({
           </div>
           <div className="hidden md:block">
             <HeaderMenuButton
+              isCollapsible
               aria-label={collapsed ? "展开侧边栏" : "收起侧边栏"}
               isActive={!collapsed}
               onClick={() => setCollapsed((value) => !value)}
