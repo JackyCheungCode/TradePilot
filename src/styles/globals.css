@@ -700,49 +700,10 @@ code, pre, kbd, samp, .font-mono {
   color: var(--cds-text-secondary, #525252);
 }
 
-/* Do not restyle Carbon's own form controls with legacy generic input rules. */
-.tp-page-canvas .cds--text-input,
-.tp-page-canvas .cds--text-area,
-.tp-page-canvas .cds--number input,
-.tp-page-canvas .cds--date-picker input,
-.tp-page-canvas .cds--list-box__field,
-.tp-page-canvas .cds--dropdown,
-.tp-page-canvas .cds--combo-box .cds--text-input,
-.tp-page-canvas .cds--multi-select .cds--text-input {
-  min-height: 40px;
-  color: var(--cds-text-primary, #161616);
-  background: var(--cds-field, #ffffff);
-  border-radius: 0;
-  font-family: inherit;
-  font-size: 14px;
-  box-shadow: none;
-}
-.tp-page-canvas .cds--text-input,
-.tp-page-canvas .cds--text-area,
-.tp-page-canvas .cds--date-picker input {
-  border: 0;
-  border-bottom: 1px solid var(--cds-border-strong, #8d8d8d);
-}
-.tp-page-canvas .cds--text-input:focus,
-.tp-page-canvas .cds--text-area:focus,
-.tp-page-canvas .cds--date-picker input:focus {
-  outline: 2px solid var(--cds-focus, #0f62fe);
-  outline-offset: -2px;
-}
+/* Keep Carbon form controls, buttons, tags and tiles on their package defaults. */
 .tp-page-canvas .cds--label,
 .tp-page-canvas .cds--form__helper-text {
   color: var(--cds-text-secondary, #525252);
-}
-.tp-page-canvas .cds--btn {
-  border-radius: 0;
-  font-family: inherit;
-}
-.tp-page-canvas .cds--tag {
-  border-radius: 0;
-}
-.tp-page-canvas .cds--tile {
-  border-radius: 0;
-  box-shadow: none;
 }
 .tp-page-canvas .bg-muted\/50,
 .tp-page-canvas .bg-muted\/40,
@@ -769,7 +730,7 @@ code, pre, kbd, samp, .font-mono {
   gap: 16px;
 }
 @media (max-width: 671px) {
-  .tp-page-root { padding: 16px 0; }
+
   .tp-control-panel { padding: 16px; margin-inline: 0; }
   .tp-page-section { padding: 16px; }
   .tp-page-canvas .tp-mobile-card-grid {
