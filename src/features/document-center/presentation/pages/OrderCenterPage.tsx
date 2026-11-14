@@ -156,7 +156,7 @@ export function OrderCenterPage({ onCreateQuotation, initialView = "quotations" 
   };
 
   return <div className="space-y-5 p-3 sm:p-4 lg:p-6">
-    <div className="flex flex-wrap items-start justify-between gap-3">
+    <div className="tp-page-heading flex flex-wrap items-start justify-between gap-3">
       <div>
         <div className="flex items-center gap-2"><ClipboardList className="h-5 w-5 text-muted-foreground" /><h1 className="text-2xl font-semibold tracking-tight">{view === "quotations" ? "报价与询价" : view === "sales" ? "销售业务" : "采购业务"}</h1></div>
         <p className="mt-1 text-sm text-muted-foreground">{view === "quotations" ? "集中管理销售报价与采购询价，跟踪确认状态及关联业务单据。" : view === "sales" ? "管理销售订单、客户交付条件与订单履约进度。" : "管理采购订单、供应商交付条件与采购执行进度。"}</p>
@@ -173,11 +173,11 @@ export function OrderCenterPage({ onCreateQuotation, initialView = "quotations" 
 
     <Card>
       <CardHeader className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="tp-filter-toolbar w-full flex flex-wrap items-center justify-between gap-3">
           <div><CardTitle>业务单据</CardTitle><CardDescription>报价单确认后会同步激活其关联订单；历史版本与模板快照保留在单据中心。</CardDescription></div>
-          <div className="relative w-full sm:w-72"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input className="pl-9" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="搜索编号、名称或客户" /></div>
+          <div className="relative w-full min-w-0 sm:w-[300px] sm:flex-none"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input className="pl-9 w-full" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="搜索编号、名称或客户" /></div>
           <div className="flex flex-wrap items-center gap-2">
-            <Combobox value={statusFilter} onValueChange={setStatusFilter} placeholder="全部状态" options={[{value:"",label:"全部状态"},...Object.entries(statusLabels).map(([value,label])=>({value,label}))]}/>
+            <Combobox value={statusFilter} onValueChange={setStatusFilter} placeholder="全部状态" className="w-full sm:w-[150px] shrink-0" options={[{value:"",label:"全部状态"},...Object.entries(statusLabels).map(([value,label])=>({value,label}))]}/>
             <span className="text-xs text-muted-foreground">点击表头可排序</span>
           </div>
         </div>
