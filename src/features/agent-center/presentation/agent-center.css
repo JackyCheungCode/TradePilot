@@ -75,3 +75,19 @@
   .tp-agent-market-grid { gap: 12px; }
   .tp-agent-market-column { min-width: 0; }
 }
+
+
+/* Agent Workbench — Carbon token-based layout and surface hierarchy. */
+.tp-agent-workbench-page{box-sizing:border-box;width:100%;max-width:none;min-width:0;margin:0;padding:0 var(--cds-spacing-05) var(--cds-spacing-07);color:var(--cds-text-primary)}
+.tp-agent-workbench-page>*{min-width:0}
+.tp-agent-workspace-layout{display:grid;grid-template-columns:minmax(0,1fr) 18.75rem;gap:var(--cds-spacing-05);width:100%;min-width:0;min-height:calc(100dvh - 13rem);overflow-x:hidden}
+.tp-agent-workspace-chat{display:flex;min-width:0;max-width:100%;min-height:min(42.5rem,calc(100dvh - 14rem));flex-direction:column;overflow:hidden;background:var(--cds-layer-01)}
+.tp-agent-workspace-chat>div:last-child{flex-shrink:0}
+.tp-agent-message-bubble{max-width:100%;padding:var(--cds-spacing-05);white-space:pre-wrap;overflow-wrap:anywhere;font:var(--cds-body-01-font-size)/var(--cds-body-01-line-height) var(--cds-font-family)}
+.tp-agent-message-bubble--user{background:var(--cds-button-primary);color:var(--cds-text-on-color)}
+.tp-agent-message-bubble--assistant{background:var(--cds-layer-01);color:var(--cds-text-primary)}
+.tp-agent-workspace-choice{min-width:0}
+.tp-agent-workspace-choice .cds--radio-button-group{display:flex;flex-wrap:wrap;gap:var(--cds-spacing-03)}
+.tp-agent-workspace-choice .cds--radio-button-wrapper{margin:0}
+@media(max-width:1055px){.tp-agent-workspace-layout{grid-template-columns:minmax(0,1fr) 16rem}}
+@media(max-width:767px){.tp-agent-workbench-page{padding-inline:var(--cds-spacing-05)}.tp-agent-workspace-layout{grid-template-columns:minmax(0,1fr);gap:var(--cds-spacing-05);min-height:0}.tp-agent-workspace-chat{min-height:calc(100dvh - 15rem)}.tp-agent-workspace-layout>aside{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--cds-spacing-03)}}
