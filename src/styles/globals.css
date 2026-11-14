@@ -615,3 +615,15 @@ main h1, .tp-page-canvas h1 {
   opacity: .65;
   cursor: pointer;
 }
+
+@media (max-width: 767px) {
+  .tp-page-canvas .tp-responsive-table--master tbody tr:has(td[colspan]) {
+    display: block;
+    margin: 10px 0 6px;
+    padding: 7px 10px;
+    background: #f1f3f5;
+    border: 0;
+    border-radius: 4px;
+  }
+  .tp-page-canvas .tp-responsive-table--master tbody tr:has(td[colspan]) td::before { content: none; }
+}
