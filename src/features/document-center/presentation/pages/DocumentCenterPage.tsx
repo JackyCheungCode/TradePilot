@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { Archive, Building2, FilePlus2, FileStack, FileText, LayoutTemplate, Languages, Package, Plus, Printer, RefreshCw, Search } from "lucide-react";
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input } from "@/shared/ui/primitives";
 import { masterDataApi, type MasterRecord } from "@/features/master-data/infrastructure/master-data-api";
-import { tradeApi, type TradeDocument, type TradeDocumentDetail, type TradeOrder, type TradeParty, type TradeProduct, type TradeOrderItem, type TradeDocumentTemplate } from "../../infrastructure/trade-api";
+import { tradeApi, type TradeDocument, type TradeDocumentDetail, type TradeOrder, type TradeProduct, type TradeOrderItem, type TradeDocumentTemplate } from "../../infrastructure/trade-api";
 type Section="workbench"|"create"|"documents"|"templates"|"settings";
 const sections:Array<{key:Section;label:string}>=[{key:"workbench",label:"单据工作台"},{key:"create",label:"单据制作"},{key:"documents",label:"单据管理"},{key:"templates",label:"模板中心"},{key:"settings",label:"单据设置"}];
 function decimalScaled(value:unknown):bigint{const text=String(value??"0");if(!/^-?\d+(?:\.\d{1,6})?$/.test(text))return 0n;const negative=text.startsWith("-"),raw=negative?text.slice(1):text,[whole,fraction=""]=raw.split(".");const scaled=BigInt(whole)*1000000n+BigInt((fraction+"000000").slice(0,6));return negative?-scaled:scaled;}
