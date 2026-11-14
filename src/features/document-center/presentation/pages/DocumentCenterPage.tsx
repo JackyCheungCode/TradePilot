@@ -140,6 +140,6 @@ export function DocumentCenterPage({initialSection="workbench"}:{initialSection?
  {Boolean(printingDocument.content?.notes)&&<div className="mb-10 whitespace-pre-wrap text-sm"><p className="mb-2 font-semibold">Notes</p>{String(printingDocument.content?.notes)}</div>}
  <div className="mt-16 grid grid-cols-2 gap-16 text-sm"><div className="border-t pt-2">Authorized signature</div><div className="border-t pt-2">Date</div></div>
  {typeof printTemplateConfig.footerText==="string"&&printTemplateConfig.footerText&&<p className="mt-12 border-t pt-4 text-center text-xs text-gray-600">{printTemplateConfig.footerText}</p>}
- <button type="button" className="fixed right-8 top-8 rounded bg-black px-4 py-2 text-white print:hidden" onClick={()=>setPrintingDocument(null)}>关闭预览</button>
+ <Button type="button" variant="secondary" className="fixed right-8 top-8 print:hidden" onClick={()=>setPrintingDocument(null)}>关闭预览</Button>
  </div>}</>;
 }
