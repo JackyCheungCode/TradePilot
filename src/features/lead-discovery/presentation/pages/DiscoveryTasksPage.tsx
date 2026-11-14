@@ -3,7 +3,7 @@ import { ArrowRight, Clock3, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { PageControlPanel } from "@/shared/ui/page-layout";
 import { SearchControlPanel } from "@/shared/ui/data-views";
-import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Combobox, Progress } from "@/shared/ui/primitives";
+import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Combobox, Progress } from "@/shared/ui/primitives";
 import { discoveryApi, discoveryWorkspaceApi } from "../../infrastructure/discovery-api";
 import type { DiscoveryLog, DiscoveryRun } from "../../domain/model";
 const statusLabel:Record<string,string>={planned:"草案",queued:"排队中",running:"执行中",completed:"已完成",partial:"部分完成",failed:"失败",cancelled:"已取消"};
