@@ -156,7 +156,7 @@ export function OrderCenterPage({ onCreateQuotation, initialView = "quotations" 
   };
 
   return <div className="space-y-5 p-3 sm:p-4 lg:p-6">
-    <div className="flex flex-wrap items-start justify-between gap-3">
+    <div className="tp-page-heading flex flex-wrap items-start justify-between gap-3">
       <div>
         <div className="flex items-center gap-2"><ClipboardList className="h-5 w-5 text-muted-foreground" /><h1 className="text-2xl font-semibold tracking-tight">{view === "quotations" ? "报价与询价" : view === "sales" ? "销售业务" : "采购业务"}</h1></div>
         <p className="mt-1 text-sm text-muted-foreground">{view === "quotations" ? "集中管理销售报价与采购询价，跟踪确认状态及关联业务单据。" : view === "sales" ? "管理销售订单、客户交付条件与订单履约进度。" : "管理采购订单、供应商交付条件与采购执行进度。"}</p>
