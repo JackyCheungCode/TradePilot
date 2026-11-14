@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Compass, Facebook, Instagram, KeyRound, LogOut, MapPinned, Menu, PanelLeftClose, PanelLeftOpen, Radar, Search, Settings, Settings2, ShieldBan, Users, X, ChevronDown, ChevronRight, ListTodo, Files, ContactRound, Building2, Handshake, Factory, Landmark, Package, Boxes, SlidersHorizontal, Layers } from "lucide-react";
+import { Compass, Facebook, Instagram, KeyRound, LogOut, MapPinned, Menu, PanelLeftClose, PanelLeftOpen, Radar, Search, Settings, Settings2, ShieldBan, Users, X, ChevronDown, ChevronRight, ListTodo, Files, ContactRound, Building2, Handshake, Package } from "lucide-react";
 import { Button } from "@/shared/ui/primitives";
 import { AgentOrbIcon } from "@/features/agent-center/presentation/components/AgentOrbIcon";
 import { Sparkles, Workflow, PlugZap, ClipboardCheck, Bot, Activity, FileStack, FilePlus2, Archive, LayoutTemplate } from "lucide-react";
@@ -8,7 +8,7 @@ type AppPage = "agentWorkbench" | "agentMarket" | "agentOrchestration" | "agentC
 
 export function AppShell({ children, activePage, onNavigate, userEmail, onSignOut }: { children: ReactNode; activePage: AppPage; onNavigate: (page: AppPage) => void; userEmail: string; onSignOut: () => void }) {
  const [collapsed,setCollapsed]=useState(false),[mobileOpen,setMobileOpen]=useState(false);
- const [agentExpanded,setAgentExpanded]=useState(true),[discoveryExpanded,setDiscoveryExpanded]=useState(false),[crmExpanded,setCrmExpanded]=useState(true),[masterExpanded,setMasterExpanded]=useState(true),[settingsExpanded,setSettingsExpanded]=useState(false),[documentsExpanded,setDocumentsExpanded]=useState(true),[productsExpanded,setProductsExpanded]=useState(true);
+ const [agentExpanded,setAgentExpanded]=useState(true),[discoveryExpanded,setDiscoveryExpanded]=useState(false),[crmExpanded,setCrmExpanded]=useState(true),[settingsExpanded,setSettingsExpanded]=useState(false),[documentsExpanded,setDocumentsExpanded]=useState(true),;
  const navClass="flex w-full items-center justify-start gap-3 px-3 py-2.5 text-left text-sm";
  const childNavClass="flex w-full items-center justify-start gap-3 px-3 py-2.5 text-left text-sm";
  const sidebar=<div className="flex h-full min-h-0 flex-col bg-card text-foreground">
