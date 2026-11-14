@@ -220,3 +220,97 @@
   .tp-agent-market-prompt-actions{align-items:stretch;flex-direction:column}
   .tp-agent-market-prompt-actions>.cds--btn{width:100%}
 }
+
+
+/* Agent Market layout guardrails — keep Carbon grid gutters inside the page container. */
+.tp-agent-market-page {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1440px;
+  min-width: 0;
+  padding-inline: var(--cds-spacing-06);
+  gap: var(--cds-spacing-07);
+  font-family: var(--cds-body-compact-01-font-family, "IBM Plex Sans", sans-serif);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.tp-agent-market-page,
+.tp-agent-market-page * {
+  box-sizing: border-box;
+}
+.tp-agent-market-page .cds--grid {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin-inline: 0;
+  padding-inline: 0;
+}
+.tp-agent-market-page .cds--row,
+.tp-agent-market-page .cds--col,
+.tp-agent-market-page section,
+.tp-agent-market-page header,
+.tp-agent-market-page .cds--tile,
+.tp-agent-market-page .cds--layer {
+  min-width: 0;
+  max-width: 100%;
+}
+.tp-agent-market-page .cds--col > * {
+  min-width: 0;
+  max-width: 100%;
+}
+.tp-agent-market-header {
+  width: 100%;
+  max-width: 100%;
+  align-self: stretch;
+}
+.tp-agent-market-header__content,
+.tp-agent-market-card-description,
+.tp-agent-market-section-heading > div,
+.tp-agent-market-prompt,
+.tp-agent-market-external-empty > div {
+  overflow-wrap: anywhere;
+}
+.tp-agent-market-page .cds--type-heading-05,
+.tp-agent-market-page .cds--type-heading-03,
+.tp-agent-market-page .cds--type-heading-compact-01,
+.tp-agent-market-page .cds--type-body-01,
+.tp-agent-market-page .cds--type-body-compact-01,
+.tp-agent-market-page .cds--type-label-01,
+.tp-agent-market-page .cds--type-helper-text-01 {
+  font-family: var(--cds-body-compact-01-font-family, "IBM Plex Sans", sans-serif);
+}
+.tp-agent-market-summary,
+.tp-agent-market-controls,
+.tp-agent-market-catalog,
+.tp-agent-market-detail,
+.tp-agent-market-external {
+  margin-block: 0;
+}
+.tp-agent-market-page > * + * {
+  margin-block-start: 0;
+}
+.tp-agent-market-grid,
+.tp-agent-market-detail-grid,
+.tp-agent-market-external-grid {
+  row-gap: var(--cds-spacing-05);
+}
+@media (max-width: 671px) {
+  .tp-agent-market-page {
+    max-width: 100%;
+    padding-inline: var(--cds-spacing-04);
+    gap: var(--cds-spacing-06);
+  }
+  .tp-agent-market-page .cds--grid {
+    margin-inline: 0;
+  }
+  .tp-agent-market-header {
+    width: 100%;
+    max-width: 100%;
+  }
+  .tp-agent-market-card-actions {
+    flex-wrap: wrap;
+  }
+  .tp-agent-market-prompt-actions {
+    min-width: 0;
+  }
+}
