@@ -68,7 +68,7 @@ export class AgentOrchestrationWorkflow extends WorkflowEntrypoint<WorkflowEnv,P
      await log(this.env,runId,ownerId,label+" 开始执行。",{agentKey:specialist.agentKey,records:dataset.records.length});
      const context={goal,instruction:specialist.instruction,discovery,records:dataset.records.slice(0,150),sources:dataset.occurrences.slice(0,200),previousAgents:specialistResults};
      const system="你是 TradePilot 的"+label+"。"+(prompts[specialist.agentKey]??"请对输入数据进行专业分析。")+"\n请用中文输出清晰、可执行的分析结果。只依据输入证据，不要虚构。若没有搜索结果，要明确说明无法得出结论。不得发送邮件、导入 CRM 或执行外部写操作。";
-     const generated=await callAgentChatModel(this.env,[{role:"user",content:JSON.stringify(context)}],system,"company_analysis");
+     const generated=await callAgentChatModel(this.env,[{role:"user",content:JSON.stringify(context)}],system,"company_analysis",false,1800);
      const output=generated.text.slice(0,16000);
      const completedSteps=Array.isArray(plan.execution_steps)?[...(plan.execution_steps as Array<Record<string,unknown>>)]:[];
      const completedIndex=completedSteps.findIndex(item=>item.agentKey===specialist.agentKey&&item.status!=="completed");

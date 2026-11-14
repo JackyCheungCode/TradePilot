@@ -316,7 +316,7 @@ async function generateAgentPlan(env:Env,ownerId:string,goal:string,country:stri
 
 
 type ChatTurn={role:"user"|"assistant";content:string};
-export async function callAgentChatModel(env:Env,messages:ChatTurn[],systemOverride?:string,taskKey="agent_chat"):Promise<{text:string;model:string}>{
+export async function callAgentChatModel(env:Env,messages:ChatTurn[],systemOverride?:string,taskKey="agent_chat",jsonResponse=true,maxTokens=900):Promise<{text:string;model:string}>{
  const settings=await db<Array<{config:Record<string,unknown>}>>(env,"ai_provider_settings?id=eq.true&select=config&limit=1");
  const config=asRecord(settings?.[0]?.config),taskModels=asRecord(config.taskModels);
  const selectedModel=String(taskModels[taskKey]??taskModels.agent_planning??config.defaultModel??"@cf/google/gemma-4-26b-a4b-it");
@@ -328,7 +328,7 @@ export async function callAgentChatModel(env:Env,messages:ChatTurn[],systemOverr
  let raw="";
  if(String(provider.protocol)==="workers-ai"&&env.AI){
   const model=selectedModel.startsWith("@cf/")?selectedModel:String(provider.model??selectedModel);
-  raw=extractModelText(await env.AI.run(model,{messages:[{role:"system",content:system},...messages],response_format:{type:"json_object"},max_tokens:900}));
+  raw=extractModelText(await env.AI.run(model,{messages:[{role:"system",content:system},...messages],...(jsonResponse?{response_format:{type:"json_object"}}:{}),max_tokens:maxTokens}));
  }else{
   const id=String(provider.id??""),secrets:Record<string,string>={openai:"AI_PROVIDER_OPENAI_API_KEY",anthropic:"AI_PROVIDER_ANTHROPIC_API_KEY",gemini:"AI_PROVIDER_GEMINI_API_KEY",deepseek:"AI_PROVIDER_DEEPSEEK_API_KEY",qwen:"AI_PROVIDER_QWEN_API_KEY",zhipu:"AI_PROVIDER_ZHIPU_API_KEY",kimi:"AI_PROVIDER_KIMI_API_KEY",minimax:"AI_PROVIDER_MINIMAX_API_KEY",openrouter:"AI_PROVIDER_OPENROUTER_API_KEY",siliconflow:"AI_PROVIDER_SILICONFLOW_API_KEY",custom:"AI_PROVIDER_CUSTOM_API_KEY"};
   const key=(env as unknown as Record<string,unknown>)[secrets[id]??""];if(typeof key!=="string"||!key)throw new Error("小雅对话模型 API Key 未配置，请在「AI 与 API 集成」保存对应密钥。");
@@ -338,16 +338,16 @@ export async function callAgentChatModel(env:Env,messages:ChatTurn[],systemOverr
   if(!isPublicHttpsEndpoint(base))throw new Error("小雅模型 Base URL 必须是 HTTPS 公网地址。");
   let response:Response;
   if(protocol==="anthropic"){
-   response=await fetch(base+"/messages",{method:"POST",redirect:"manual",headers:{"x-api-key":key,"anthropic-version":"2023-06-01","content-type":"application/json"},body:JSON.stringify({model,max_tokens:900,system,messages:messages.map(m=>({role:m.role,content:m.content}))}),signal:AbortSignal.timeout(45000)});
+   response=await fetch(base+"/messages",{method:"POST",redirect:"manual",headers:{"x-api-key":key,"anthropic-version":"2023-06-01","content-type":"application/json"},body:JSON.stringify({model,max_tokens:maxTokens,system,messages:messages.map(m=>({role:m.role,content:m.content}))}),signal:AbortSignal.timeout(45000)});
    if(!response.ok)throw new Error("小雅模型请求失败（HTTP "+response.status+"）。");
    const body=await response.json() as Record<string,unknown>;raw=Array.isArray(body.content)?(body.content as unknown[]).map(item=>String(asRecord(item).text??"")).join("\n"):"";
   }else if(protocol==="gemini"){
    const contents=messages.map(m=>({role:m.role==="assistant"?"model":"user",parts:[{text:m.content}]}));
-   response=await fetch(base+"/models/"+encodeURIComponent(model)+":generateContent?key="+encodeURIComponent(key),{method:"POST",redirect:"manual",headers:{"content-type":"application/json"},body:JSON.stringify({systemInstruction:{parts:[{text:system}]},contents,generationConfig:{responseMimeType:"application/json",maxOutputTokens:900}}),signal:AbortSignal.timeout(45000)});
+   response=await fetch(base+"/models/"+encodeURIComponent(model)+":generateContent?key="+encodeURIComponent(key),{method:"POST",redirect:"manual",headers:{"content-type":"application/json"},body:JSON.stringify({systemInstruction:{parts:[{text:system}]},contents,generationConfig:{...(jsonResponse?{responseMimeType:"application/json"}:{}),maxOutputTokens:maxTokens}}),signal:AbortSignal.timeout(45000)});
    if(!response.ok)throw new Error("小雅模型请求失败（HTTP "+response.status+"）。");
    raw=extractModelText(await response.json());
   }else{
-   response=await fetch(base+"/chat/completions",{method:"POST",redirect:"manual",headers:{Authorization:"Bearer "+key,"Content-Type":"application/json"},body:JSON.stringify({model,messages:[{role:"system",content:system},...messages],response_format:{type:"json_object"},max_tokens:900}),signal:AbortSignal.timeout(45000)});
+   response=await fetch(base+"/chat/completions",{method:"POST",redirect:"manual",headers:{Authorization:"Bearer "+key,"Content-Type":"application/json"},body:JSON.stringify({model,messages:[{role:"system",content:system},...messages],response_format:{type:"json_object"},...(jsonResponse?{response_format:{type:"json_object"}}:{}),max_tokens:maxTokens}),signal:AbortSignal.timeout(45000)});
    if(!response.ok)throw new Error("小雅模型请求失败（HTTP "+response.status+"）。");
    raw=extractModelText(await response.json());
   }
