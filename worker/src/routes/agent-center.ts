@@ -80,7 +80,7 @@ async function parseMcpBody(response:Response):Promise<Record<string,unknown>>{
   return result;
 }
 async function mcpRequest(endpoint:string,headers:Record<string,string>,payload:Record<string,unknown>,sessionId?:string):Promise<{body:Record<string,unknown>;sessionId:string|null}>{
-  const response=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json, text/event-stream",...headers,...(sessionId?{"Mcp-Session-Id":sessionId}:{})},body:JSON.stringify(payload),signal:AbortSignal.timeout(20000)});
+  const response=await fetch(endpoint,{method:"POST",redirect:"manual",headers:{"Content-Type":"application/json","Accept":"application/json, text/event-stream",...headers,...(sessionId?{"Mcp-Session-Id":sessionId}:{})},body:JSON.stringify(payload),signal:AbortSignal.timeout(20000)});
   return {body:await parseMcpBody(response),sessionId:response.headers.get("Mcp-Session-Id")??sessionId??null};
 }
 function isPublicHttpsEndpoint(value:string):boolean{
@@ -158,6 +158,7 @@ async function executeRestTool(connection:ConnectionRow,tool:Record<string,unkno
   });
   const prefix=base.pathname.replace(/\/$/,"");
   const target=new URL(base.origin+prefix+resolvedPath);
+  if(target.protocol!=="https:"||target.hostname!==base.hostname||target.port!==base.port||target.origin!==base.origin)throw new Error("REST_TARGET_HOST_NOT_ALLOWED");
   const requestHeaders:Record<string,string>={Accept:"application/json",...headers};
   for(const parameter of parameters){
     const name=typeof parameter.name==="string"?parameter.name:"";
@@ -183,7 +184,7 @@ async function executeRestTool(connection:ConnectionRow,tool:Record<string,unkno
     if(Object.keys(content).length&&!content["application/json"]&&!content["application/*+json"])throw new Error("REST_REQUEST_BODY_CONTENT_TYPE_UNSUPPORTED");
     if(bodyValue!==undefined){body=JSON.stringify(bodyValue);requestHeaders["Content-Type"]="application/json";}
   }
-  const response=await fetch(target.toString(),{method,headers:requestHeaders,...(body!==undefined?{body}:{}),signal:AbortSignal.timeout(30000)});
+  const response=await fetch(target.toString(),{method,redirect:"manual",headers:requestHeaders,...(body!==undefined?{body}:{}),signal:AbortSignal.timeout(30000)});
   const contentLength=Number(response.headers.get("content-length")??0);
   if(contentLength>1000000)throw new Error("REST_RESPONSE_TOO_LARGE");
   const raw=await response.text();
@@ -205,7 +206,7 @@ async function executeExternalTool(env:Env,ownerId:string,connection:ConnectionR
   const toolName=String(tool.name??"");
   if(connection.protocol==="mcp")return executeMcpTool(connection,headers,toolName,args);
   if(connection.protocol==="rest_api")return executeRestTool(connection,tool,headers,args);
-  const response=await fetch(connection.endpoint_url,{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json",...headers},body:JSON.stringify({event:"tradepilot.agent.tool.invoke",run:{id:run.id,goal:run.goal},tool:{name:toolName,arguments:args}}),signal:AbortSignal.timeout(30000)});
+  const response=await fetch(connection.endpoint_url,{method:"POST",redirect:"manual",headers:{"Content-Type":"application/json","Accept":"application/json",...headers},body:JSON.stringify({event:"tradepilot.agent.tool.invoke",run:{id:run.id,goal:run.goal},tool:{name:toolName,arguments:args}}),signal:AbortSignal.timeout(30000)});
   const raw=await response.text();
   if(!response.ok)throw new Error("WEBHOOK_HTTP_"+response.status+": "+raw.slice(0,500));
   try{return raw?JSON.parse(raw):{accepted:true,status:response.status};}catch{return {accepted:true,status:response.status,response:raw.slice(0,20000)};}
