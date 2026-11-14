@@ -103,7 +103,6 @@
   overflow: hidden;
   padding: 8px 16px;
   color: var(--cds-text-secondary, #525252);
-  font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -147,7 +146,6 @@
   gap: 8px;
   overflow: hidden;
   color: var(--cds-text-secondary, #525252);
-  font-size: 12px;
   white-space: nowrap;
 }
 
