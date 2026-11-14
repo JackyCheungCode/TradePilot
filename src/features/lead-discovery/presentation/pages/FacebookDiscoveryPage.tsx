@@ -1,5 +1,5 @@
 import { useEffect,useState } from "react";
-import { Activity,LoaderCircle,Search,SlidersHorizontal,Building2,UserRound,MessageSquareText,Users,Video,CalendarDays,CheckCircle2,Terminal,Sparkles } from "lucide-react";
+import { Activity,Renew as LoaderCircle,Search,SettingsAdjust as SlidersHorizontal,Building as Building2,User as UserRound,Chat as MessageSquareText,UserMultiple as Users,Video,Calendar as CalendarDays,CheckmarkFilled as CheckCircle2,Terminal,MagicWand as Sparkles } from "@carbon/icons-react";
 import { toast } from "sonner";
 import { Badge,Button,Card,CardContent,CardHeader,CardTitle,Input,Checkbox,MultiSelect } from "@/shared/ui/primitives";
 import { PageControlPanel } from "@/shared/ui/page-layout";
