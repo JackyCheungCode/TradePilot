@@ -11,6 +11,7 @@ import { handleFacebookDiscovery } from "./routes/facebook-discovery";
 import { InstagramDiscoveryWorkflow } from "./workflows/instagram-discovery";
 import { handleInstagramDiscovery } from "./routes/instagram-discovery";
 import { handleAgentCenter } from "./routes/agent-center";
+import { AgentOrchestrationWorkflow } from "./workflows/agent-orchestration";
 
 export interface WorkerEnv {
  ASSETS: { fetch(request: Request): Promise<Response> };
@@ -32,9 +33,10 @@ export interface WorkerEnv {
  CONTACT_ENRICHMENT_WORKFLOW: { create(options:{id:string;params:{jobId:string;ownerId:string;recordIds:string[]}}):Promise<{id:string}> };
  FACEBOOK_DISCOVERY_WORKFLOW: { create(options:{id:string;params:{runId:string;ownerId:string;input:import("./routes/facebook-discovery").FacebookInput}}):Promise<{id:string}> };
  INSTAGRAM_DISCOVERY_WORKFLOW: { create(options:{id:string;params:{runId:string;ownerId:string;input:import("./routes/instagram-discovery").InstagramInput}}):Promise<{id:string}> };
+ AGENT_ORCHESTRATION_WORKFLOW: { create(options:{id:string;params:{runId:string;ownerId:string;input:DiscoveryRunInput;goal:string;specialists:Array<{agentKey:string;instruction:string}>}}):Promise<{id:string}> };
 }
 
-export { LeadDiscoveryWorkflow, ContactEnrichmentWorkflow, FacebookDiscoveryWorkflow, InstagramDiscoveryWorkflow };
+export { LeadDiscoveryWorkflow, ContactEnrichmentWorkflow, FacebookDiscoveryWorkflow, InstagramDiscoveryWorkflow, AgentOrchestrationWorkflow };
 
 export default {
  async fetch(request: Request, env: WorkerEnv): Promise<Response> {

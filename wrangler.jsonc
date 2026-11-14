@@ -33,6 +33,11 @@
       "class_name": "FacebookDiscoveryWorkflow"
     },
     {
+      "name": "tradepilot-agent-orchestration",
+      "binding": "AGENT_ORCHESTRATION_WORKFLOW",
+      "class_name": "AgentOrchestrationWorkflow"
+    },
+    {
       "name": "tradepilot-instagram-discovery",
       "binding": "INSTAGRAM_DISCOVERY_WORKFLOW",
       "class_name": "InstagramDiscoveryWorkflow"

@@ -3,15 +3,18 @@ import type { DiscoveryRunInput } from "./discovery";
 
 type Protocol = "rest_api" | "mcp" | "webhook";
 type AuthMode = "none" | "bearer" | "header" | "oauth2" | "webhook_secret";
-interface Env {
+export interface Env {
   SUPABASE_URL: string;
   SUPABASE_ANON_KEY: string;
   SUPABASE_SERVICE_ROLE_KEY: string;
   AGENT_ENCRYPTION_KEY?: string;
   SERPER_API_KEY?: string;
   SERPAPI_API_KEY?: string;
+  GOOGLE_MAPS_API_KEY?: string;
+  OVERPASS_API_URL?: string;
   AI?: {run(model:string,input:Record<string,unknown>):Promise<unknown>};
   LEAD_DISCOVERY_WORKFLOW?: { create(options:{id:string;params:{runId:string;ownerId:string;input:DiscoveryRunInput}}):Promise<{id:string}> };
+  AGENT_ORCHESTRATION_WORKFLOW?: { create(options:{id:string;params:{runId:string;ownerId:string;input:DiscoveryRunInput;goal:string;specialists:Array<{agentKey:string;instruction:string}>}}):Promise<{id:string}> };
 }
 type ConnectionRow = {
   id:string; owner_id:string; name:string; protocol:Protocol; endpoint_url:string;
@@ -222,7 +225,7 @@ type PlannerAction =
  | {type:"internal_discovery";query:string;country:string;limitPerCountry:number}
  | {type:"external_tool";connectionId:string;toolName:string;arguments:Record<string,unknown>}
  | {type:"needs_clarification";question:string};
-type PlannerResult={agentKey:string;summary:string;steps:string[];action:PlannerAction;model:string;fallback?:boolean};
+type PlannerResult={agentKey:string;summary:string;steps:string[];action:PlannerAction;specialists:Array<{agentKey:string;instruction:string}>;model:string;fallback?:boolean};
 function extractModelText(value:unknown):string{
  const root=asRecord(value);
  if(typeof root.response==="string")return root.response;
@@ -250,7 +253,7 @@ async function generateAgentPlan(env:Env,ownerId:string,goal:string,country:stri
  const providers=Array.isArray(config.providers)?config.providers.map(asRecord):[];
  const provider=providers.find(item=>item.model===selectedModel)??(selectedModel.startsWith("@cf/")?{id:"workers-ai",protocol:"workers-ai",baseUrl:"",model:selectedModel}:null);
  const tools=connections.filter(row=>row.status==="active").flatMap(row=>(row.protocol_tools??[]).map(tool=>({connectionId:row.id,connectionName:row.name,protocol:row.protocol,name:tool.name,description:tool.description??"",risk:tool.risk==="read_only"?"read_only":"approval_required",inputSchema:tool.inputSchema??{}})));
- const system="You are TradePilot's task planner for international B2B trade. Return ONLY strict JSON, no markdown. Schema: {agentKey:string,summary:string,steps:string[],action:{type:'internal_discovery',query:string,country:string,limitPerCountry:number}|{type:'external_tool',connectionId:string,toolName:string,arguments:object}|{type:'needs_clarification',question:string}}. Available agentKey values: buyer_development, market_research, company_research, lead_scoring, multilingual_sales, follow_up, trade_compliance. Choose exactly one executable action. For finding importers, distributors, wholesalers, buyers, or prospects use internal_discovery unless an exact suitable external tool is listed. For external_tool you MUST choose exact connectionId and toolName from the supplied list and provide arguments matching its schema. Never invent tools. If the goal is not executable with available tools, use needs_clarification. All read-only research/search tools may run automatically. Never plan sending email, CRM imports, writes, deletes, merges, purchases, or other side effects as automatic; choose the relevant write tool only if it will be gated by human approval. Country must be a two-letter ISO code. Keep steps to 2-5 concise actions.";
+ const system="You are TradePilot's task planner for international B2B trade. Return ONLY strict JSON, no markdown. Schema: {agentKey:string,summary:string,steps:string[],specialists:Array<{agentKey:string,instruction:string}>,action:{type:'internal_discovery',query:string,country:string,limitPerCountry:number}|{type:'external_tool',connectionId:string,toolName:string,arguments:object}|{type:'needs_clarification',question:string}}. Available agentKey values: buyer_development, market_research, company_research, lead_scoring, multilingual_sales, follow_up, trade_compliance. Choose exactly one executable action. For finding importers, distributors, wholesalers, buyers, or prospects use internal_discovery unless an exact suitable external tool is listed. For external_tool you MUST choose exact connectionId and toolName from the supplied list and provide arguments matching its schema. Never invent tools. If the goal is not executable with available tools, use needs_clarification. All read-only research/search tools may run automatically. Never plan sending email, CRM imports, writes, deletes, merges, purchases, or other side effects as automatic; choose the relevant write tool only if it will be gated by human approval. Country must be a two-letter ISO code. Keep steps to 2-5 concise actions. For buyer discovery, propose a sequence of 1-3 specialist agents AFTER the discovery action, chosen from company_research, market_research, lead_scoring, trade_compliance. Each specialist must receive a short concrete instruction based on the goal and the previous discovery results. Never include email sending or CRM import. For non-discovery research, specialists may be empty. The specialists are sequential and each receives prior specialist outputs.";
  const user=JSON.stringify({goal,marketCountry:country,searchEngine,availableTools:tools});
  let raw="";
  if(provider&&String(provider.protocol)==="workers-ai"&&env.AI){
@@ -279,7 +282,7 @@ async function generateAgentPlan(env:Env,ownerId:string,goal:string,country:stri
  }else{
    const normalized=goal.toLowerCase();
    if(/importer|buyer|distributor|wholesaler|采购商|进口商|经销商|批发商|买家|潜客|客户开发/.test(normalized)){
-     return {agentKey:"buyer_development",summary:"使用 TradePilot 原生搜索发现目标市场买家。",steps:["根据行业和目标市场构建搜索条件","调用搜索引擎发现企业官网与潜在买家","将结果写入统一搜索结果中心"],action:{type:"internal_discovery",query:goal,country,limitPerCountry:50},model:"deterministic-fallback",fallback:true};
+     return {agentKey:"buyer_development",summary:"使用 TradePilot 原生搜索发现目标市场买家。",steps:["根据行业和目标市场构建搜索条件","调用搜索引擎发现企业官网与潜在买家","将结果写入统一搜索结果中心"],action:{type:"internal_discovery",query:goal,country,limitPerCountry:50},specialists:[],model:"deterministic-fallback",fallback:true};
    }
    return {agentKey:"company_research",summary:"当前未配置可用规划模型，无法可靠判断所需工具。",steps:["配置 AI 规划模型后重新提交任务"],action:{type:"needs_clarification",question:"请先在「AI 与 API 集成」配置一个可用模型，再由 Agent 自动规划此任务。"},model:"none",fallback:true};
  }
@@ -311,14 +314,15 @@ async function generateAgentPlan(env:Env,ownerId:string,goal:string,country:stri
 
 
 type ChatTurn={role:"user"|"assistant";content:string};
-async function callAgentChatModel(env:Env,messages:ChatTurn[]):Promise<{text:string;model:string}>{
+export async function callAgentChatModel(env:Env,messages:ChatTurn[],systemOverride?:string,taskKey="agent_chat"):Promise<{text:string;model:string}>{
  const settings=await db<Array<{config:Record<string,unknown>}>>(env,"ai_provider_settings?id=eq.true&select=config&limit=1");
  const config=asRecord(settings?.[0]?.config),taskModels=asRecord(config.taskModels);
- const selectedModel=String(taskModels.agent_chat??taskModels.agent_planning??config.defaultModel??"@cf/google/gemma-4-26b-a4b-it");
+ const selectedModel=String(taskModels[taskKey]??taskModels.agent_planning??config.defaultModel??"@cf/google/gemma-4-26b-a4b-it");
  const providers=Array.isArray(config.providers)?config.providers.map(asRecord):[];
  const provider=providers.find(item=>item.model===selectedModel)??(selectedModel.startsWith("@cf/")?{id:"workers-ai",protocol:"workers-ai",model:selectedModel}:null);
  if(!provider)throw new Error("尚未配置小雅对话模型，请在「AI 与 API 集成」设置 Agent 对话模型。");
- const system="你是 TradePilot 的总协调 Agent「小雅」，专门协助外贸团队开发全球 B2B 买家。请使用中文，语气专业、简洁、主动。结合对话历史理解上下文，不要重复询问已提供的信息。你需要判断用户是否已提出可执行任务。只返回严格 JSON：{reply:string,task:{goal:string,agentKey:string,country:string,mode:'planner'|'internal'|'external'}|null}。如果缺少关键条件（例如目标客户/产品或目标市场），task=null，并在 reply 中只追问最关键的一项；不要凭空补国家、产品或行业。若用户明确 @ 某 Agent，agentKey 必须按以下映射：buyer_development,market_research,company_research,lead_scoring,multilingual_sales,follow_up,trade_compliance；否则使用 auto。国家使用 ISO 3166-1 alpha-2；不确定时 task=null 并追问。mode 默认 planner。task.goal 应整理成清晰完整目标，保留对话中已确认的条件。绝不自行执行任务，只生成待用户确认的任务建议。邮件发送和批量导入不得建议自动执行。";
+ const defaultSystem="你是 TradePilot 的总协调 Agent「小雅」，专门协助外贸团队开发全球 B2B 买家。请使用中文，语气专业、简洁、主动。结合对话历史理解上下文，不要重复询问已提供的信息。你需要判断用户是否已提出可执行任务。只返回严格 JSON：{reply:string,task:{goal:string,agentKey:string,country:string,mode:'planner'|'internal'|'external'}|null}。如果缺少关键条件（例如目标客户/产品或目标市场），task=null，并在 reply 中只追问最关键的一项；不要凭空补国家、产品或行业。若用户明确 @ 某 Agent，agentKey 必须按以下映射：buyer_development,market_research,company_research,lead_scoring,multilingual_sales,follow_up,trade_compliance；否则使用 auto。国家使用 ISO 3166-1 alpha-2；不确定时 task=null 并追问。mode 默认 planner。task.goal 应整理成清晰完整目标，保留对话中已确认的条件。绝不自行执行任务，只生成待用户确认的任务建议。邮件发送和批量导入不得建议自动执行。";
+ const system=systemOverride??defaultSystem;
  let raw="";
  if(String(provider.protocol)==="workers-ai"&&env.AI){
   const model=selectedModel.startsWith("@cf/")?selectedModel:String(provider.model??selectedModel);
@@ -598,7 +602,7 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
       const taskCode="AGENT-"+new Date().toISOString().slice(0,10).replace(/-/g,"")+"-"+runId.replace(/-/g,"").slice(0,6).toUpperCase();
       const initialStatus=internalSearch||actionType==="external_tool"?"queued":"planned";
       const agentKey=requestedAgentKey||planner?.agentKey||"buyer_development";
-      const plan={planner:{summary:planner?.summary??"直接执行用户指定的买家发现任务。",steps:planner?.steps??["启动 TradePilot 原生买家发现搜索"],model:planner?.model??"manual",fallback:planner?.fallback??false},execution_state:initialStatus,action:planner?.action??{type:"internal_discovery",country,searchEngine:engine,limitPerCountry:limit},policy:{search_and_analysis:"automatic",send_email:"approval_required",bulk_import:"approval_required"}};
+      const plan={planner:{summary:planner?.summary??"直接执行用户指定的买家发现任务。",steps:planner?.steps??["启动 TradePilot 原生买家发现搜索"],model:planner?.model??"manual",fallback:planner?.fallback??false},execution_state:initialStatus,action:planner?.action??{type:"internal_discovery",country,searchEngine:engine,limitPerCountry:limit},specialists:planner?.specialists??[],execution_steps:[...(internalSearch?[{agentKey:"buyer_development",title:"全球买家发现",status:"queued"}]:[]),...(planner?.specialists??[]).map(s=>({agentKey:s.agentKey,title:s.agentKey,instruction:s.instruction,status:"queued"}))],policy:{search_and_analysis:"automatic",send_email:"approval_required",bulk_import:"approval_required"}};
       const rows=await db<Array<{id:string;agent_key:string;goal:string;status:string;created_at:string}>>(env,"agent_runs",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({id:runId,owner_id:ownerId,agent_key:agentKey,goal,status:initialStatus,plan,connection_id:connection?.id??null})});
       const run=rows?.[0];if(!run)return errorResponse(request,"RUN_CREATE_FAILED","Agent 任务创建失败。",500);
       try{
@@ -607,7 +611,12 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
         await db(env,"discovery_run_logs",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({run_id:runId,owner_id:ownerId,level:"info",message:"Agent 规划完成："+userMessage,payload:{agentKey,steps:plan.planner.steps,actionType}})});
         await db(env,"agent_run_events",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({owner_id:ownerId,run_id:runId,event_type:"plan_created",message:"Agent 已自动选择专业角色并生成执行方案。",payload:{agentKey,steps:plan.planner.steps,actionType,model:plan.planner.model}})});
         if(internalSearch&&input){
-          await env.LEAD_DISCOVERY_WORKFLOW!.create({id:runId,params:{runId,ownerId,input}});
+          if(plannerMode&&(planner?.specialists.length??0)>0){
+            if(!env.AGENT_ORCHESTRATION_WORKFLOW)throw new Error("AGENT_ORCHESTRATION_WORKFLOW_NOT_CONFIGURED");
+            await env.AGENT_ORCHESTRATION_WORKFLOW.create({id:runId,params:{runId,ownerId,input,goal,specialists:planner!.specialists}});
+          }else{
+            await env.LEAD_DISCOVERY_WORKFLOW!.create({id:runId,params:{runId,ownerId,input}});
+          }
         }else if(actionType==="external_tool"&&connection&&selectedTool&&planner?.action.type==="external_tool"){
           const risk=selectedTool.risk==="read_only"?"read_only":"approval_required";
           const args=planner.action.arguments;
