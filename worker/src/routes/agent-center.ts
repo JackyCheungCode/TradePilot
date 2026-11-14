@@ -397,6 +397,40 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
       const rows=await db<Array<Record<string,unknown>>>(env,"agent_workflows?select=id,name,description,enabled,definition,created_at,updated_at",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({owner_id:ownerId,name,description,enabled:false,definition:{steps:normalized},updated_at:new Date().toISOString()})});
       return successResponse(request,rows?.[0]??{},201);
     }
+    const workflowRunMatch=path.match(/^\/api\/v1\/agent\/workflows\/([0-9a-f-]{36})\/run$/i);
+    if(workflowRunMatch&&request.method==="POST"){
+      let body:Record<string,unknown>;try{body=await request.json() as Record<string,unknown>;}catch{return errorResponse(request,"INVALID_JSON","请求内容不是有效 JSON。",400);}
+      const goal=typeof body.goal==="string"?body.goal.trim():"",country=typeof body.country==="string"?body.country.trim().toUpperCase():"";
+      if(goal.length<2||goal.length>10000||!/^[A-Z]{2}$/.test(country))return errorResponse(request,"VALIDATION_ERROR","请填写任务目标和有效的 ISO 国家代码。",400);
+      if(!env.SERPER_API_KEY||!env.LEAD_DISCOVERY_WORKFLOW||!env.AGENT_ORCHESTRATION_WORKFLOW)return errorResponse(request,"WORKFLOW_NOT_CONFIGURED","买家发现或 Agent 编排服务尚未配置。",503);
+      const workflows=await db<Array<{id:string;name:string;description:string;enabled:boolean;definition:Record<string,unknown>}>>(env,"agent_workflows?id=eq."+workflowRunMatch[1]+"&owner_id=eq."+ownerId+"&select=id,name,description,enabled,definition&limit=1");
+      const workflow=workflows?.[0];if(!workflow)return errorResponse(request,"WORKFLOW_NOT_FOUND","工作流不存在。",404);
+      if(!workflow.enabled)return errorResponse(request,"WORKFLOW_DISABLED","请先启用该工作流，再启动执行。",409);
+      const rawSteps=Array.isArray(workflow.definition.steps)?workflow.definition.steps.map(asRecord):[];
+      if(rawSteps.length<1||rawSteps.length>12||rawSteps[0]?.agentKey!=="buyer_development")return errorResponse(request,"WORKFLOW_INVALID","当前工作流必须以全球买家开发 Agent 开始。",400);
+      const specialists=rawSteps.slice(1).map(item=>({agentKey:String(item.agentKey??""),instruction:String(item.instruction??"").trim()}));
+      const valid=new Set(["company_research","market_research","lead_scoring","trade_compliance"]);
+      if(specialists.length>3||specialists.some(item=>!valid.has(item.agentKey)||!item.instruction))return errorResponse(request,"WORKFLOW_INVALID","后续步骤只允许配置最多三个有效的专业分析 Agent。",400);
+      const profiles=await db<Array<{agent_key:string;enabled:boolean}>>(env,"agent_profiles?owner_id=eq."+ownerId+"&select=agent_key,enabled");
+      const disabled=new Set((profiles??[]).filter(item=>!item.enabled).map(item=>item.agent_key));
+      if(specialists.some(item=>disabled.has(item.agentKey)))return errorResponse(request,"AGENT_DISABLED","工作流包含已停用的专业 Agent，请先启用或修改工作流。",409);
+      const runId=crypto.randomUUID(),taskCode="AGENT-"+new Date().toISOString().slice(0,10).replace(/-/g,"")+"-"+runId.replace(/-/g,"").slice(0,6).toUpperCase();
+      const input:DiscoveryRunInput={countries:[country],query:goal,limitPerCountry:50,providers:[],channel:"search_engine",searchEngines:["serper"],searchTypes:["web"],searchLanguage:"en",advancedQuery:goal,excludeCategories:[]};
+      const plan={planner:{summary:workflow.name,steps:rawSteps.map(item=>String(item.instruction??item.agentKey)),model:"saved-workflow"},execution_state:"queued",workflowId:workflow.id,specialists,execution_steps:[{agentKey:"buyer_development",title:"全球买家发现",status:"queued"},...specialists.map(item=>({agentKey:item.agentKey,title:item.agentKey,instruction:item.instruction,status:"queued"}))],policy:{search_and_analysis:"automatic",send_email:"approval_required",bulk_import:"approval_required"}};
+      const created=await db<Array<{id:string}>>(env,"agent_runs",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({id:runId,owner_id:ownerId,agent_key:"buyer_development",goal,status:"queued",plan})});
+      if(!created?.length)return errorResponse(request,"RUN_CREATE_FAILED","无法创建 Agent 执行任务。",500);
+      try{
+        await db(env,"discovery_runs",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({id:runId,owner_id:ownerId,query:goal,countries:[country],limit_per_country:50,status:"queued",progress:0,discovered_count:0,created_lead_count:0,message:"已启动工作流："+workflow.name,task_code:taskCode,channel:"agent",providers:["serper"],search_config:{searchEngine:"serper",searchTypes:["web"],searchLanguage:"en",agentKey:"buyer_development",workflowId:workflow.id}})});
+        await writeRunLog(env,ownerId,runId,"info","启动已保存的 Agent 工作流："+workflow.name,{workflowId:workflow.id,specialists:specialists.map(item=>item.agentKey)});
+        await env.AGENT_ORCHESTRATION_WORKFLOW.create({id:runId,params:{runId,ownerId,input,goal,specialists}});
+      }catch(error){
+        const message="工作流启动失败："+String(error).slice(0,180);
+        await db(env,"agent_runs?id=eq."+runId+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"failed",error_message:message,completed_at:new Date().toISOString()})});
+        await db(env,"discovery_runs?id=eq."+runId+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"failed",progress:100,message})});
+        return errorResponse(request,"WORKFLOW_START_FAILED",message,503);
+      }
+      return successResponse(request,{runId,taskCode,status:"queued",workflowId:workflow.id,message:"工作流已进入统一任务执行中心。"},202);
+    }
     const workflowMatch=path.match(/^\/api\/v1\/agent\/workflows\/([0-9a-f-]{36})(?:\/(test|enable))?$/i);
     if(workflowMatch&&request.method==="PUT"&&!workflowMatch[2]){
       let body:Record<string,unknown>;try{body=await request.json() as Record<string,unknown>;}catch{return errorResponse(request,"INVALID_JSON","请求内容不是有效 JSON。",400);}

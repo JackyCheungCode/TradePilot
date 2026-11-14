@@ -21,6 +21,7 @@ export const agentApi={
  listWorkflows:()=>request<AgentWorkflow[]>("/api/v1/agent/workflows"),
  createWorkflow:(input:{name:string;description:string;definition:AgentWorkflow["definition"]})=>request<AgentWorkflow>("/api/v1/agent/workflows",{method:"POST",body:JSON.stringify(input)}),
  saveWorkflow:(id:string,input:{name:string;description:string;enabled:boolean;definition:AgentWorkflow["definition"]})=>request<AgentWorkflow>("/api/v1/agent/workflows/"+encodeURIComponent(id),{method:"PUT",body:JSON.stringify(input)}),
+ runWorkflow:(id:string,input:{goal:string;country:string})=>request<{runId:string;taskCode:string;status:string;message:string}>("/api/v1/agent/workflows/"+encodeURIComponent(id)+"/run",{method:"POST",body:JSON.stringify(input)}),
  testWorkflow:(id:string)=>request<{valid:boolean;stepCount:number;disabledAgents:string[];mode:string;message:string}>("/api/v1/agent/workflows/"+encodeURIComponent(id)+"/test",{method:"POST"}),
  deleteWorkflow:(id:string)=>request<{id:string;deleted:boolean}>("/api/v1/agent/workflows/"+encodeURIComponent(id),{method:"DELETE"}),
  listProfiles:()=>request<AgentProfile[]>("/api/v1/agent/profiles"),
