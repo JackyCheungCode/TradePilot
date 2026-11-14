@@ -4,7 +4,7 @@ export interface TradeProduct {id:string;sku?:string|null;name:string;descriptio
 export interface TradeOrderItem {id:string;product_id?:string|null;product_name:string;sku?:string|null;quantity:number;unit:string;unit_price:number;discount_amount:number;tax_rate:number;amount:number;line_number:number;}
 export interface TradeOrder {id:string;order_number:string;order_type:"sales"|"purchase";title:string;status:string;currency_code:string;created_at:string;updated_at:string;trade_order_items?:TradeOrderItem[];}
 export interface TradeDocument {id:string;document_number:string;document_type:string;title:string;status:string;locale:string;currency_code:string;order_id:string;template_id?:string|null;current_version:number;created_at:string;content?:Record<string,unknown>;totals?:Record<string,unknown>;}
-export interface TradeDocumentDetail extends TradeDocument {trade_document_versions?:Array<{version_number:number;content_snapshot:Record<string,unknown>;totals_snapshot:Record<string,unknown>;created_at:string}>;}
+export interface TradeDocumentDetail extends TradeDocument {trade_document_versions?:Array<{version_number:number;content_snapshot:Record<string,unknown>;totals_snapshot:Record<string,unknown>;template_snapshot:Record<string,unknown>;created_at:string}>;}
 export interface TradeDocumentTemplate {id:string;name:string;document_type:string;locale:string;description:string;is_default:boolean;is_active:boolean;template_config:Record<string,unknown>;created_at:string;updated_at:string;}
 async function request<T>(path:string,init?:RequestInit):Promise<T>{
  const {data:{session}}=await getSupabaseClient().auth.getSession();if(!session?.access_token)throw new Error("请先登录 TradePilot。");
