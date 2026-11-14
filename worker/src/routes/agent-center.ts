@@ -147,7 +147,7 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
       await db(env,"agent_runs?id=eq."+runId+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"awaiting_approval",updated_at:new Date().toISOString()})});
       return successResponse(request,approval,201);
     }
-    const approvalDecision=path.match(/^\\/api\\/v1\\/agent\\/approvals\\/([0-9a-f-]{36})\\/decision$/i);
+    const approvalDecision=path.match(/^\/api\/v1\/agent\/approvals\/([0-9a-f-]{36})\/decision$/i);
     if(approvalDecision&&request.method==="POST"){
       let body:Record<string,unknown>;try{body=await request.json() as Record<string,unknown>;}catch{return errorResponse(request,"INVALID_JSON","请求内容不是有效 JSON。",400);}
       const decision=body.decision;
