@@ -49,16 +49,16 @@ export function Button({
 }
 
 export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <CarbonTile className={cn("rounded-md border-0 bg-layer text-text-primary shadow-none", className)} {...props} />;
+  return <CarbonTile className={className} {...props} />;
 }
 export function CardHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return <div className={cn("flex flex-col gap-1.5 p-4", className)} {...props} />;
 }
 export function CardTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
-  return <h3 className={cn("font-semibold leading-none tracking-tight", className)} {...props} />;
+  return <h3 className={cn("cds--type-heading-compact-01", className)} {...props} />;
 }
 export function CardDescription({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
-  return <p className={cn("text-sm text-text-secondary", className)} {...props} />;
+  return <p className={cn("cds--type-body-compact-01", className)} {...props} />;
 }
 export function CardContent({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return <div className={cn("p-4 pt-0", className)} {...props} />;
@@ -71,12 +71,12 @@ export function Badge({
 }: React.HTMLAttributes<HTMLSpanElement> & {
   variant?: "default" | "secondary" | "outline" | "success";
 }) {
-  const type = variant === "success" ? "green" : variant === "default" ? "blue" : "gray";
+  const type = variant === "success" ? "green" : variant === "default" ? "blue" : variant === "outline" ? "outline" : "gray";
   return (
     <CarbonTag
       type={type}
       size="sm"
-      className={cn(variant === "outline" && "border border-current bg-transparent", className)}
+      className={className}
       {...props}
     />
   );
@@ -245,7 +245,7 @@ export function Combobox({
       items={options}
       selectedItem={selected}
       itemToString={(item) => item?.label ?? ""}
-      itemToElement={(item) => <span className="flex items-center gap-2">{item.icon}{<span className="flex flex-col"><span>{item.label}</span>{item.description ? <span className="text-xs text-text-secondary">{item.description}</span> : null}</span>}</span>}
+      itemToElement={(item) => <span className="flex items-center gap-2">{item.icon}{<span className="flex flex-col"><span>{item.label}</span>{item.description ? <span className="cds--type-helper-text-01">{item.description}</span> : null}</span>}</span>}
       onChange={({ selectedItem }) => onValueChange(selectedItem?.value ?? "")}
       placeholder={searchPlaceholder || placeholder}
       titleText=""
