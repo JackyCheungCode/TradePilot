@@ -7,7 +7,7 @@ import "./styles/globals.css";
 import "./styles/design-tokens.css";
 import "./styles/reset.css";
 import "./styles/carbon.scss";
-import "@carbon/charts-react/dist/styles.css";
+import "@carbon/charts-react/styles.css";
 import "@aora-bot/react/styles.css";
 
 const rootElement = document.getElementById("root");
