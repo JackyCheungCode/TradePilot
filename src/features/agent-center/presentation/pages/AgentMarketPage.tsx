@@ -5,6 +5,7 @@ import {
   Dropdown,
   Grid,
   InlineNotification,
+  Layer,
   Search,
   Tag,
   TextArea,
@@ -149,13 +150,13 @@ export function AgentMarketPage() {
         </Column>
         <Column sm={4} md={4} lg={5}>
           <Tile className="tp-agent-market-metric">
-            <p className="tp-agent-market-metric__value">{enabledCount ?? "—"}</p>
+            <p className="tp-agent-market-metric__value cds--type-heading-05">{enabledCount ?? "—"}</p>
             <p className="tp-agent-market-metric__label cds--type-body-compact-01">{profileLoadError ? "启用状态暂不可用" : profilesLoaded ? "已启用" : "正在读取启用状态"}</p>
           </Tile>
         </Column>
         <Column sm={4} md={4} lg={6}>
           <Tile className="tp-agent-market-metric">
-            <p className="tp-agent-market-metric__value">{activeConnectionCount ?? "—"}</p>
+            <p className="tp-agent-market-metric__value cds--type-heading-05">{activeConnectionCount ?? "—"}</p>
             <p className="tp-agent-market-metric__label cds--type-body-compact-01">{connectionLoadError ? "外部连接状态暂不可用" : "已验证的外部 Agent 连接"}</p>
           </Tile>
         </Column>
@@ -255,6 +256,7 @@ export function AgentMarketPage() {
               <p className="cds--type-body-01">搜索、研究和分析按系统预算策略执行；发送消息、批量导入及其他外部写操作仍需人工审批。</p>
             </Column>
           </Grid>
+          <Layer level={1} className="tp-agent-market-prompt-layer">
           <div className="tp-agent-market-prompt">
             <TextArea
               id="agent-system-prompt"
@@ -269,6 +271,7 @@ export function AgentMarketPage() {
               <Button disabled={savingPrompt || Boolean(profileLoadError)} onClick={() => void savePrompt()} renderIcon={Checkmark}>保存专业指令</Button>
             </div>
           </div>
+          </Layer>
         </section>
       )}
 
