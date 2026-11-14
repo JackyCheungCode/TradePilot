@@ -297,3 +297,53 @@
     width: 104px;
   }
 }
+
+
+/* Predictable responsive page canvas: one wrapper owns the page width and gutters. */
+.tp-page-canvas {
+  width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+.tp-page-root {
+  width: 100%;
+  min-width: 0;
+  max-width: 1600px;
+  margin-inline: auto;
+}
+.tp-page-root > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Mobile navigation is an overlay, never part of the document flow. */
+.tp-carbon-mobile-nav {
+  isolation: isolate;
+  overscroll-behavior: contain;
+}
+.tp-carbon-mobile-nav__backdrop {
+  display: block;
+  cursor: pointer;
+}
+.tp-carbon-mobile-nav__panel {
+  z-index: 1;
+  height: 100dvh;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.tp-carbon-mobile-nav__panel .tp-carbon-side-nav {
+  height: calc(100dvh - 48px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+@media (max-width: 767px) {
+  .tp-carbon-main {
+    width: 100%;
+    min-width: 0;
+  }
+  .tp-carbon-header {
+    padding-inline-end: env(safe-area-inset-right);
+  }
+  .tp-page-root {
+    padding: 12px;
+  }
+}
