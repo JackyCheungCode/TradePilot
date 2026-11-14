@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Search, X } from "lucide-react";
+import { Search, Close } from "@carbon/icons-react";
 import { cn } from "@/shared/lib/utils";
 import { Tag as CarbonTag } from "@carbon/react";
 import { Button, Input } from "@/shared/ui/primitives";
@@ -37,7 +37,7 @@ export function SearchControlPanel({
         {filters}
         {activeFilters && onClear ? (
           <Button type="button" variant="ghost" size="sm" onClick={onClear} className="h-9">
-            <X aria-hidden="true" className="h-3.5 w-3.5" />清除筛选
+            <Close aria-hidden="true" className="h-3.5 w-3.5" />清除筛选
           </Button>
         ) : null}
       </div>
