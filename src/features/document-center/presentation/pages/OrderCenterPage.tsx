@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ArrowUpRight, CheckCircle2, ClipboardList, FileText, RefreshCw, Search, ShoppingCart, Truck } from "lucide-react";
+import { ArrowUpRight, CheckCircle2, ClipboardList, FileText, Pencil, RefreshCw, Search, ShoppingCart, Truck } from "lucide-react";
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input } from "@/shared/ui/primitives";
 import { tradeApi, type TradeDocument, type TradeOrder } from "@/features/document-center/infrastructure/trade-api";
 
@@ -21,6 +21,15 @@ export function OrderCenterPage({ onCreateQuotation }: { onCreateQuotation: () =
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [busyId, setBusyId] = useState("");
+  const [editingOrderId, setEditingOrderId] = useState("");
+  const [orderDraft, setOrderDraft] = useState({
+    title: "", customer_reference: "", trade_date: "", validity_date: "", delivery_date: "",
+    payment_terms: "", pricelist_name: "", fiscal_position: "", incoterms_code: "", incoterms_version: "2020", named_place: "",
+    shipping_policy: "asap", origin_location: "", destination_location: "", salesperson_name: "", sales_team: "",
+    source_document: "", campaign: "", medium: "", source: "", signature_required: false, payment_required: false, prepayment_percent: "",
+    invoice_street: "", invoice_city: "", invoice_state: "", invoice_zip: "", invoice_country: "",
+    delivery_street: "", delivery_city: "", delivery_state: "", delivery_zip: "", delivery_country: "",
+  });
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -48,7 +57,54 @@ export function OrderCenterPage({ onCreateQuotation }: { onCreateQuotation: () =
     const related = item.trade_orders?.order_number ?? "";
     return (item.document_number + " " + item.title + " " + related).toLowerCase().includes(search.toLowerCase());
   }), [quotations, search]);
-  const visibleQuotes = view === "sales" ? filteredQuotes.filter((item) => item.document_type === "quotation") : view === "purchase" ? filteredQuotes.filter((item) => item.document_type === "request_for_quotation") : filteredQuotes;
+  
+
+  const beginEditOrder = (order: TradeOrder) => {
+    const invoice = order.invoice_address ?? {}, delivery = order.delivery_address ?? {};
+    setEditingOrderId(order.id);
+    setOrderDraft({
+      title: order.title ?? "", customer_reference: order.customer_reference ?? "", trade_date: order.trade_date ?? "",
+      validity_date: order.validity_date ?? "", delivery_date: order.delivery_date ?? "", payment_terms: order.payment_terms ?? "",
+      pricelist_name: order.pricelist_name ?? "", fiscal_position: order.fiscal_position ?? "", incoterms_code: order.incoterms_code ?? "",
+      incoterms_version: order.incoterms_version ?? "2020", named_place: order.named_place ?? "", shipping_policy: order.shipping_policy ?? "asap",
+      origin_location: order.origin_location ?? "", destination_location: order.destination_location ?? "", salesperson_name: order.salesperson_name ?? "",
+      sales_team: order.sales_team ?? "", source_document: order.source_document ?? "", campaign: order.campaign ?? "", medium: order.medium ?? "",
+      source: order.source ?? "", signature_required: Boolean(order.signature_required), payment_required: Boolean(order.payment_required),
+      prepayment_percent: order.prepayment_percent == null ? "" : String(order.prepayment_percent),
+      invoice_street: String(invoice.street ?? invoice.address_line1 ?? ""), invoice_city: String(invoice.city ?? ""),
+      invoice_state: String(invoice.state ?? ""), invoice_zip: String(invoice.zip ?? invoice.postal_code ?? ""), invoice_country: String(invoice.country ?? ""),
+      delivery_street: String(delivery.street ?? delivery.address_line1 ?? ""), delivery_city: String(delivery.city ?? ""),
+      delivery_state: String(delivery.state ?? ""), delivery_zip: String(delivery.zip ?? delivery.postal_code ?? ""), delivery_country: String(delivery.country ?? ""),
+    });
+  };
+
+  const saveOrderDetails = async () => {
+    const order = orders.find((item) => item.id === editingOrderId);
+    if (!order) return;
+    if (orderDraft.prepayment_percent && (!Number.isFinite(Number(orderDraft.prepayment_percent)) || Number(orderDraft.prepayment_percent) < 0 || Number(orderDraft.prepayment_percent) > 100)) {
+      toast.error("预付款比例必须在 0 到 100 之间"); return;
+    }
+    setBusyId(order.id);
+    try {
+      await tradeApi.updateOrder(order.id, {
+        title: orderDraft.title.trim(), customer_reference: orderDraft.customer_reference.trim(),
+        trade_date: orderDraft.trade_date || null, validity_date: orderDraft.validity_date || null, delivery_date: orderDraft.delivery_date || null,
+        payment_terms: orderDraft.payment_terms, pricelist_name: orderDraft.pricelist_name, fiscal_position: orderDraft.fiscal_position,
+        incoterms_code: orderDraft.incoterms_code.toUpperCase(), incoterms_version: orderDraft.incoterms_version, named_place: orderDraft.named_place,
+        shipping_policy: orderDraft.shipping_policy, origin_location: orderDraft.origin_location, destination_location: orderDraft.destination_location,
+        salesperson_name: orderDraft.salesperson_name, sales_team: orderDraft.sales_team, source_document: orderDraft.source_document,
+        campaign: orderDraft.campaign, medium: orderDraft.medium, source: orderDraft.source,
+        signature_required: orderDraft.signature_required, payment_required: orderDraft.payment_required,
+        prepayment_percent: orderDraft.prepayment_percent ? Number(orderDraft.prepayment_percent) : null,
+        invoice_address: { street: orderDraft.invoice_street, city: orderDraft.invoice_city, state: orderDraft.invoice_state, zip: orderDraft.invoice_zip, country: orderDraft.invoice_country },
+        delivery_address: { street: orderDraft.delivery_street, city: orderDraft.delivery_city, state: orderDraft.delivery_state, zip: orderDraft.delivery_zip, country: orderDraft.delivery_country },
+      });
+      toast.success("订单业务资料已保存");
+      setEditingOrderId("");
+      await refresh();
+    } catch (error) { toast.error(error instanceof Error ? error.message : "订单资料保存失败"); }
+    finally { setBusyId(""); }
+  };
 
   const confirmQuote = async (quote: TradeDocument) => {
     setBusyId(quote.id);
@@ -123,9 +179,49 @@ export function OrderCenterPage({ onCreateQuotation }: { onCreateQuotation: () =
               <div className="flex flex-wrap gap-2">
                 {order.status === "draft" && <Button size="sm" onClick={() => void changeOrderStatus(order, "active")} disabled={busyId === order.id}>开始执行</Button>}
                 {order.status === "active" && <><Button size="sm" variant="outline" onClick={() => void changeOrderStatus(order, "completed")} disabled={busyId === order.id}>标记完成</Button><Button size="sm" variant="ghost" onClick={() => void changeOrderStatus(order, "cancelled")} disabled={busyId === order.id}>取消</Button></>}
-                <Button size="sm" variant="ghost" onClick={onCreateQuotation}>制作单据 <ArrowUpRight className="ml-1 h-3.5 w-3.5" /></Button>
+                <Button size="sm" variant="outline" onClick={() => beginEditOrder(order)}><Pencil className="mr-1 h-3.5 w-3.5" />编辑</Button><Button size="sm" variant="ghost" onClick={onCreateQuotation}>制作单据 <ArrowUpRight className="ml-1 h-3.5 w-3.5" /></Button>
               </div>
             </div>
+            {editingOrderId === order.id && <div className="mt-4 space-y-4 border-t pt-4">
+              <div><p className="font-medium">订单资料</p><p className="text-xs text-muted-foreground">按 Odoo 销售订单字段分组维护；地址、付款、交付与来源信息会保存到业务档案。</p></div>
+              <div className="space-y-2"><p className="text-xs font-semibold text-muted-foreground">订单与报价信息</p><div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                <Input value={orderDraft.title} onChange={(e) => setOrderDraft((d) => ({ ...d, title: e.target.value }))} placeholder="订单名称" />
+                <Input value={orderDraft.customer_reference} onChange={(e) => setOrderDraft((d) => ({ ...d, customer_reference: e.target.value }))} placeholder="客户参考号" />
+                <Input type="date" value={orderDraft.trade_date} onChange={(e) => setOrderDraft((d) => ({ ...d, trade_date: e.target.value }))} />
+                <Input type="date" value={orderDraft.validity_date} onChange={(e) => setOrderDraft((d) => ({ ...d, validity_date: e.target.value }))} />
+              </div></div>
+              <div className="space-y-2"><p className="text-xs font-semibold text-muted-foreground">开票地址</p><div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+                {(["invoice_street","invoice_city","invoice_state","invoice_zip","invoice_country"] as const).map((key) => <Input key={key} value={orderDraft[key]} onChange={(e) => setOrderDraft((d) => ({ ...d, [key]: e.target.value }))} placeholder={({invoice_street:"街道地址",invoice_city:"城市",invoice_state:"州 / 省",invoice_zip:"邮编",invoice_country:"国家"} as Record<string,string>)[key]} />)}
+              </div></div>
+              <div className="space-y-2"><p className="text-xs font-semibold text-muted-foreground">交付地址</p><div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+                {(["delivery_street","delivery_city","delivery_state","delivery_zip","delivery_country"] as const).map((key) => <Input key={key} value={orderDraft[key]} onChange={(e) => setOrderDraft((d) => ({ ...d, [key]: e.target.value }))} placeholder={({delivery_street:"街道地址",delivery_city:"城市",delivery_state:"州 / 省",delivery_zip:"邮编",delivery_country:"国家"} as Record<string,string>)[key]} />)}
+              </div></div>
+              <div className="space-y-2"><p className="text-xs font-semibold text-muted-foreground">销售、付款与税务</p><div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                <Input value={orderDraft.payment_terms} onChange={(e) => setOrderDraft((d) => ({ ...d, payment_terms: e.target.value }))} placeholder="付款条件，如 T/T 30% deposit" />
+                <Input value={orderDraft.pricelist_name} onChange={(e) => setOrderDraft((d) => ({ ...d, pricelist_name: e.target.value }))} placeholder="价格表" />
+                <Input value={orderDraft.fiscal_position} onChange={(e) => setOrderDraft((d) => ({ ...d, fiscal_position: e.target.value }))} placeholder="税务位置 / 税务规则" />
+                <Input value={orderDraft.prepayment_percent} onChange={(e) => setOrderDraft((d) => ({ ...d, prepayment_percent: e.target.value }))} placeholder="预付款比例 %" />
+                <Input value={orderDraft.salesperson_name} onChange={(e) => setOrderDraft((d) => ({ ...d, salesperson_name: e.target.value }))} placeholder="销售负责人" />
+                <Input value={orderDraft.sales_team} onChange={(e) => setOrderDraft((d) => ({ ...d, sales_team: e.target.value }))} placeholder="销售团队" />
+              </div><div className="flex flex-wrap gap-2"><Button size="sm" variant={orderDraft.signature_required ? "default" : "outline"} onClick={() => setOrderDraft((d) => ({ ...d, signature_required: !d.signature_required }))}>要求客户签署：{orderDraft.signature_required ? "是" : "否"}</Button><Button size="sm" variant={orderDraft.payment_required ? "default" : "outline"} onClick={() => setOrderDraft((d) => ({ ...d, payment_required: !d.payment_required }))}>要求在线付款：{orderDraft.payment_required ? "是" : "否"}</Button></div></div>
+              <div className="space-y-2"><p className="text-xs font-semibold text-muted-foreground">交付与贸易条件</p><div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                <Input value={orderDraft.incoterms_code} onChange={(e) => setOrderDraft((d) => ({ ...d, incoterms_code: e.target.value }))} placeholder="Incoterms，如 FOB" />
+                <Input value={orderDraft.incoterms_version} onChange={(e) => setOrderDraft((d) => ({ ...d, incoterms_version: e.target.value }))} placeholder="Incoterms 版本" />
+                <Input value={orderDraft.named_place} onChange={(e) => setOrderDraft((d) => ({ ...d, named_place: e.target.value }))} placeholder="指定地点 / 港口" />
+                <Input type="date" value={orderDraft.delivery_date} onChange={(e) => setOrderDraft((d) => ({ ...d, delivery_date: e.target.value }))} />
+                <Input value={orderDraft.origin_location} onChange={(e) => setOrderDraft((d) => ({ ...d, origin_location: e.target.value }))} placeholder="起运地" />
+                <Input value={orderDraft.destination_location} onChange={(e) => setOrderDraft((d) => ({ ...d, destination_location: e.target.value }))} placeholder="目的地" />
+                <div className="flex flex-wrap gap-1 sm:col-span-2"><Button size="sm" variant={orderDraft.shipping_policy === "asap" ? "default" : "outline"} onClick={() => setOrderDraft((d) => ({ ...d, shipping_policy: "asap" }))}>尽快发货</Button><Button size="sm" variant={orderDraft.shipping_policy === "when_ready" ? "default" : "outline"} onClick={() => setOrderDraft((d) => ({ ...d, shipping_policy: "when_ready" }))}>全部备妥后发货</Button></div>
+              </div></div>
+              <div className="space-y-2"><p className="text-xs font-semibold text-muted-foreground">业务来源与追踪</p><div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                <Input value={orderDraft.source_document} onChange={(e) => setOrderDraft((d) => ({ ...d, source_document: e.target.value }))} placeholder="来源单据" />
+                <Input value={orderDraft.campaign} onChange={(e) => setOrderDraft((d) => ({ ...d, campaign: e.target.value }))} placeholder="营销活动" />
+                <Input value={orderDraft.medium} onChange={(e) => setOrderDraft((d) => ({ ...d, medium: e.target.value }))} placeholder="媒介 / 渠道" />
+                <Input value={orderDraft.source} onChange={(e) => setOrderDraft((d) => ({ ...d, source: e.target.value }))} placeholder="来源" />
+              </div></div>
+              <div className="flex justify-end gap-2"><Button size="sm" variant="outline" onClick={() => setEditingOrderId("")}>取消</Button><Button size="sm" onClick={() => void saveOrderDetails()} disabled={busyId === order.id}>保存订单资料</Button></div>
+            </div>}
+
           </div>)}
           {!filteredOrders.length && <p className="rounded-lg bg-muted/30 py-8 text-center text-sm text-muted-foreground">没有符合条件的订单。</p>}
         </section>}
