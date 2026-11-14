@@ -60,7 +60,7 @@ export function OrderCenterPage({ onCreateQuotation }: { onCreateQuotation: () =
   
 
   const beginEditOrder = (order: TradeOrder) => {
-    const invoice = order.invoice_address ?? {}, delivery = order.delivery_address ?? {};
+    const invoice = order.invoice_address && Object.keys(order.invoice_address).length ? order.invoice_address : order.crm_account?.billing_address ?? {}; const delivery = order.delivery_address && Object.keys(order.delivery_address).length ? order.delivery_address : order.crm_account?.shipping_address ?? {};
     setEditingOrderId(order.id);
     setOrderDraft({
       title: order.title ?? "", customer_reference: order.customer_reference ?? "", trade_date: order.trade_date ?? "",
