@@ -160,14 +160,14 @@ The first change must be the dependency/lockfile and theme foundation, not broad
 - [x] Migrated shared Input and Textarea wrappers to Carbon TextInput and TextArea.
 - [x] Migrated shared Badge wrapper to Carbon Tag.
 - [x] Migrated shared searchable Combobox wrapper to Carbon ComboBox.
-- [ ] Checkbox remains on the legacy native input contract pending a safe audit of its label/wrapper call sites.
-- [ ] `asChild` button call sites still use the Slot-based link composition; each must be inventoried and migrated to Carbon-compatible link/button composition.
-- [ ] Card, Progress, Separator, Popover and other domain components still require Carbon component mapping.
-- [ ] AppShell, side navigation, top header, page layout and every page-level control remain to be migrated.
+- [x] Shared Checkbox wrapper now uses Carbon Checkbox; wrapped-label call sites were converted to Carbon `labelText` to avoid nested labels.
+- [x] No `asChild` call sites remain; removed the unused Radix Slot wrapper and dependency.
+- [x] Card uses Carbon Tile; Progress uses Carbon ProgressBar; separators are structural token-based elements; former Radix Popover selectors were migrated to Carbon ComboBox/MultiSelect.
+- [x] AppShell now uses Carbon Header, HeaderMenuButton, SideNav, SideNavMenu and SideNavLink; its navigation icons use Carbon Icons.
 - [ ] No route is considered Carbon-complete yet.
 
 ### Validation
-- CI workflow run `43593394933` was observed in progress at the time this record was updated; npm install was still running. No passing build or production deployment is claimed.
+- CI run `43595857626` passed typecheck, all 21 tests, lint, frontend build and Worker build for commit `45e178fdcfb1604b5ae6b4aab96cf616fe3514c6`. The later ContentSwitcher commit is undergoing its own CI run. No production deployment has been performed.
 - Package lockfile generation and review remain required; CI uses npm install and must produce a reproducible lockfile before release.
 
 
@@ -175,9 +175,9 @@ The first change must be the dependency/lockfile and theme foundation, not broad
 - [x] Card wrapper now uses Carbon Tile.
 - [x] Progress wrapper now uses Carbon ProgressBar with bounded 0–100 values.
 - [x] Resolved the first CI TypeScript error by excluding the native numeric HTML input `size` attribute from Carbon TextInput props.
-- [ ] Verify the newest CI run after the Card/ProgressBar conversion.
-- [ ] Continue with Carbon Checkbox/Radio/Switch, DatePicker, Select/Dropdown/MultiSelect, Dialog/Modal and notification wrappers after auditing their existing call-site contracts.
-- [ ] Carbon SideNav/Header migration is still outstanding; current shell navigation and Material Symbols icons have not yet been fully replaced.
+- [x] Card/ProgressBar changes and subsequent shared control changes passed CI in run `43595857626`.
+- [x] Checkbox, DatePicker, ComboBox, MultiSelect and FileUploaderButton now use Carbon React components. Radio/Switch inputs were not found in the audited user-facing routes; Dialog/Modal and notification inventories remain outstanding.
+- [x] Carbon SideNav/Header migration completed; AppShell navigation symbols now use Carbon Icons. Feature-page Lucide icon inventory and migration remain outstanding.
 
 
 ### CI feedback and typography validation
@@ -194,11 +194,25 @@ The first change must be the dependency/lockfile and theme foundation, not broad
 - [x] Carbon Card wrapper now renders Carbon Tile.
 - [x] Carbon ProgressBar wrapper now renders Carbon ProgressBar.
 - [x] SearchControlPanel continues to use the Carbon-backed shared Button and TextInput wrappers.
-- [ ] Newest changes to StatusBadge and Carbon icons still need a CI run.
+- [x] StatusBadge and Carbon Icons changes passed CI.
 - [ ] Existing page-local icon usage (Lucide/Material Symbols) remains to be inventoried and replaced; this migration is not yet globally icon-complete.
-- [ ] Existing raw native inputs and page-local selector controls remain to be inventoried and migrated.
+- [x] Audited user-facing routes: no native `<select>` or native radio input remains; custom country/region, language, model, search-type and business-type pickers were migrated to Carbon ComboBox/MultiSelect. Date fields use Carbon DatePicker; customer logo upload uses Carbon FileUploaderButton.
 
 
 ### Current-head verification gate
 - The completed CI run #1337 passed typecheck, 21 tests, lint, frontend build, and Worker build for the earlier shared-primitive snapshot.
-- The subsequent Carbon Tag / Carbon icon updates must be included in a fresh CI run before this PR can be considered merge-ready.
+- The latest fully completed verification run `43595857626` passed all CI stages for commit `45e178fdcfb1604b5ae6b4aab96cf616fe3514c6`. The later Carbon ContentSwitcher migration for AI/API settings requires a fresh CI result before merge readiness.
+
+
+### AppShell and selector migration (2026-11-14)
+- [x] Replaced the application shell navigation with Carbon Header and SideNav components while preserving the existing route destinations, group expansion rules, desktop collapse control, mobile drawer and sign-out action.
+- [x] Replaced AppShell Material Symbols with Carbon Icons.
+- [x] Migrated the AI/API settings tab switcher to Carbon ContentSwitcher (current-head CI pending).
+- [x] Migrated Facebook discovery object selection, Instagram multi-pickers, search-engine vertical/business/exclusion selectors, map-local business selectors, country selector, region/city selectors and AI model picker to Carbon MultiSelect/ComboBox.
+- [x] Removed Radix Popover, Progress, Separator and Slot dependencies; no Radix UI dependency remains in package.json.
+- [x] Migrated customer logo upload to Carbon FileUploaderButton.
+- [x] Migrated date inputs through the shared Carbon DatePicker adapter while preserving the existing `onChange(event.target.value)` contract.
+- [ ] Complete feature-page Lucide icon replacement and visual consistency review.
+- [ ] Migrate and verify all remaining page-local data tables, pagination, menus, drawers/dialogs and notification surfaces.
+- [ ] Add route-by-route authenticated desktop/mobile visual smoke evidence for every nested and conditional state.
+- [ ] Review reproducible dependency lockfile strategy before release.
