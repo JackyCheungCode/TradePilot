@@ -1,0 +1,16 @@
+@use "@carbon/react/scss/breakpoint" as *;
+
+/* Responsive visibility only; Carbon UI Shell owns Header and control styling. */
+.tp-header-mobile-menu {
+  display: none;
+}
+
+@include breakpoint-down(md) {
+  .tp-header-mobile-menu {
+    display: flex;
+  }
+
+  .tp-header-navigation {
+    display: none;
+  }
+}
