@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button, Column, Dropdown, Grid, Heading, InlineNotification, Section, Stack, Tag, Tile } from "@carbon/react";
 import { Reset as RotateCcw, Save } from "@carbon/icons-react";
-import { CharacterMark, COLOR_IDS, SHAPE_IDS, type ColorId, type ShapeId, type CharacterState } from "@aora-bot/react";
+import { CharacterMark, COLOR_IDS, SHAPE_IDS, zhCN, type ColorId, type ShapeId, type CharacterState } from "@aora-bot/react";
 import { PageHeader } from "@/components/common";
 import { AGENT_APPEARANCE_PROFILES, DEFAULT_AGENT_APPEARANCE, DEFAULT_AGENT_APPEARANCE_CONFIG, type AgentAppearance, type AgentAppearanceConfig } from "../../domain/appearance";
 import { loadAgentAppearanceConfig, saveAgentAppearanceConfig } from "../hooks/useAgentAppearance";
@@ -100,7 +100,7 @@ export function AgentAppearanceSettingsPage() {
       </div>
       <Stack gap={2} className="tp-agent-appearance-preview-copy">
         <Heading className="cds--type-productive-heading-03">{activeName}</Heading>
-        <p className="cds--type-body-compact-01">{states.find((item) => item.id === previewState)?.label}状态 · {readable(current.shape, shapeLabels)} · {readable(current.color, colorLabels)}</p>
+        <p className="cds--type-body-compact-01">{states.find((item) => item.id === previewState)?.label}状态 · {localized("shape", current.shape)} · {localized("color", current.color)}</p>
         <Tag type={isInherited ? "green" : "blue"}>{isInherited ? "继承全局默认" : activeAgent === "default" ? "全局默认配置" : "独立配置"}</Tag>
       </Stack>
     </Stack>
@@ -156,12 +156,12 @@ export function AgentAppearanceSettingsPage() {
                   <Grid narrow className="tp-agent-appearance-field-grid">
                     <Column sm={4} md={4} lg={8}>
                       <Dropdown id="agent-appearance-shape" titleText="角色造型" label="选择角色造型" items={[...SHAPE_IDS]}
-                        selectedItem={current.shape} itemToString={(item) => item ? readable(item, shapeLabels) : ""}
+                        selectedItem={current.shape} itemToString={(item) => item ? localized("shape", item) : ""}
                         onChange={({ selectedItem }) => { if (selectedItem) setCurrent({ ...current, shape: selectedItem }); }} />
                     </Column>
                     <Column sm={4} md={4} lg={8}>
                       <Dropdown id="agent-appearance-color" titleText="主色" label="选择主色" items={[...COLOR_IDS]}
-                        selectedItem={current.color} itemToString={(item) => item ? readable(item, colorLabels) : ""}
+                        selectedItem={current.color} itemToString={(item) => item ? localized("color", item) : ""}
                         onChange={({ selectedItem }) => { if (selectedItem) setCurrent({ ...current, color: selectedItem }); }} />
                     </Column>
                   </Grid>
