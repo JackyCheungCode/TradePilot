@@ -154,7 +154,7 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
         await fetch(connection.endpoint_url,{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json, text/event-stream",...headers,...(init.sessionId?{"Mcp-Session-Id":init.sessionId}:{})},body:JSON.stringify({jsonrpc:"2.0",method:"notifications/initialized"}),signal:AbortSignal.timeout(15000)});
         const listed=await mcpRequest(connection.endpoint_url,headers,{jsonrpc:"2.0",id:2,method:"tools/list",params:{}},init.sessionId??undefined);
         const result=listed.body.result as {tools?:Array<Record<string,unknown>>}|undefined;
-        tools=(result?.tools??[]).slice(0,100).map(tool=>({name:String(tool.name??"").slice(0,120),description:String(tool.description??"").slice(0,1000),inputSchema:tool.inputSchema??{},risk:"approval_required",protocol:"mcp"})).filter(tool=>tool.name);
+        tools=(result?.tools??[]).slice(0,100).map(tool=>{const name=String(tool.name??"").slice(0,120);const description=String(tool.description??"").slice(0,1000);const safe=/^(search|find|lookup|list|get|read|query|discover|research|analyze|analyse|fetch|scrape)([-_ .]|$)/i.test(name)&&!/(send|write|create|update|delete|remove|import|export|purchase|payment)/i.test(name+" "+description);return {name,description,inputSchema:tool.inputSchema??{},risk:safe?"read_only":"approval_required",protocol:"mcp"};}).filter(tool=>tool.name);
         metadata={serverInfo:initResult.serverInfo??{},protocolVersion:initResult.protocolVersion??"2025-03-26",toolCount:tools.length};
       }else if(connection.protocol==="rest_api"){
         const response=await fetch(connection.endpoint_url,{method:"GET",headers:{Accept:"application/json",...headers},signal:AbortSignal.timeout(20000)});
@@ -176,7 +176,7 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
         metadata={toolCount:1,mode:"outbound_webhook"};
       }
       if(!tools.length)throw new Error("AGENT_NO_TOOLS_DISCOVERED: 该端点没有发现可用工具。");
-      const updated=await db<ConnectionRow[]>(env,"agent_connections?id=eq."+connection.id+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=representation"},body:JSON.stringify({protocol_tools:tools,protocol_metadata:metadata,status:"active",last_tested_at:new Date().toISOString(),last_error:null,updated_at:new Date().toISOString()})});
+      await db<ConnectionRow[]>(env,"agent_connections?id=eq."+connection.id+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=representation"},body:JSON.stringify({protocol_tools:tools,protocol_metadata:metadata,status:"active",last_tested_at:new Date().toISOString(),last_error:null,updated_at:new Date().toISOString()})});
       return successResponse(request,{connectionId:connection.id,status:"active",tools,metadata},200);
     }
     const connectionMatch=path.match(/^\/api\/v1\/agent\/connections\/([0-9a-f-]{36})$/i);

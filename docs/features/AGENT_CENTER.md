@@ -4,7 +4,7 @@
 The first-level entry **TradePilot Agent 智能体** precedes 潜客发现. Seven sections: Agent 工作台、Agent 市场、Agent 编排、外部 Agent 接入、执行记录、审批中心、Agent 设置. The sidebar mark is a custom animated AI orb.
 
 ## External integrations
-Open ecosystem: REST API, MCP and Webhook. A connection is registered with protocol, public HTTPS endpoint, auth mode and capabilities. Credentials are encrypted using AES-256-GCM with a Worker-only `AGENT_ENCRYPTION_KEY` (configured as a Cloudflare Worker secret); plaintext credentials are never returned to clients. Private/local endpoints are rejected to reduce SSRF exposure. Connections remain pending until protocol-specific verification is implemented.
+Open ecosystem: REST API, MCP and Webhook. REST connections use an OpenAPI 3.x JSON document URL for operation discovery; MCP uses initialize/tools/list; webhook registrations expose a controlled trigger capability. Credentials are encrypted using AES-256-GCM with a Worker-only `AGENT_ENCRYPTION_KEY` (configured as a Cloudflare Worker secret); plaintext credentials are never returned to clients. Private/local endpoints are rejected to reduce SSRF exposure. Connections remain pending until protocol-specific verification succeeds. Discovered MCP tools and OpenAPI operations are stored as protocol tool metadata; read-only GET operations can be marked for automatic execution, while non-GET operations and non-read-only MCP tools require approval by default.
 
 ## Data model
 - `agent_connections`: external endpoint metadata and encrypted credentials.
