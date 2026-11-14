@@ -1,5 +1,4 @@
 import * as React from "react";
-import * as Slot from "@radix-ui/react-slot";
 import {
   Button as CarbonButton,
   Checkbox as CarbonCheckbox,
@@ -16,7 +15,6 @@ import {
 import { cn } from "@/shared/lib/utils";
 
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  asChild?: boolean;
   variant?: "default" | "outline" | "ghost" | "secondary";
   size?: "default" | "sm" | "icon";
 };
@@ -25,22 +23,8 @@ export function Button({
   className,
   variant = "default",
   size = "default",
-  asChild = false,
   ...props
 }: ButtonProps) {
-  // Preserve the existing Slot contract for link-as-button call sites.
-  if (asChild) {
-    return (
-      <Slot.Root
-        data-tp-button="true"
-        data-tp-size={size}
-        data-tp-variant={variant}
-        className={cn("inline-flex items-center justify-center gap-2", className)}
-        {...props}
-      />
-    );
-  }
-
   const kind =
     variant === "default"
       ? "primary"
