@@ -26,7 +26,7 @@ const catalog=[
 {id:"custom",name:"自定义 OpenAI 兼容接口",protocol:"openai" as const,url:"",model:"",models:[]}];
 const providerLogo:Record<string,string>={"workers-ai":"cloudflare",openai:"openai",anthropic:"anthropic",gemini:"googlegemini",deepseek:"deepseek",qwen:"alibabacloud",zhipu:"zhipu",kimi:"moonshot",minimax:"minimax",openrouter:"openrouter",siliconflow:"silicon"};
 function ProviderLogo({id}:{id:string}){const slug=providerLogo[id];return <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white p-1.5 ring-1 ring-border">{slug?<img src={"https://cdn.simpleicons.org/"+slug} alt="" aria-hidden="true" className="h-5 w-5 object-contain" onError={e=>{e.currentTarget.style.display="none";}}/>:<BrainCircuit className="h-5 w-5 text-muted-foreground"/>}</span>;}
-const tasks=[["agent_planning","Agent 任务规划"],["website_extraction","官网信息提取"],["contact_extraction","联系人与联系方式识别"],["company_analysis","企业分析"],["multilingual","多语言内容理解"],["structured_json","结构化数据输出"]];
+const tasks=[["agent_chat","小雅对话"],["agent_planning","Agent 任务规划"],["website_extraction","官网信息提取"],["contact_extraction","联系人与联系方式识别"],["company_analysis","企业分析"],["multilingual","多语言内容理解"],["structured_json","结构化数据输出"]];
 const empty:AIConfig={defaultModel:"@cf/google/gemma-4-26b-a4b-it",taskModels:{},providers:[{id:"workers-ai",name:"Cloudflare Workers AI",protocol:"workers-ai",baseUrl:"",model:"@cf/google/gemma-4-26b-a4b-it",configured:true}]};
 
 function ModelPicker({value,options,onChange,placeholder="选择模型"}:{value:string;options:Array<{value:string;label:string}>;onChange:(value:string)=>void;placeholder?:string}){
