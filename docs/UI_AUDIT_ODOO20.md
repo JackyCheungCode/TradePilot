@@ -195,3 +195,30 @@ Odoo 20 的关键不是复制配色，而是复用一致的 Web Client 与记录
 ## 7. 审计限制
 
 本报告基于当前 `develop` 源码和 Odoo 20 官方文档进行静态审查。未登录线上生产环境逐页操作，也未在 360px/390px/1024px/1280px/1440px 视口运行视觉回归。因此矩阵中“待运行时验收”的项目不能视为已通过或已确认缺陷。后续页面迁移必须配合浏览器/设备截图和交互测试。
+
+## 8. Implementation progress (2026-11-14)
+
+### Phase 1 — UI Foundation
+
+- Implemented in PR #9: `ui/odoo20-foundation-phase1`.
+- Merged into `develop` and deployed to the production Worker.
+- Includes unified global design tokens, AppShell navigation behavior, shared page control panel primitives, responsive record presentation, and removal of fragile global CSS selectors.
+- CI passed for the merged implementation.
+- Production login page was checked at 390px and 1440px. This is not a substitute for authenticated internal-page acceptance.
+
+### Phase 2 — Shared Business Views
+
+- Implemented in PR #10: `ui/odoo20-shared-business-views-phase2`.
+- Current head: `079e90cbd48bfabcbef66f8848575f7925a67ffc`.
+- Shared components include SearchControlPanel, ListViewShell, FormLayout, FormSection, FormField, StatusBadge, and TaskExecutionPanel.
+- Migrated CRM leads, master data, order center, document center, discovery tasks/results, Agent run records, Agent market roles, external Agent connections, approvals, and saved workflows.
+- Search Engine, Map/Local Business, Facebook, and Instagram now use the same task execution panel structure.
+- CI run 43588415875 passed typecheck, tests, lint, frontend build, and Worker build.
+- PR #10 remains Draft and has not been merged or deployed.
+
+### Remaining acceptance gates
+
+- Authenticated screenshots and interaction checks are still required at desktop 1440/1280/1024px and mobile 390/360px.
+- Agent workspace and settings require further detail-level review.
+- Verify keyboard/focus behavior, modal/popover viewport boundaries, loading/empty/error states, and no unexpected page-level horizontal overflow.
+- Do not claim Odoo 20 visual parity until the authenticated screen-by-screen comparison is completed.
