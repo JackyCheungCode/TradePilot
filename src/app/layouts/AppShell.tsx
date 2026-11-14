@@ -80,6 +80,26 @@ export function AppShell({
   }, [activePage]);
 
   const closeMobile = () => setMobileOpen(false);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeMobile();
+    };
+    const onResize = () => {
+      if (window.matchMedia("(min-width: 768px)").matches) closeMobile();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("resize", onResize);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("resize", onResize);
+    };
+  }, [mobileOpen]);
+
   const navigate = (page: AppPage) => {
     onNavigate(page);
     closeMobile();
@@ -294,7 +314,7 @@ export function AppShell({
       </aside>
 
       {mobileOpen && (
-        <div className="tp-carbon-mobile-nav md:hidden">
+        <div className="tp-carbon-mobile-nav md:hidden" role="dialog" aria-modal="true" aria-label="TradePilot 主导航">
           <button
             type="button"
             aria-label="关闭导航菜单"
@@ -321,7 +341,7 @@ export function AppShell({
               isCollapsible
               aria-label="打开侧边栏菜单"
               isActive={mobileOpen}
-              onClick={() => setMobileOpen(true)}
+              onClick={() => setMobileOpen((value) => !value)}
             />
           </div>
           <div className="hidden md:block">
@@ -352,7 +372,7 @@ export function AppShell({
             </HeaderGlobalAction>
           </HeaderGlobalBar>
         </Header>
-        <div id="main-content" className="tp-page-canvas" tabIndex={-1}>{children}</div>
+        <div id="main-content" className="tp-page-canvas" tabIndex={-1}><div className="tp-page-root">{children}</div></div>
       </main>
     </div>
   );
