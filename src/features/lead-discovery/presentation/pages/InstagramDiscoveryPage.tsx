@@ -1,7 +1,7 @@
 import {useEffect,useMemo,useState} from "react";
-import {Activity,Check,ChevronDown,LoaderCircle,MessageCircle,Search,Sparkles,Terminal,Users,Wallet} from "lucide-react";
+import {Activity,LoaderCircle,MessageCircle,Search,Sparkles,Terminal,Users,Wallet} from "lucide-react";
 import {toast} from "sonner";
-import {Badge,Button,Card,CardContent,CardDescription,CardHeader,CardTitle,Input,Popover,PopoverContent,PopoverTrigger,Checkbox,Textarea} from "@/shared/ui/primitives";
+import {Badge,Button,Card,CardContent,CardDescription,CardHeader,CardTitle,Input,Checkbox,Textarea,MultiSelect,Combobox} from "@/shared/ui/primitives";
 import { PageControlPanel } from "@/shared/ui/page-layout";
 import { TaskExecutionPanel } from "../components/TaskExecutionPanel";
 import {CountrySelect} from "../components/CountrySelect";
@@ -11,8 +11,31 @@ import type {DiscoveryLog,DiscoveryRun} from "../../domain/model";
 const languages:Array<[string,string]>=[["en","英语"],["fr","法语"],["es","西班牙语"],["ar","阿拉伯语"],["ru","俄语"],["pt","葡萄牙语"],["tr","土耳其语"],["sw","斯瓦希里语"]];
 const accountTypes:Array<[string,string]>=[["business","商业账号"],["creator","创作者"],["personal","个人"]];
 const levelClass:Record<DiscoveryLog["level"],string>={info:"text-sky-300",success:"text-emerald-300",warning:"text-amber-300",error:"text-rose-300"};
-function MultiPicker({label,options,value,onChange}:{label:string;options:Array<[string,string]>;value:string[];onChange:(v:string[])=>void}){const [open,setOpen]=useState(false);return <div className="space-y-2"><label className="text-sm font-medium">{label}</label><Popover open={open} onOpenChange={setOpen}><PopoverTrigger asChild><Button type="button" variant="outline" className="w-full justify-between font-normal"><span className="truncate">{value.length?options.filter(x=>value.includes(x[0])).map(x=>x[1]).join("、"): "不限"}</span><ChevronDown className="h-4 w-4 shrink-0"/></Button></PopoverTrigger><PopoverContent align="start" className="w-[var(--radix-popover-trigger-width)] p-2"><div className="space-y-1">{options.map(([id,name])=><button key={id} type="button" onClick={()=>onChange(value.includes(id)?value.filter(x=>x!==id):[...value,id])} className={"flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm "+(value.includes(id)?"bg-primary/10":"hover:bg-muted")}><span className="flex-1">{name}</span>{value.includes(id)&&<Check className="h-4 w-4 text-primary"/>}</button>)}</div></PopoverContent></Popover></div>}
-function RecentDaysPicker({value,onChange}:{value:string;onChange:(v:string)=>void}){const [open,setOpen]=useState(false);const options=[["30","近 30 天"],["60","近 60 天"],["90","近 90 天"],["180","近 180 天"],["365","近一年"],["0","不限"]];const selected=options.find(x=>x[0]===value)?.[1]??"近 90 天";return <Popover open={open} onOpenChange={setOpen}><PopoverTrigger asChild><Button type="button" variant="outline" className="w-full justify-between font-normal">{selected}<ChevronDown className="h-4 w-4"/></Button></PopoverTrigger><PopoverContent align="start" className="w-[var(--radix-popover-trigger-width)] p-1">{options.map(([v,label])=><button key={v} type="button" onClick={()=>{onChange(v);setOpen(false)}} className={"w-full rounded-md px-3 py-2 text-left text-sm "+(value===v?"bg-primary/10":"hover:bg-muted")}>{label}</button>)}</PopoverContent></Popover>;}
+function MultiPicker({label,options,value,onChange}:{label:string;options:Array<[string,string]>;value:string[];onChange:(v:string[])=>void}) {
+  return (
+    <div className="space-y-2">
+      <label className="text-sm font-medium">{label}</label>
+      <MultiSelect
+        placeholder={label}
+        options={options.map(([optionValue, optionLabel]) => ({ value: optionValue, label: optionLabel }))}
+        value={value}
+        onValueChange={onChange}
+      />
+    </div>
+  );
+}
+function RecentDaysPicker({value,onChange}:{value:string;onChange:(v:string)=>void}) {
+  const options=[["30","近 30 天"],["60","近 60 天"],["90","近 90 天"],["180","近 180 天"],["365","近一年"],["0","不限"]];
+  return (
+    <Combobox
+      value={value}
+      onValueChange={onChange}
+      placeholder="选择时间范围"
+      options={options.map(([optionValue, label]) => ({ value: optionValue, label }))}
+    />
+  );
+}
+
 export function InstagramDiscoveryPage(){
  const [country,setCountry]=useState("NG"),[countries,setCountries]=useState<string[]>(["NG"]),[keywords,setKeywords]=useState("#usedclothing\n#bale\nthrift shop"),[languagesSelected,setLanguagesSelected]=useState(["en"]),[types,setTypes]=useState(["business","creator","personal"]),[minFollowers,setMinFollowers]=useState("200"),[maxFollowers,setMaxFollowers]=useState("50000"),[recent,setRecent]=useState("90"),[requireContact,setRequireContact]=useState(true),[exclude,setExclude]=useState("wholesale supplier\nmanufacturer\nfactory"),[limit,setLimit]=useState("100"),[maxCost,setMaxCost]=useState("10"),[includeCaptions,setIncludeCaptions]=useState(false);
  const [configured,setConfigured]=useState(false),[run,setRun]=useState<DiscoveryRun|null>(null),[logs,setLogs]=useState<DiscoveryLog[]>([]),[busy,setBusy]=useState(false),[actorConfig,setActorConfig]=useState<{discoveryCostPer1000?:number;profileCostPer1000?:number}|null>(null);
