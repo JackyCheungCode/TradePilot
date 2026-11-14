@@ -232,6 +232,7 @@ export function Combobox({
   options: ComboboxOption[];
   placeholder?: string;
   searchPlaceholder?: string;
+  filterable?: boolean;
   disabled?: boolean;
   className?: string;
 }) {
@@ -248,6 +249,8 @@ export function Combobox({
       placeholder={searchPlaceholder || placeholder}
       titleText=""
       aria-label={placeholder}
+      shouldFilterItem={filterable ? ({ item, inputValue }) => !inputValue || item.label.toLocaleLowerCase().includes(inputValue.toLocaleLowerCase()) : undefined}
+      onInputChange={filterable ? () => undefined : undefined}
       disabled={disabled}
       className={className}
     />
