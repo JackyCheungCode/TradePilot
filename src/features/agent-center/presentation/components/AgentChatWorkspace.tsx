@@ -32,11 +32,10 @@ export function AgentChatWorkspace({connections,onNotice}:{connections:AgentConn
  const connection=activeConnections.find(c=>c.id===connectionId);
  const tools=connection?.protocol_tools??[];
  const chosenTool=tools.find(t=>t.name===toolName);
- const selectedAgentName=agents.find(a=>a.id===selectedAgent)?.name??"小雅自动调度";
  function sendMessage(){
   const text=draft.trim();if(!text||busy)return;
   setMessages(old=>[...old,{id:Date.now(),role:"user",content:text}]);
-  setPlanGoal(text);setShowPlan(true);setCompleted(false);setDraft("");
+  setPlanGoal(text);setShowPlan(true);setDraft("");
   const match=agents.find(a=>a.id!=="auto"&&(text.includes("@"+a.name)||text.includes("@"+a.name+" Agent")));
   if(match)setSelectedAgent(match.id);
   setMessages(old=>[...old,{id:Date.now()+1,role:"assistant",content:"收到。我先把目标整理成任务卡片。你可以在下方调整 Agent、国家市场和工具，确认后才会启动。"}]);
@@ -60,7 +59,7 @@ export function AgentChatWorkspace({connections,onNotice}:{connections:AgentConn
     const detail=[planner?.summary??run.message??"小雅已接收任务。",status,"任务编号："+(run.taskCode??run.id),...(planner?.steps??[]).map((s,i)=>(i+1)+". "+s)].join("\n");
     setMessages(old=>[...old,{id:Date.now()+2,role:"assistant",content:detail,kind:"result"}]);
    }
-   setShowPlan(false);setCompleted(true);
+   setShowPlan(false);
   }catch(error){setMessages(old=>[...old,{id:Date.now()+3,role:"assistant",content:error instanceof Error?error.message:"任务提交失败。",kind:"result"}]);}
   finally{setBusy(false);}
  }

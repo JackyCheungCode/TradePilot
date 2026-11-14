@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Activity, ArrowRight, Bot, BrainCircuit, Clock3, Globe2, LockKeyhole, PlugZap, ShieldCheck, Sparkles } from "lucide-react";
+import { Activity, Bot, BrainCircuit, Clock3, Globe2, LockKeyhole, PlugZap, ShieldCheck, Sparkles } from "lucide-react";
 import { AgentOrbIcon } from "../components/AgentOrbIcon";
 import { AgentChatWorkspace } from "../components/AgentChatWorkspace";
 import "../agent-center.css";
