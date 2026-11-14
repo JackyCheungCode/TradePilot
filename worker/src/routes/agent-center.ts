@@ -111,6 +111,37 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
   const url=new URL(request.url);
   const path=url.pathname.replace(/\/$/,"");
   try{
+    if(path==="/api/v1/agent/appearance"&&request.method==="GET"){
+      const rows=await db<Array<{config:Record<string,unknown>}>>(env,"agent_appearance_settings?owner_id=eq."+ownerId+"&select=config&limit=1");
+      const fallback={default:{shape:"mochi",color:"cream",styleId:"vector",variant:"soft",face:"cute"},agents:{}};
+      return successResponse(request,rows?.[0]?.config??fallback);
+    }
+    if(path==="/api/v1/agent/appearance"&&request.method==="PUT"){
+      let body:Record<string,unknown>;try{body=await request.json() as Record<string,unknown>;}catch{return errorResponse(request,"INVALID_JSON","请求内容不是有效 JSON。",400);}
+      const input=body.config as Record<string,unknown>|undefined;
+      if(!input||typeof input!=="object"||Array.isArray(input))return errorResponse(request,"VALIDATION_ERROR","形象配置格式无效。",400);
+      const allowedColors=new Set(["cream","ivory","black","brown","red","orange","yellow","green","cyan","blue","violet","magenta","pink","gray","sage","clay","navy","mauve","night","cocoa","sky","blush","lilac","butter","meadow"]);
+      const variants:Record<string,Set<string>>={vector:new Set(["solid","outline","glass","sticker","paper","soft","riso","pencil","marker","crayon","watercolor","neon","chalk","origami","relief","gothic"]),pixel:new Set(["crisp","dot","block"]),kaomoji:new Set(["plain","bubble"])};
+      const normalizeAppearance=(value:unknown)=>{
+        if(!value||typeof value!=="object"||Array.isArray(value))return null;
+        const item=value as Record<string,unknown>;
+        const styleId=typeof item.styleId==="string"?item.styleId:"vector";
+        if(!variants[styleId]||typeof item.shape!=="string"||!/^[a-z0-9-]{2,40}$/.test(item.shape)||typeof item.color!=="string"||!allowedColors.has(item.color)||typeof item.variant!=="string"||!variants[styleId].has(item.variant)||!["cute","eyes","line"].includes(String(item.face)))return null;
+        return {shape:item.shape,color:item.color,styleId,variant:item.variant,face:item.face};
+      };
+      const defaultAppearance=normalizeAppearance(input.default);
+      const rawAgents=input.agents&&typeof input.agents==="object"&&!Array.isArray(input.agents)?input.agents as Record<string,unknown>:{};
+      const agents:Record<string,unknown>={};
+      for(const [key,value] of Object.entries(rawAgents).slice(0,20)){
+        if(!/^[a-z][a-z0-9_-]{1,50}$/i.test(key))continue;
+        const appearance=normalizeAppearance(value);if(appearance)agents[key]=appearance;
+      }
+      if(!defaultAppearance)return errorResponse(request,"VALIDATION_ERROR","默认 Agent 形象不完整或包含不支持的设置。",400);
+      const config={default:defaultAppearance,agents};
+      if(JSON.stringify(config).length>30000)return errorResponse(request,"PAYLOAD_TOO_LARGE","形象配置过大。",413);
+      const rows=await db<Array<{config:Record<string,unknown>}>>(env,"agent_appearance_settings?on_conflict=owner_id&select=config",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=representation"},body:JSON.stringify({owner_id:ownerId,config,updated_at:new Date().toISOString()})});
+      return successResponse(request,rows?.[0]?.config??config);
+    }
     if(path==="/api/v1/agent/connections"&&request.method==="GET"){
       const rows=await db<ConnectionRow[]>(env,"agent_connections?owner_id=eq."+ownerId+"&select="+publicConnectionFields+"&order=created_at.desc&limit=100");
       return successResponse(request,rows??[]);

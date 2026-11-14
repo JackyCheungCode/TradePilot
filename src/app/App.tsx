@@ -14,8 +14,9 @@ import { FacebookDiscoveryPage } from "@/features/lead-discovery/presentation/pa
 import { InstagramDiscoveryPage } from "@/features/lead-discovery/presentation/pages/InstagramDiscoveryPage";
 import { getSupabaseClient } from "@/shared/lib/supabase";
 import { AgentCenterPage } from "@/features/agent-center/presentation/pages/AgentCenterPage";
+import { AgentAppearanceSettingsPage } from "@/features/agent-center/presentation/pages/AgentAppearanceSettingsPage";
 
-type AppPage = "agentWorkbench" | "agentMarket" | "agentOrchestration" | "agentConnections" | "agentRuns" | "agentApprovals" | "agentSettings" | "discovery" | "discoveryTasks" | "discoveryResults" | "searchDiscovery" | "facebookDiscovery" | "instagramDiscovery" | "leads" | "integrations" | "searchExclusions";
+type AppPage = "agentWorkbench" | "agentMarket" | "agentOrchestration" | "agentConnections" | "agentRuns" | "agentApprovals" | "agentSettings" | "discovery" | "discoveryTasks" | "discoveryResults" | "searchDiscovery" | "facebookDiscovery" | "instagramDiscovery" | "leads" | "integrations" | "searchExclusions" | "agentAppearance";
 const ROUTES: Record<AppPage, string> = {
   agentWorkbench: "/agent/workbench", agentMarket: "/agent/market", agentOrchestration: "/agent/orchestration", agentConnections: "/agent/connections", agentRuns: "/agent/runs", agentApprovals: "/agent/approvals", agentSettings: "/agent/settings",
   discovery: "/lead-discovery/map-local-businesses",
@@ -27,6 +28,7 @@ const ROUTES: Record<AppPage, string> = {
   leads: "/crm/leads",
   integrations: "/settings/integrations",
   searchExclusions: "/settings/search-exclusions",
+  agentAppearance: "/settings/agent-appearance",
 };
 const getPath = () => window.location.pathname;
 const getPage = (path: string): AppPage | null => {
@@ -40,6 +42,7 @@ const getPage = (path: string): AppPage | null => {
   if (path === ROUTES.leads) return "leads";
   if (path === ROUTES.integrations) return "integrations";
   if (path === ROUTES.searchExclusions) return "searchExclusions";
+  if (path === ROUTES.agentAppearance) return "agentAppearance";
   return null;
 };
 export function App() {
@@ -97,7 +100,7 @@ export function App() {
   if (checkingSession) return <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">正在检查登录状态…</div>;
   if (!session || path === "/login") return <><LoginPage /><Toaster richColors position="top-right" /></>;
   return <AppShell activePage={activePage ?? "discovery"} onNavigate={navigate} userEmail={session.user.email ?? ""} onSignOut={() => void getSupabaseClient().auth.signOut()}>
-    {activePage && activePage.startsWith("agent") ? <AgentCenterPage section={activePage as "agentWorkbench" | "agentMarket" | "agentOrchestration" | "agentConnections" | "agentRuns" | "agentApprovals" | "agentSettings"} /> : activePage === "integrations" ? <IntegrationsSettingsPage /> : activePage === "searchExclusions" ? <SearchExclusionRulesPage /> : activePage === "discoveryTasks" ? <DiscoveryTasksPage /> : activePage === "discoveryResults" ? <DiscoveryResultsPage /> : activePage === "searchDiscovery" ? <SearchEngineDiscoveryPage /> : activePage === "facebookDiscovery" ? <FacebookDiscoveryPage /> : activePage === "instagramDiscovery" ? <InstagramDiscoveryPage /> : activePage === "leads" ? <LeadsPage /> : <MapLocalDiscoveryPage />}
+    {activePage && activePage.startsWith("agent") ? <AgentCenterPage section={activePage as "agentWorkbench" | "agentMarket" | "agentOrchestration" | "agentConnections" | "agentRuns" | "agentApprovals" | "agentSettings"} /> : activePage === "integrations" ? <IntegrationsSettingsPage /> : activePage === "searchExclusions" ? <SearchExclusionRulesPage /> : activePage === "agentAppearance" ? <AgentAppearanceSettingsPage /> : activePage === "discoveryTasks" ? <DiscoveryTasksPage /> : activePage === "discoveryResults" ? <DiscoveryResultsPage /> : activePage === "searchDiscovery" ? <SearchEngineDiscoveryPage /> : activePage === "facebookDiscovery" ? <FacebookDiscoveryPage /> : activePage === "instagramDiscovery" ? <InstagramDiscoveryPage /> : activePage === "leads" ? <LeadsPage /> : <MapLocalDiscoveryPage />}
     <Toaster richColors position="top-right" />
   </AppShell>;
 }

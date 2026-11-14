@@ -1,3 +1,21 @@
-import type { HTMLAttributes } from "react";
-import { cn } from "@/shared/lib/utils";
-export function AgentOrbIcon({className,...props}:HTMLAttributes<HTMLSpanElement>){return <span role="img" aria-label="TradePilot AI" className={cn("relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-950 shadow-[0_0_18px_rgba(91,121,255,.35)]",className)} {...props}><span className="absolute inset-[12%] rounded-full bg-[conic-gradient(from_20deg,#64d9ff,#7667ff,#e47bff,#54e6d1,#64d9ff)] blur-[1px] animate-[spin_7s_linear_infinite]"/><span className="absolute inset-[22%] rounded-full bg-[radial-gradient(circle_at_35%_30%,#fff_0%,#b6caff_16%,#706bff_42%,#171c4a_78%)] shadow-[0_0_10px_rgba(123,150,255,.9)] animate-pulse"/><span className="absolute left-[18%] top-[18%] h-[24%] w-[24%] rounded-full bg-white/90 blur-[2px]"/><span className="absolute inset-[7%] rounded-full border border-white/25"/></span>}
+import { CharacterMark, type CharacterState, type ColorId, type ShapeId } from "@aora-bot/react";
+import { useAgentAppearance } from "../hooks/useAgentAppearance";
+
+export function AgentOrbIcon({ className, agentKey = "default", state = "idle", sizePx = 32 }: {
+  className?: string; agentKey?: string; state?: CharacterState; sizePx?: number;
+}) {
+  const appearance = useAgentAppearance(agentKey);
+  return <CharacterMark
+    className={className}
+    shape={appearance.shape as ShapeId}
+    color={appearance.color as ColorId}
+    styleId={appearance.styleId}
+    variant={appearance.variant as never}
+    face={appearance.face}
+    state={state}
+    sizePx={sizePx}
+    autoPause
+    entryEffects={false}
+    seed={"tradepilot-" + agentKey}
+  />;
+}

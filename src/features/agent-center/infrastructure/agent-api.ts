@@ -1,4 +1,5 @@
 import { getSupabaseClient } from "@/shared/lib/supabase";
+import type { AgentAppearanceConfig } from "../domain/appearance";
 export type AgentProtocol="rest_api"|"mcp"|"webhook";
 export type AgentAuthMode="none"|"bearer"|"header"|"oauth2"|"webhook_secret";
 export interface AgentConnection {id:string;name:string;protocol:AgentProtocol;endpoint_url:string;auth_mode:AgentAuthMode;capabilities:string[];protocol_tools:Array<{name:string;description?:string;risk?:string}>;protocol_metadata:Record<string,unknown>;status:string;last_tested_at:string|null;last_error:string|null;created_at:string;updated_at:string;}
@@ -13,6 +14,8 @@ async function request<T>(path:string,init?:RequestInit):Promise<T>{
  return body.data;
 }
 export const agentApi={
+ getAppearance:()=>request<AgentAppearanceConfig>("/api/v1/agent/appearance"),
+ saveAppearance:(config:AgentAppearanceConfig)=>request<AgentAppearanceConfig>("/api/v1/agent/appearance",{method:"PUT",body:JSON.stringify({config})}),
  listConnections:()=>request<AgentConnection[]>("/api/v1/agent/connections"),
  createConnection:(input:{name:string;protocol:AgentProtocol;endpointUrl:string;authMode:AgentAuthMode;credentials?:Record<string,string>;capabilities:string[]})=>request<AgentConnection>("/api/v1/agent/connections",{method:"POST",body:JSON.stringify(input)}),
  deleteConnection:(id:string)=>request<{id:string;deleted:boolean}>("/api/v1/agent/connections/"+encodeURIComponent(id),{method:"DELETE"}),
