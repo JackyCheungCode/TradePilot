@@ -1,4 +1,4 @@
-import {useCallback,useEffect,useMemo,useState} from "react";
+import {useCallback,useEffect,useState} from "react";
 import {Building2,ContactRound,Factory,Handshake,Package,Plus,RefreshCw,Trash2,Users} from "lucide-react";
 import {toast} from "sonner";
 import {Badge,Button,Card,CardContent,CardDescription,CardHeader,CardTitle,Input} from "@/shared/ui/primitives";
