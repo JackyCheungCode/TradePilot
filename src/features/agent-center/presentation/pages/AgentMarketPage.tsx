@@ -141,7 +141,7 @@ export function AgentMarketPage() {
         <Button kind="primary" onClick={openConnections} renderIcon={Plug}>接入外部 Agent</Button>
       </header>
 
-      <Grid fullWidth className="tp-agent-market-summary">
+      <Grid className="tp-agent-market-summary">
         <Column sm={4} md={4} lg={5}>
           <Tile className="tp-agent-market-metric">
             <p className="tp-agent-market-metric__value cds--type-heading-05">{agentCatalog.length}</p>
@@ -163,7 +163,7 @@ export function AgentMarketPage() {
       </Grid>
 
       <section className="tp-agent-market-controls" aria-label="搜索和筛选 Agent">
-        <Grid fullWidth className="tp-agent-market-controls-grid">
+        <Grid className="tp-agent-market-controls-grid">
           <Column sm={4} md={8} lg={8}>
             <Search
               id="agent-market-search"
@@ -197,7 +197,7 @@ export function AgentMarketPage() {
       {notice && <InlineNotification kind={notice.kind} title={notice.title} subtitle={notice.subtitle} lowContrast hideCloseButton />}
 
       <section className="tp-agent-market-catalog" aria-label="内置 Agent 目录">
-        <Grid fullWidth className="tp-agent-market-grid">
+        <Grid className="tp-agent-market-grid">
           <Column sm={4} md={8} lg={16}>
             <div className="tp-agent-market-section-heading">
               <div><h2 className="cds--type-heading-03">内置 Agent</h2><p className="cds--type-body-compact-01">选择一个 Agent 查看能力、执行边界和配置。</p></div>
@@ -237,7 +237,7 @@ export function AgentMarketPage() {
 
       {selectedAgent && (
         <section className="tp-agent-market-detail" aria-label="Agent 详情与配置">
-          <Grid fullWidth className="tp-agent-market-detail-heading-grid">
+          <Grid className="tp-agent-market-detail-heading-grid">
             <Column sm={4} md={8} lg={16}>
               <div className="tp-agent-market-section-heading">
                 <div><h2 className="cds--type-heading-03">{selectedAgent.name}</h2><p className="cds--type-body-compact-01">Agent 详情与专业指令配置</p></div>
@@ -245,7 +245,7 @@ export function AgentMarketPage() {
               </div>
             </Column>
           </Grid>
-          <Grid fullWidth className="tp-agent-market-detail-grid">
+          <Grid className="tp-agent-market-detail-grid">
             <Column sm={4} md={4} lg={8}>
               <h3 className="cds--type-heading-compact-01">业务能力</h3>
               <p className="cds--type-body-01">{selectedAgent.detail}</p>
@@ -276,7 +276,7 @@ export function AgentMarketPage() {
       )}
 
       <section className="tp-agent-market-external">
-        <Grid fullWidth className="tp-agent-market-external-grid">
+        <Grid className="tp-agent-market-external-grid">
           <Column sm={4} md={8} lg={16}>
             <div className="tp-agent-market-section-heading">
               <div><h2 className="cds--type-heading-03">外部 Agent</h2><p className="cds--type-body-compact-01">仅统计已登记并通过连接验证的外部 Agent。尚未接入的服务不会作为可用 Agent 展示。</p></div>
