@@ -95,7 +95,7 @@
 .tp-agent-market-controls .cds--search,
 .tp-agent-market-controls .cds--dropdown{width:100%}
 /* Keep Carbon Search's square field: the app-wide generic input rule must not round it. */
-.tp-agent-market-page .cds--search-input{
+.tp-page-canvas .tp-agent-market-page input.cds--search-input:not([type="checkbox"]):not([type="radio"]){
   min-height:var(--cds-spacing-09);
   border:0;
   border-bottom:1px solid var(--cds-border-strong);
@@ -104,7 +104,7 @@
   box-shadow:none;
   font-family:inherit;
 }
-.tp-agent-market-page .cds--search-input:focus{
+.tp-page-canvas .tp-agent-market-page input.cds--search-input:not([type="checkbox"]):not([type="radio"]):focus{
   outline:2px solid var(--cds-focus);
   outline-offset:-2px;
 }
