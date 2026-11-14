@@ -12,10 +12,11 @@
 /* Agent Market page — page-scoped Carbon layout and responsive composition. */
 .tp-agent-market-page {
   width: 100%;
-  max-width: 1584px;
+  width: 100%;
+  max-width: none;
   min-width: 0;
   padding: 16px;
-  margin-inline: auto;
+  margin-inline: 0;
   color: var(--cds-text-primary, #161616);
   background: var(--cds-background, #f4f4f4);
 }
@@ -195,6 +196,11 @@
   background: var(--cds-layer-01, #ffffff);
   border-left: 3px solid var(--cds-support-success, #24a148);
   font-size: 13px;
+}
+@media (min-width: 1584px) {
+  .tp-agent-market-page { padding-inline: 24px; }
+  .tp-agent-market-page > .tp-control-panel { margin-inline: -24px; }
+  .tp-agent-market-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 @media (min-width: 672px) and (max-width: 1055px) {
   .tp-agent-market-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
