@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   At as AtSign, LogoFacebook as Facebook, Earth as Globe, LogoInstagram as Instagram, LogoLinkedin as Linkedin, Email as Mail, Chat as MessageCircle, Chat as MessageSquare,
-  Music, Phone, Add as Plus, Renew as RefreshCw, Search, Send, Mobile as Smartphone, TrashCan as Trash2, User as UserRound,
+  Music as Music2, Phone, Add as Plus, Renew as RefreshCw, Search, Send, Mobile as Smartphone, TrashCan as Trash2, User as UserRound,
   LogoYoutube as Youtube, Close as X, Edit as Pencil, Star,
 } from "@carbon/icons-react";
 import { toast } from "sonner";
