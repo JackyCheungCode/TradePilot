@@ -142,19 +142,19 @@ export function AgentMarketPage() {
       </header>
 
       <Grid className="tp-agent-market-summary">
-        <Column sm={1} md={4} lg={5}>
+        <Column sm={2} md={4} lg={5}>
           <Tile className="tp-agent-market-metric">
             <p className="tp-agent-market-metric__value cds--type-heading-05">{agentCatalog.length}</p>
             <p className="tp-agent-market-metric__label cds--type-body-compact-01">内置 Agent</p>
           </Tile>
         </Column>
-        <Column sm={1} md={4} lg={5}>
+        <Column sm={2} md={4} lg={5}>
           <Tile className="tp-agent-market-metric">
             <p className="tp-agent-market-metric__value cds--type-heading-05">{enabledCount ?? "—"}</p>
             <p className="tp-agent-market-metric__label cds--type-body-compact-01">{profileLoadError ? "启用状态暂不可用" : profilesLoaded ? "已启用" : "正在读取启用状态"}</p>
           </Tile>
         </Column>
-        <Column sm={1} md={4} lg={6}>
+        <Column sm={4} md={8} lg={6}>
           <Tile className="tp-agent-market-metric">
             <p className="tp-agent-market-metric__value cds--type-heading-05">{activeConnectionCount ?? "—"}</p>
             <p className="tp-agent-market-metric__label cds--type-body-compact-01">{connectionLoadError ? "外部连接状态暂不可用" : "已验证的外部 Agent 连接"}</p>
@@ -170,7 +170,7 @@ export function AgentMarketPage() {
               labelText="搜索 Agent"
               placeholder="按名称、业务能力或用途搜索"
               value={search}
-              size="lg"
+              size="md"
               onChange={(event) => setSearch(event.currentTarget.value)}
             />
           </Column>
@@ -178,7 +178,7 @@ export function AgentMarketPage() {
             <Dropdown
               id="agent-market-status"
               titleText="启用状态"
-              size="lg"
+              size="md"
               label="全部状态"
               items={statusItems}
               itemToString={(item) => item?.text ?? ""}
