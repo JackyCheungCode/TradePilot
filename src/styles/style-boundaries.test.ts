@@ -2,8 +2,10 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const globalStyles = readFileSync(new URL("./globals.css", import.meta.url), "utf8");
+const appShellStyles = readFileSync(new URL("../app/layouts/app-shell.css", import.meta.url), "utf8");
+const agentMarketStyles = readFileSync(new URL("../features/agent-center/presentation/agent-center.css", import.meta.url), "utf8");
 
-describe("global stylesheet boundaries", () => {
+describe("stylesheet ownership boundaries", () => {
   it("keeps application and feature selectors out of the global entry", () => {
     expect(globalStyles).not.toContain(".tp-");
     expect(globalStyles).not.toContain("[role=");
@@ -11,5 +13,13 @@ describe("global stylesheet boundaries", () => {
 
   it("does not style native controls or data tables globally", () => {
     expect(globalStyles).not.toMatch(/^\s*(?:button|input|textarea|select|table|label)\s*[{,]/m);
+  });
+
+  it("keeps Carbon implementation selectors out of the application shell stylesheet", () => {
+    expect(appShellStyles).not.toContain(".cds--");
+  });
+
+  it("keeps Carbon implementation selectors out of Agent Market feature styles", () => {
+    expect(agentMarketStyles).not.toContain(".cds--");
   });
 });
