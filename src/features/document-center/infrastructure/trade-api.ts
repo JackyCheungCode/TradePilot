@@ -1,6 +1,6 @@
 import { getSupabaseClient } from "@/shared/lib/supabase";
 export interface TradeParty {id:string;party_type:string;legal_name:string;display_name?:string|null;country_code?:string|null;email?:string|null;phone?:string|null;website?:string|null;address?:Record<string,unknown>;is_active:boolean;created_at:string;updated_at:string;}
-export interface TradeProduct {id:string;sku?:string|null;name:string;description?:string|null;hs_code?:string|null;unit:string;default_currency?:string|null;default_unit_price?:number|null;is_active:boolean;}
+export interface TradeProduct {id:string;sku?:string|null;name:string;description?:string|null;specifications?:Record<string,unknown>;hs_code?:string|null;origin_country_code?:string|null;unit:string;default_currency?:string|null;default_unit_price?:number|null;category?:string|null;brand?:string|null;model_number?:string|null;barcode?:string|null;manufacturer?:string|null;purchase_unit?:string|null;sales_unit?:string|null;moq?:number|null;lead_time_days?:number|null;warranty_period?:string|null;net_weight?:number|null;gross_weight?:number|null;weight_unit?:string|null;is_active:boolean;}
 export interface TradeOrderItem {id:string;product_id?:string|null;product_name:string;sku?:string|null;quantity:number;unit:string;unit_price:number;discount_amount:number;tax_rate:number;amount:number;line_number:number;}
 export interface TradeOrder {id:string;order_number:string;order_type:"sales"|"purchase";title:string;status:string;currency_code:string;created_at:string;updated_at:string;trade_order_items?:TradeOrderItem[];}
 export interface TradeDocument {id:string;document_number:string;document_type:string;title:string;status:string;locale:string;currency_code:string;order_id:string;template_id?:string|null;current_version:number;created_at:string;content?:Record<string,unknown>;totals?:Record<string,unknown>;}
@@ -16,7 +16,7 @@ export const tradeApi={
  listParties:()=>request<TradeParty[]>("/api/v1/trade/parties"),
  createParty:(input:Partial<TradeParty>&{legal_name:string;party_type:string})=>request<TradeParty>("/api/v1/trade/parties",{method:"POST",body:JSON.stringify(input)}),
  listProducts:()=>request<TradeProduct[]>("/api/v1/trade/products"),
- createProduct:(input:Partial<TradeProduct>&{name:string})=>request<TradeProduct>("/api/v1/trade/products",{method:"POST",body:JSON.stringify(input)}),
+ createProduct:(input:Partial<TradeProduct>&{name:string;category?:string;customs_description?:string;moq?:number|null;lead_time_days?:number|null})=>request<TradeProduct>("/api/v1/trade/products",{method:"POST",body:JSON.stringify(input)}),
  listOrders:()=>request<TradeOrder[]>("/api/v1/trade/orders"),
  createOrder:(input:{title:string;order_type:"sales"|"purchase";currency_code?:string;crm_account_id?:string;crm_contact_id?:string;opportunity_id?:string;enterprise_profile_id?:string})=>request<TradeOrder>("/api/v1/trade/orders",{method:"POST",body:JSON.stringify(input)}),
  listOrderItems:(orderId:string)=>request<TradeOrderItem[]>("/api/v1/trade/orders/"+encodeURIComponent(orderId)+"/items"),
