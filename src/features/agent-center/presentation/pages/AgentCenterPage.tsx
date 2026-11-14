@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Activity, ArrowRight, Clock3, LockKeyhole, PlugZap, Sparkles } from "lucide-react";
+import { Activity, ArrowRight, LockKeyhole, PlugZap } from "lucide-react";
 import { AgentOrbIcon } from "../components/AgentOrbIcon";
 import "../agent-center.css";
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input } from "@/shared/ui/primitives";
