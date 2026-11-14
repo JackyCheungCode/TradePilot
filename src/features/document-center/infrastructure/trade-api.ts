@@ -3,7 +3,8 @@ export interface TradeParty {id:string;party_type:string;legal_name:string;displ
 export interface TradeProduct {id:string;sku?:string|null;name:string;description?:string|null;hs_code?:string|null;unit:string;default_currency?:string|null;default_unit_price?:number|null;is_active:boolean;}
 export interface TradeOrderItem {id:string;product_id?:string|null;product_name:string;sku?:string|null;quantity:number;unit:string;unit_price:number;discount_amount:number;tax_rate:number;amount:number;line_number:number;}
 export interface TradeOrder {id:string;order_number:string;order_type:"sales"|"purchase";title:string;status:string;currency_code:string;created_at:string;updated_at:string;trade_order_items?:TradeOrderItem[];}
-export interface TradeDocument {id:string;document_number:string;document_type:string;title:string;status:string;locale:string;currency_code:string;order_id:string;current_version:number;created_at:string;}
+export interface TradeDocument {id:string;document_number:string;document_type:string;title:string;status:string;locale:string;currency_code:string;order_id:string;current_version:number;created_at:string;content?:Record<string,unknown>;totals?:Record<string,unknown>;}
+export interface TradeDocumentDetail extends TradeDocument {trade_document_versions?:Array<{version_number:number;content_snapshot:Record<string,unknown>;totals_snapshot:Record<string,unknown>;created_at:string}>;}
 async function request<T>(path:string,init?:RequestInit):Promise<T>{
  const {data:{session}}=await getSupabaseClient().auth.getSession();if(!session?.access_token)throw new Error("请先登录 TradePilot。");
  const response=await fetch(path,{...init,signal:init?.signal??AbortSignal.timeout(20000),headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token,...init?.headers}});
@@ -20,5 +21,7 @@ export const tradeApi={
  listOrderItems:(orderId:string)=>request<TradeOrderItem[]>("/api/v1/trade/orders/"+encodeURIComponent(orderId)+"/items"),
  createOrderItem:(orderId:string,input:{product_id?:string|null;product_name:string;sku?:string|null;quantity:string;unit:string;unit_price:string;discount_amount?:string;tax_rate?:string;hs_code?:string|null})=>request<TradeOrderItem>("/api/v1/trade/orders/"+encodeURIComponent(orderId)+"/items",{method:"POST",body:JSON.stringify(input)}),
  listDocuments:()=>request<TradeDocument[]>("/api/v1/trade/documents"),
+ getDocument:(id:string)=>request<TradeDocumentDetail>("/api/v1/trade/documents/"+encodeURIComponent(id)),
+ updateDocument:(id:string,input:{content:Record<string,unknown>;totals:Record<string,unknown>;locale:string;currency_code:string;current_version:number})=>request<TradeDocument>("/api/v1/trade/documents/"+encodeURIComponent(id),{method:"PATCH",body:JSON.stringify(input)}),
  createDocument:(input:{order_id:string;document_type:string;title?:string;locale?:string;currency_code?:string})=>request<TradeDocument>("/api/v1/trade/documents",{method:"POST",body:JSON.stringify(input)}),
 };
