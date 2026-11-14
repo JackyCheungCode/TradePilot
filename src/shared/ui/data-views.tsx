@@ -25,7 +25,7 @@ export function SearchControlPanel({
   className?: string;
 }) {
   return (
-    <section aria-label="搜索与筛选" className={cn("tp-search-control-panel", className)}>
+    <section aria-label="搜索与筛选" className={cn("tp-search-control-panel flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between", className)}>
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
         {onSearchChange ? (
           <div className="relative min-w-[180px] flex-1 sm:max-w-[320px]">
