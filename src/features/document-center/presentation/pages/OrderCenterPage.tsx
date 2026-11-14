@@ -167,7 +167,7 @@ export function OrderCenterPage({ onCreateQuotation, initialView = "quotations" 
       </div>
     </div>
 
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="tp-metric-grid grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       {[{ label: "报价与询价", value: counts.quotes, icon: FileText }, { label: "销售订单", value: counts.sales, icon: ShoppingCart }, { label: "采购订单", value: counts.purchase, icon: Truck }, { label: "执行中订单", value: counts.active, icon: CheckCircle2 }].map((item) => <Card key={item.label}><CardContent className="flex items-center justify-between p-4"><div><p className="text-sm text-muted-foreground">{item.label}</p><p className="mt-1 text-2xl font-semibold tabular-nums">{loading ? "—" : item.value}</p></div><item.icon className="h-5 w-5 text-muted-foreground" /></CardContent></Card>)}
     </div>
 
