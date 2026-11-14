@@ -21,18 +21,6 @@
   --input: var(--cds-border-strong, #8d8d8d);
   --ring: var(--cds-focus, #0f62fe);
 
-  --tp-sidebar: var(--cds-layer-01, #ffffff);
-  --tp-sidebar-muted: var(--cds-text-secondary, #525252);
-  --tp-surface: var(--cds-layer, #ffffff);
-  --tp-canvas: var(--cds-background, #f4f4f4);
-  --tp-border-subtle: var(--cds-border-subtle, #e0e0e0);
-  --tp-line: var(--cds-border-subtle, #e0e0e0);
-  --tp-text: var(--cds-text-primary, #161616);
-  --tp-text-muted: var(--cds-text-secondary, #525252);
-  --tp-radius: 0;
-  --tp-control-height: 40px;
-  --tp-sidebar-width: 256px;
-  --tp-topbar-height: 48px;
 }
 
 * { box-sizing: border-box; }
