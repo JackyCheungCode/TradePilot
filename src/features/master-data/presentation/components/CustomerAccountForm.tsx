@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Plus, Trash2, Upload, UserRoundPlus, X } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, UserRoundPlus, X } from "lucide-react";
+import { FileUploaderButton } from "@carbon/react";
 import { toast } from "sonner";
 import { Badge, Button, Combobox, Input, Textarea } from "@/shared/ui/primitives";
 import { FormField, FormSection } from "@/shared/ui/data-views";
@@ -253,7 +254,7 @@ export function CustomerAccountForm({
               <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted">
                 {form.logo_url ? <img src={form.logo_url} alt="客户徽标" className="h-full w-full object-contain" /> : <span className="text-xs text-muted-foreground">徽标</span>}
               </div>
-              <div className="min-w-0 space-y-2"><p className="text-sm font-medium">徽标</p><label className="inline-flex cursor-pointer items-center gap-2 rounded-[4px] border bg-background px-3 py-2 text-xs font-medium hover:bg-muted"><Upload className="h-3.5 w-3.5" />{uploading ? "正在上传…" : "上传图片"}<input className="sr-only" type="file" accept="image/png,image/jpeg,image/webp" disabled={uploading} onChange={(event) => { void uploadLogo(event.target.files?.[0]); event.currentTarget.value = ""; }} /></label><p className="text-xs text-muted-foreground">PNG、JPG、WEBP 或 SVG，最大 5 MB。</p></div>
+              <div className="min-w-0 space-y-2"><p className="text-sm font-medium">徽标</p><FileUploaderButton accept={["image/png", "image/jpeg", "image/webp"]} buttonKind="tertiary" size="sm" disableLabelChanges disabled={uploading} labelText={uploading ? "正在上传…" : "上传图片"} onChange={(event) => { void uploadLogo(event.target.files?.[0]); event.currentTarget.value = ""; }} /><p className="text-xs text-muted-foreground">PNG、JPG、WEBP 或 SVG，最大 5 MB。</p></div>
             </div>
             <FormField label="名称" required><Input autoFocus value={form.account_name} onChange={(event) => update("account_name", event.target.value)} placeholder="客户或公司名称" /></FormField>
             <FormField label="关联公司"><Combobox value={form.parent_account_id} onValueChange={(value) => update("parent_account_id", value)} options={parentOptions} placeholder="无（顶级客户）" searchPlaceholder="搜索公司名称…" /></FormField>
