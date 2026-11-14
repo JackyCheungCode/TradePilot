@@ -4,30 +4,38 @@
 This is the mandatory UI standard for every page and feature. See /AGENTS.md.
 
 ## Foundation
-- shadcn/ui is the only foundational component system.
-- Install and maintain components with the shadcn CLI; keep generated primitives in the configured shared UI directory.
-- Use the official shadcn MCP server for discovery and current component guidance when available.
-- Do not introduce a competing UI framework or duplicate primitives.
+- IBM Carbon Design System v11 and the official `@carbon/react` package are the sole foundational UI system.
+- Use official Carbon React components and Carbon Icons for interactive controls and standard interface patterns.
+- Shared wrappers may adapt existing application contracts, but must render the corresponding Carbon component rather than recreate its appearance.
+- Do not add shadcn/ui, Radix UI, or a competing visual component system.
+- Tailwind CSS is permitted for layout utilities only; Carbon tokens and component styles remain authoritative.
 
 ## Component policy
 | Need | Required foundation |
 | --- | --- |
-| Actions | Button |
-| Text entry | Input, Textarea |
-| Selection | Select, Combobox, Checkbox, Radio Group, Switch |
-| Forms | Form patterns composed from shadcn components |
-| Dialogs | Dialog, Alert Dialog |
-| Menus | Dropdown Menu, Context Menu |
-| Navigation | Sidebar, Navigation Menu, Breadcrumb, Menubar |
-| Data | Table; compose Data Table patterns for advanced workflows |
-| Feedback | Sonner, Alert, Progress, Skeleton |
-| Dates | Calendar, Date Picker |
-| Overlays | Popover, Tooltip, Sheet |
-| Disclosure | Collapsible, Accordion |
-| Layout | Card, Separator, Scroll Area, Resizable |
-| Status | Badge |
+| Actions | Carbon Button |
+| Text entry | Carbon TextInput, TextArea, NumberInput |
+| Selection | Carbon Select, Dropdown, ComboBox, MultiSelect, Checkbox, RadioButtonGroup, Toggle |
+| Forms | Form patterns composed from Carbon components |
+| Dialogs | Carbon Modal, ComposedModal |
+| Menus | Carbon OverflowMenu, Menu, MenuItem |
+| Navigation | Carbon Header, SideNav, Breadcrumb, ContentSwitcher only for existing local view switching |
+| Data | Carbon DataTable, Table, Pagination |
+| Feedback | Carbon InlineNotification, ToastNotification, ProgressBar, SkeletonText |
+| Dates | Carbon DatePicker, DatePickerInput |
+| Overlays | Carbon Tooltip, Popover, Toggletip, SidePanel where available |
+| Disclosure | Carbon Accordion, AccordionItem |
+| Layout | Carbon Grid, Column, Tile, Layer, StructuredList |
+| Status | Carbon Tag, InlineLoading |
 
 Consult current official docs for exact component names and APIs.
+
+## Style ownership
+- `globals.css` is limited to Tailwind entry/theme configuration; it must not contain page, shell, form-control, or Carbon component selectors.
+- Design tokens live in `src/styles/design-tokens.css`; global resets and font defaults live in `src/styles/reset.css`.
+- App shell rules belong to `src/app/layouts/app-shell.css`; shared page-frame rules belong to `src/shared/ui/page-layout.css`; feature styles belong inside their owning feature directory.
+- Feature styles must use feature-owned class namespaces. Do not style native elements or Carbon internal classes globally.
+- Do not override Carbon control dimensions, typography, border, radius, focus, hover, or disabled states. Use Carbon tokens for surrounding layout and surfaces.
 
 ## Design consistency
 - Centralize color, radius, typography, spacing, and elevation in design tokens / CSS variables.
