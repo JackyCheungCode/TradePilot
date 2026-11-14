@@ -1,5 +1,5 @@
 import {useEffect,useMemo,useState} from "react";
-import {Activity,ArrowRight,Check,ChevronDown,Clock3,Instagram,LoaderCircle,MessageCircle,Search,Sparkles,Terminal,Users,Wallet} from "lucide-react";
+import {Activity,ArrowRight,Check,ChevronDown,Clock3,LoaderCircle,MessageCircle,Search,Sparkles,Terminal,Users,Wallet} from "lucide-react";
 import {toast} from "sonner";
 import {Badge,Button,Card,CardContent,CardDescription,CardHeader,CardTitle,Input,Popover,PopoverContent,PopoverTrigger,Progress,Checkbox,Textarea} from "@/shared/ui/primitives";
 import { PageControlPanel } from "@/shared/ui/page-layout";
