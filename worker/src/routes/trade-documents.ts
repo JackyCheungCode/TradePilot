@@ -14,7 +14,6 @@ async function db<T>(env:Env,path:string,init:RequestInit={}):Promise<T>{
 function obj(value:unknown):Json{return value&&typeof value==="object"&&!Array.isArray(value)?value as Json:{};}
 function str(value:unknown,max=240):string{return typeof value==="string"?value.trim().slice(0,max):"";}
 function jsonBody(value:unknown):Json{return obj(value);}
-function query(url:URL,key:string):string{return encodeURIComponent(url.searchParams.get(key)??"");}
 async function createNumber(env:Env,ownerId:string,key:string):Promise<string>{
  const year=new Date().getUTCFullYear();
  const rows=await db<number>(env,"rpc/next_trade_document_number",{method:"POST",body:JSON.stringify({p_owner_id:ownerId,p_sequence_key:key,p_sequence_year:year})});
