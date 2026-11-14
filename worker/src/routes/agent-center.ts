@@ -57,7 +57,7 @@ function isPublicHttpsEndpoint(value:string):boolean{
 const allowedProtocols:Protocol[]=["rest_api","mcp","webhook"];
 const allowedAuthModes:AuthMode[]=["none","bearer","header","oauth2","webhook_secret"];
 function stableStringify(value:unknown):string{
-  if(value===null||typeof value!=="object")return JSON.stringify(value);
+  if(value===null||typeof value!=="object")return JSON.stringify(value) ?? "null";
   if(Array.isArray(value))return "["+value.map(stableStringify).join(",")+"]";
   const object=value as Record<string,unknown>;
   return "{"+Object.keys(object).sort().map(key=>JSON.stringify(key)+":"+stableStringify(object[key])).join(",")+"}";
@@ -98,8 +98,7 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
       }
       const rows=await db<ConnectionRow[]>(env,"agent_connections?select="+publicConnectionFields,{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({owner_id:ownerId,name,protocol,endpoint_url:endpoint,auth_mode:authMode,encrypted_credentials:encryptedCredentials,capabilities,status:"pending"})});
       const created=rows?.[0];if(!created)return errorResponse(request,"CONNECTION_CREATE_FAILED","连接登记失败。",500);
-      const {owner_id:_owner,...safe}=created as ConnectionRow;
-      return successResponse(request,safe,201);
+      return successResponse(request,created,201);
     }
     const connectionMatch=path.match(/^\/api\/v1\/agent\/connections\/([0-9a-f-]{36})$/i);
     if(connectionMatch&&request.method==="DELETE"){
@@ -160,7 +159,7 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
       const verifiedHash=await sha256(stableStringify(approval.operation_snapshot));
       if(verifiedHash!==approval.snapshot_sha256)return errorResponse(request,"APPROVAL_SNAPSHOT_MISMATCH","审批快照校验失败，已阻止此操作。",409);
       const status=decision==="approve"?"approved":"rejected";
-      await db(env,"agent_approvals?id=eq."+approval.id+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status,decision_note:typeof body.note==="string"?body.note.slice(0,1000):null,decided_at:new Date().toISOString()})});
+      await db(env,"agent_approvals?id=eq."+approval.id+"&owner_id=eq."+ownerId+"&status=eq.pending",{method:"PATCH",headers:{Prefer:"return=representation"},body:JSON.stringify({status,decision_note:typeof body.note==="string"?body.note.slice(0,1000):null,decided_at:new Date().toISOString()})});
       await db(env,"agent_run_events",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({owner_id:ownerId,run_id:approval.run_id,event_type:"approval_"+decision,message:decision==="approve"?"人工审批已通过。":"人工审批已拒绝。",payload:{approvalId:approval.id}})});
       return successResponse(request,{id:approval.id,status,decision});
     }
