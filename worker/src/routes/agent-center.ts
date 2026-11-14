@@ -309,6 +309,47 @@ async function generateAgentPlan(env:Env,ownerId:string,goal:string,country:stri
  return {agentKey,summary,steps,action,model:selectedModel};
 }
 
+
+type ChatTurn={role:"user"|"assistant";content:string};
+async function callAgentChatModel(env:Env,messages:ChatTurn[]):Promise<{text:string;model:string}>{
+ const settings=await db<Array<{config:Record<string,unknown>}>>(env,"ai_provider_settings?id=eq.true&select=config&limit=1");
+ const config=asRecord(settings?.[0]?.config),taskModels=asRecord(config.taskModels);
+ const selectedModel=String(taskModels.agent_chat??taskModels.agent_planning??config.defaultModel??"@cf/google/gemma-4-26b-a4b-it");
+ const providers=Array.isArray(config.providers)?config.providers.map(asRecord):[];
+ const provider=providers.find(item=>item.model===selectedModel)??(selectedModel.startsWith("@cf/")?{id:"workers-ai",protocol:"workers-ai",model:selectedModel}:null);
+ if(!provider)throw new Error("尚未配置小雅对话模型，请在「AI 与 API 集成」设置 Agent 对话模型。");
+ const system="你是 TradePilot 的总协调 Agent「小雅」，专门协助外贸团队开发全球 B2B 买家。请使用中文，语气专业、简洁、主动。结合对话历史理解上下文，不要重复询问已提供的信息。你需要判断用户是否已提出可执行任务。只返回严格 JSON：{reply:string,task:{goal:string,agentKey:string,country:string,mode:'planner'|'internal'|'external'}|null}。如果缺少关键条件（例如目标客户/产品或目标市场），task=null，并在 reply 中只追问最关键的一项；不要凭空补国家、产品或行业。若用户明确 @ 某 Agent，agentKey 必须按以下映射：buyer_development,market_research,company_research,lead_scoring,multilingual_sales,follow_up,trade_compliance；否则使用 auto。国家使用 ISO 3166-1 alpha-2；不确定时 task=null 并追问。mode 默认 planner。task.goal 应整理成清晰完整目标，保留对话中已确认的条件。绝不自行执行任务，只生成待用户确认的任务建议。邮件发送和批量导入不得建议自动执行。";
+ let raw="";
+ if(String(provider.protocol)==="workers-ai"&&env.AI){
+  const model=selectedModel.startsWith("@cf/")?selectedModel:String(provider.model??selectedModel);
+  raw=extractModelText(await env.AI.run(model,{messages:[{role:"system",content:system},...messages],response_format:{type:"json_object"},max_tokens:900}));
+ }else{
+  const id=String(provider.id??""),secrets:Record<string,string>={openai:"AI_PROVIDER_OPENAI_API_KEY",anthropic:"AI_PROVIDER_ANTHROPIC_API_KEY",gemini:"AI_PROVIDER_GEMINI_API_KEY",deepseek:"AI_PROVIDER_DEEPSEEK_API_KEY",qwen:"AI_PROVIDER_QWEN_API_KEY",zhipu:"AI_PROVIDER_ZHIPU_API_KEY",kimi:"AI_PROVIDER_KIMI_API_KEY",minimax:"AI_PROVIDER_MINIMAX_API_KEY",openrouter:"AI_PROVIDER_OPENROUTER_API_KEY",siliconflow:"AI_PROVIDER_SILICONFLOW_API_KEY",custom:"AI_PROVIDER_CUSTOM_API_KEY"};
+  const key=(env as unknown as Record<string,unknown>)[secrets[id]??""];if(typeof key!=="string"||!key)throw new Error("小雅对话模型 API Key 未配置，请在「AI 与 API 集成」保存对应密钥。");
+  const protocol=String(provider.protocol??"openai"),model=String(provider.model??selectedModel);
+  const fallback=protocol==="anthropic"?"https://api.anthropic.com/v1":protocol==="gemini"?"https://generativelanguage.googleapis.com/v1beta":id==="openrouter"?"https://openrouter.ai/api/v1":"https://api.openai.com/v1";
+  const base=String(provider.baseUrl||fallback).replace(/\/$/,"");
+  if(!isPublicHttpsEndpoint(base))throw new Error("小雅模型 Base URL 必须是 HTTPS 公网地址。");
+  let response:Response;
+  if(protocol==="anthropic"){
+   response=await fetch(base+"/messages",{method:"POST",redirect:"manual",headers:{"x-api-key":key,"anthropic-version":"2023-06-01","content-type":"application/json"},body:JSON.stringify({model,max_tokens:900,system,messages:messages.map(m=>({role:m.role,content:m.content}))}),signal:AbortSignal.timeout(45000)});
+   if(!response.ok)throw new Error("小雅模型请求失败（HTTP "+response.status+"）。");
+   const body=await response.json() as Record<string,unknown>;raw=Array.isArray(body.content)?(body.content as unknown[]).map(item=>String(asRecord(item).text??"")).join("\n"):"";
+  }else if(protocol==="gemini"){
+   const contents=messages.map(m=>({role:m.role==="assistant"?"model":"user",parts:[{text:m.content}]}));
+   response=await fetch(base+"/models/"+encodeURIComponent(model)+":generateContent?key="+encodeURIComponent(key),{method:"POST",redirect:"manual",headers:{"content-type":"application/json"},body:JSON.stringify({systemInstruction:{parts:[{text:system}]},contents,generationConfig:{responseMimeType:"application/json",maxOutputTokens:900}}),signal:AbortSignal.timeout(45000)});
+   if(!response.ok)throw new Error("小雅模型请求失败（HTTP "+response.status+"）。");
+   raw=extractModelText(await response.json());
+  }else{
+   response=await fetch(base+"/chat/completions",{method:"POST",redirect:"manual",headers:{Authorization:"Bearer "+key,"Content-Type":"application/json"},body:JSON.stringify({model,messages:[{role:"system",content:system},...messages],response_format:{type:"json_object"},max_tokens:900}),signal:AbortSignal.timeout(45000)});
+   if(!response.ok)throw new Error("小雅模型请求失败（HTTP "+response.status+"）。");
+   raw=extractModelText(await response.json());
+  }
+ }
+ if(!raw)throw new Error("小雅模型返回空内容，请检查模型配置。");
+ return {text:raw,model:selectedModel};
+}
+
 export async function handleAgentCenter(request:Request,env:Env):Promise<Response>{
   const ownerId=await ownerFromRequest(request,env);
   if(!ownerId)return errorResponse(request,"UNAUTHORIZED","请先登录 TradePilot。",401);
@@ -475,6 +516,44 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
       ]);
       return successResponse(request,{run,discoveryRun:discovery?.[0]??null,events:events??[],logs:logs??[]});
     }
+
+    if(path==="/api/v1/agent/chat"&&request.method==="POST"){
+      let body:Record<string,unknown>;try{body=await request.json() as Record<string,unknown>;}catch{return errorResponse(request,"INVALID_JSON","请求内容不是有效 JSON。",400);}
+      const message=typeof body.message==="string"?body.message.trim():"";
+      if(message.length<1||message.length>5000)return errorResponse(request,"VALIDATION_ERROR","消息长度必须为 1–5000 个字符。",400);
+      let conversationId=typeof body.conversationId==="string"&&/^[0-9a-f-]{36}$/i.test(body.conversationId)?body.conversationId:crypto.randomUUID();
+      const existing=await db<Array<{id:string}>>(env,"agent_conversations?id=eq."+conversationId+"&owner_id=eq."+ownerId+"&select=id&limit=1");
+      if(!existing?.length){
+        conversationId=crypto.randomUUID();
+        await db(env,"agent_conversations",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({id:conversationId,owner_id:ownerId,title:message.slice(0,100),last_message_at:new Date().toISOString()})});
+      }
+      const history=await db<Array<{role:"user"|"assistant";content:string}>>(env,"agent_chat_messages?conversation_id=eq."+conversationId+"&owner_id=eq."+ownerId+"&select=role,content&order=created_at.desc&limit=16");
+      const turns:ChatTurn[]=[...(history??[]).reverse(),{role:"user",content:message}];
+      await db(env,"agent_chat_messages",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({owner_id:ownerId,conversation_id:conversationId,role:"user",content:message})});
+      try{
+        const generated=await callAgentChatModel(env,turns);
+        const parsed=parsePlannerJson(generated.text);
+        const reply=String(parsed.reply??"我已理解你的意思，请再补充一点目标信息。").slice(0,3000);
+        const taskRaw=parsed.task===null?null:asRecord(parsed.task);
+        let task:Record<string,unknown>|null=null;
+        if(taskRaw&&typeof taskRaw.goal==="string"&&taskRaw.goal.trim().length>=2){
+          const allowed=new Set(["auto","buyer_development","market_research","company_research","lead_scoring","multilingual_sales","follow_up","trade_compliance"]);
+          const agentKey=allowed.has(String(taskRaw.agentKey))?String(taskRaw.agentKey):"auto";
+          const country=String(taskRaw.country??"").toUpperCase();
+          const mode=["planner","internal","external"].includes(String(taskRaw.mode))?String(taskRaw.mode):"planner";
+          if(!/^[A-Z]{2}$/.test(country))task=null;
+          else task={goal:String(taskRaw.goal).slice(0,10000),agentKey,country,mode};
+        }
+        await db(env,"agent_chat_messages",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({owner_id:ownerId,conversation_id:conversationId,role:"assistant",content:reply,metadata:{task,model:generated.model}})});
+        await db(env,"agent_conversations?id=eq."+conversationId+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({last_message_at:new Date().toISOString()})});
+        return successResponse(request,{conversationId,reply,task,model:generated.model});
+      }catch(error){
+        const message=error instanceof Error?error.message:"小雅暂时无法生成回复。";
+        await db(env,"agent_chat_messages",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({owner_id:ownerId,conversation_id:conversationId,role:"assistant",content:message,metadata:{error:true}})});
+        return errorResponse(request,"AGENT_CHAT_FAILED",message,503);
+      }
+    }
+
     if(path==="/api/v1/agent/runs"&&request.method==="GET"){
       const rows=await db<unknown[]>(env,"agent_runs?owner_id=eq."+ownerId+"&select=id,agent_key,goal,status,plan,result,error_message,estimated_cost_usd,actual_cost_usd,created_at,updated_at&order=created_at.desc&limit=100");
       return successResponse(request,rows??[]);

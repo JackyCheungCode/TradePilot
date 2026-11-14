@@ -28,18 +28,30 @@ export function AgentChatWorkspace({connections,onNotice}:{connections:AgentConn
  const [busy,setBusy]=useState(false);
  const [argsJson,setArgsJson]=useState("{}");
  const [activeRunId,setActiveRunId]=useState<string|null>(null);
+ const [conversationId,setConversationId]=useState<string|undefined>(undefined);
  useEffect(()=>{if(!activeRunId)return;let alive=true;const poll=async()=>{try{const snapshot=await agentApi.getRun(activeRunId);if(!alive)return;const run=snapshot.run;const latest=snapshot.logs.at(-1)?.message??snapshot.events.at(-1)?.message??snapshot.discoveryRun?.message;const status=run.status;const statusText=status==="queued"?"已排队":status==="running"?"正在执行":status==="awaiting_approval"?"等待人工审批":status==="succeeded"?"执行成功":status==="completed"?"执行完成":status==="partial"?"部分完成":status==="failed"?"执行失败":status==="cancelled"?"已取消":status;const progress=snapshot.discoveryRun?.progress;const update=[statusText,typeof progress==="number"?"进度 "+progress+"%":null,latest].filter(Boolean).join(" · ");setMessages(old=>{const index=old.findIndex(item=>item.id===-1);if(index<0)return [...old,{id:-1,role:"assistant",content:update,kind:"progress"}];const next=[...old];next[index]={...next[index],content:update,kind:"progress"};return next;});if(["succeeded","completed","partial","failed","cancelled","awaiting_approval","planned"].includes(status)){setMessages(old=>[...old.filter(item=>item.id!==-2),{id:-2,role:"assistant",content:status==="awaiting_approval"?"任务已暂停，等待你在审批中心确认。":status==="failed"?(run.error_message??"任务执行失败，请查看执行记录。"):status==="partial"?"任务部分完成，请查看统一搜索结果和执行日志。":status==="cancelled"?"任务已取消。":"任务已完成。"+(snapshot.discoveryRun?.discovered_count!==undefined?" 发现 "+snapshot.discoveryRun.discovered_count+" 条结果。":""),kind:"result"}]);setActiveRunId(null);}}catch(error){if(alive)onNotice(error instanceof Error?error.message:"读取任务进度失败。");}};void poll();const timer=window.setInterval(()=>void poll(),3000);return()=>{alive=false;window.clearInterval(timer);};},[activeRunId,onNotice]);
  const activeConnections=connections.filter(c=>c.status==="active");
  const connection=activeConnections.find(c=>c.id===connectionId);
  const tools=connection?.protocol_tools??[];
  const chosenTool=tools.find(t=>t.name===toolName);
- function sendMessage(){
+ async function sendMessage(){
   const text=draft.trim();if(!text||busy)return;
-  setMessages(old=>[...old,{id:Date.now(),role:"user",content:text}]);
-  setPlanGoal(text);setShowPlan(true);setDraft("");
-  const match=agents.find(a=>a.id!=="auto"&&(text.includes("@"+a.name)||text.includes("@"+a.name+" Agent")));
-  if(match)setSelectedAgent(match.id);
-  setMessages(old=>[...old,{id:Date.now()+1,role:"assistant",content:"收到。我先把目标整理成任务卡片。你可以在下方调整 Agent、国家市场和工具，确认后才会启动。"}]);
+  setDraft("");setBusy(true);
+  setMessages(old=>[...old,{id:Date.now(),role:"user",content:text},{id:Date.now()+1,role:"assistant",content:"小雅正在理解你的需求…",kind:"progress"}]);
+  try{
+   const response=await agentApi.chat(text,conversationId);
+   setConversationId(response.conversationId);
+   setMessages(old=>[...old.filter(item=>!(item.kind==="progress"&&item.content==="小雅正在理解你的需求…")),{id:Date.now()+2,role:"assistant",content:response.reply}]);
+   if(response.task){
+    setPlanGoal(response.task.goal);
+    setSelectedAgent(response.task.agentKey);
+    setCountry(response.task.country);
+    setMode(response.task.mode);
+    setShowPlan(true);
+   }
+  }catch(error){
+   setMessages(old=>[...old.filter(item=>!(item.kind==="progress"&&item.content==="小雅正在理解你的需求…")),{id:Date.now()+3,role:"assistant",content:error instanceof Error?error.message:"小雅暂时无法回复，请稍后重试。",kind:"result"}]);
+  }finally{setBusy(false);}
  }
  async function confirmTask(){
   if(!planGoal.trim()||busy)return;
@@ -67,7 +79,7 @@ export function AgentChatWorkspace({connections,onNotice}:{connections:AgentConn
  }
  return <div className="grid min-h-[680px] gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
   <Card className="flex min-h-[680px] flex-col overflow-hidden border-0 shadow-sm">
-   <div className="flex items-center gap-3 border-b bg-card px-5 py-4"><AgentOrbIcon className="h-11 w-11" sizePx={44} state={busy?"working":"happy"}/><div className="min-w-0 flex-1"><p className="font-semibold">小雅 <span className="text-xs font-normal text-muted-foreground">TradePilot 总协调 Agent</span></p><p className="text-xs text-muted-foreground">任务理解 · Agent 调度 · 进度汇报</p></div><Badge variant="success">在线</Badge></div>
+   <div className="flex items-center gap-3 border-b bg-card px-5 py-4"><AgentOrbIcon className="h-11 w-11" sizePx={44} state={busy?"working":"happy"}/><div className="min-w-0 flex-1"><p className="font-semibold">小雅 <span className="text-xs font-normal text-muted-foreground">TradePilot 总协调 Agent</span></p><p className="text-xs text-muted-foreground">多轮对话 · 任务理解 · Agent 调度</p></div><Badge variant="success">在线</Badge></div>
    <CardContent className="flex flex-1 flex-col gap-4 overflow-y-auto bg-muted/20 p-4 md:p-6">
     {messages.map(m=><div key={m.id} className={m.role==="user"?"ml-auto max-w-[88%]":"mr-auto max-w-[94%]"}>
      <div className="mb-1 flex items-center gap-2 text-[11px] text-muted-foreground">{m.role==="assistant"?<><Bot className="h-3.5 w-3.5"/>小雅</>:"你"}{m.kind==="progress"&&<Badge>处理中</Badge>}{m.kind==="result"&&<Badge variant="success">任务反馈</Badge>}</div>
@@ -82,8 +94,8 @@ export function AgentChatWorkspace({connections,onNotice}:{connections:AgentConn
      <div className="flex flex-wrap justify-end gap-2"><Button variant="outline" size="sm" onClick={()=>setShowPlan(false)}>取消</Button><Button size="sm" disabled={busy||(mode!=="external"&&!/^[A-Z]{2}$/.test(country))||(mode==="external"&&(!connectionId||!toolName))} onClick={()=>void confirmTask()}>{busy?"正在提交…":"确认并启动任务"} <ArrowUp className="ml-1 h-4 w-4"/></Button></div>
     </CardContent></Card></div>}
    </CardContent>
-   <div className="border-t bg-card p-3 md:p-4"><div className="mb-2 flex flex-wrap items-center gap-2"><span className="text-xs text-muted-foreground">快速指定：</span>{agents.slice(1).map(a=><Button key={a.id} size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={()=>setDraft(v=>(v? v+" ":"")+"@"+a.name+" ")}>@{a.name}</Button>)}</div><div className="flex items-end gap-2"><textarea value={draft} onChange={e=>setDraft(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage();}}} placeholder="告诉小雅你的目标… 输入 @ 选择专业 Agent，Enter 发送" rows={2} className="min-h-12 flex-1 resize-y rounded-xl border bg-background px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"/><Button disabled={!draft.trim()||busy} onClick={sendMessage} className="h-11 w-11 px-0"><ArrowUp className="h-4 w-4"/></Button></div><p className="mt-2 text-[11px] text-muted-foreground">发送消息只生成任务确认卡片；确认后才会调用 Agent。邮件发送、批量导入等操作仍需人工审批。</p></div>
+   <div className="border-t bg-card p-3 md:p-4"><div className="mb-2 flex flex-wrap items-center gap-2"><span className="text-xs text-muted-foreground">快速指定：</span>{agents.slice(1).map(a=><Button key={a.id} size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={()=>setDraft(v=>(v? v+" ":"")+"@"+a.name+" ")}>@{a.name}</Button>)}</div><div className="flex items-end gap-2"><textarea value={draft} onChange={e=>setDraft(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage();}}} placeholder="告诉小雅你的目标… 输入 @ 选择专业 Agent，Enter 发送" rows={2} className="min-h-12 flex-1 resize-y rounded-xl border bg-background px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"/><Button disabled={!draft.trim()||busy} onClick={sendMessage} className="h-11 w-11 px-0"><ArrowUp className="h-4 w-4"/></Button></div><p className="mt-2 text-[11px] text-muted-foreground">小雅会结合上下文理解需求并生成任务建议；只有你确认后才会启动执行。邮件发送、批量导入等操作仍需人工审批。</p></div>
   </Card>
-  <aside className="space-y-3"><Card><CardContent className="space-y-3 p-4"><div className="flex items-center gap-2"><Globe2 className="h-4 w-4"/><p className="text-sm font-semibold">当前工作区</p></div><div><p className="text-xs text-muted-foreground">默认协调者</p><p className="text-sm font-medium">小雅</p></div><div><p className="text-xs text-muted-foreground">已连接外部 Agent</p><p className="text-sm font-medium">{activeConnections.length} 个</p></div><div><p className="text-xs text-muted-foreground">执行模式</p><p className="text-sm font-medium">{mode==="planner"?"AI 自动规划":mode==="internal"?"内置搜索":"外部工具"}</p></div></CardContent></Card><Card><CardContent className="space-y-3 p-4"><p className="text-sm font-semibold">安全执行策略</p><div className="flex items-center justify-between text-xs"><span>搜索与分析</span><Badge variant="success">自动执行</Badge></div><div className="flex items-center justify-between text-xs"><span>邮件 / 批量导入</span><Badge>人工审批</Badge></div><p className="text-xs text-muted-foreground">每次任务都会进入统一任务执行中心，审批和执行记录保留在原有模块。</p></CardContent></Card><Card><CardContent className="space-y-2 p-4"><div className="flex items-center gap-2"><Wrench className="h-4 w-4"/><p className="text-sm font-semibold">可用工具</p></div><p className="text-xs text-muted-foreground">内置 Agent、REST API、MCP 与 Webhook 接入共用同一工作台。</p><div className="flex items-center gap-2 text-xs"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-600"/>任务需确认后启动</div><div className="flex items-center gap-2 text-xs"><Clock3 className="h-3.5 w-3.5"/>状态反馈写入聊天记录</div></CardContent></Card></aside>
+  <aside className="space-y-3"><Card><CardContent className="space-y-3 p-4"><div className="flex items-center gap-2"><Globe2 className="h-4 w-4"/><p className="text-sm font-semibold">当前工作区</p></div><div><p className="text-xs text-muted-foreground">默认协调者</p><p className="text-sm font-medium">小雅</p></div><div><p className="text-xs text-muted-foreground">已连接外部 Agent</p><p className="text-sm font-medium">{activeConnections.length} 个</p></div><div><p className="text-xs text-muted-foreground">执行模式</p><p className="text-sm font-medium">{mode==="planner"?"AI 自动规划":mode==="internal"?"内置搜索":"外部工具"}</p></div></CardContent></Card><Card><CardContent className="space-y-3 p-4"><p className="text-sm font-semibold">安全执行策略</p><div className="flex items-center justify-between text-xs"><span>搜索与分析</span><Badge variant="success">自动执行</Badge></div><div className="flex items-center justify-between text-xs"><span>邮件 / 批量导入</span><Badge>人工审批</Badge></div><p className="text-xs text-muted-foreground">每次任务都会进入统一任务执行中心，审批和执行记录保留在原有模块。</p></CardContent></Card><Card><CardContent className="space-y-2 p-4"><div className="flex items-center gap-2"><Wrench className="h-4 w-4"/><p className="text-sm font-semibold">可用工具</p></div><p className="text-xs text-muted-foreground">内置 Agent、REST API、MCP 与 Webhook 接入共用同一工作台。</p><div className="flex items-center gap-2 text-xs"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-600"/>任务需确认后启动</div><div className="flex items-center gap-2 text-xs"><Clock3 className="h-3.5 w-3.5"/>对话上下文持续保存</div></CardContent></Card></aside>
  </div>;
 }
