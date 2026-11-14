@@ -2,7 +2,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: Inter, "Noto Sans SC", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "IBM Plex Sans", "Noto Sans TC", "Noto Sans SC", ui-sans-serif, system-ui, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -100,7 +100,7 @@ body {
   margin: 0;
   background: var(--background);
   color: var(--foreground);
-  font-family: Inter, "Noto Sans SC", ui-sans-serif, system-ui, sans-serif;
+  font-family: "IBM Plex Sans", "Noto Sans TC", "Noto Sans SC", ui-sans-serif, system-ui, sans-serif;
   font-size: 13px;
   line-height: 1.45;
   letter-spacing: 0;
@@ -636,3 +636,9 @@ main h1, .tp-page-canvas h1 {
 .dark .tp-page-canvas table tbody tr:hover { background: #292d32; }
 .dark .tp-control-panel { background: #202328; border-color: #3b4148; }
 .dark .tp-mobile-record { background: #202328; border-color: #3b4148; }
+
+
+/* Carbon typography: reserve IBM Plex Mono for technical and code-oriented content. */
+code, pre, kbd, samp, .font-mono {
+  font-family: "IBM Plex Mono", "Noto Sans Mono CJK TC", "Noto Sans Mono CJK SC", ui-monospace, SFMono-Regular, monospace;
+}
