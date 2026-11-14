@@ -583,3 +583,16 @@ main h1, .tp-page-canvas h1 {
   .tp-page-canvas .tp-responsive-table--products tbody td:nth-child(8)::before { content: "操作"; margin-right: auto; align-self: center; }
   .tp-page-canvas .tp-responsive-table--products tbody td:nth-child(5) { text-align: left; }
 }
+
+.tp-page-canvas > main {
+  width: 100%;
+  min-width: 0;
+  max-width: 1600px;
+  margin-inline: auto;
+  padding: 18px 24px;
+}
+.tp-page-canvas > main > .tp-control-panel { margin: -18px -24px 18px; }
+@media (max-width: 767px) {
+  .tp-page-canvas > main { padding: 12px; }
+  .tp-page-canvas > main > .tp-control-panel { margin: -12px -12px 14px; }
+}
