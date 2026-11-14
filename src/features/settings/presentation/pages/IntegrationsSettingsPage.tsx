@@ -1,5 +1,5 @@
 import {useEffect,useMemo,useState} from "react";
-import {BrainCircuit,Check,CheckCircle2,ChevronDown,Cloud,Database,Eye,EyeOff,Globe2,KeyRound,Languages,LoaderCircle,LockKeyhole,Save,Search,Settings2,ShieldCheck,TestTube2,Plus} from "lucide-react";
+import {BrainCircuit,Check,CheckCircle2,ChevronDown,Cloud,Database,Eye,EyeOff,Globe2,KeyRound,Languages,LoaderCircle,LockKeyhole,Save,Search,ShieldCheck,TestTube2,Plus} from "lucide-react";
 import {toast} from "sonner";
 import {Badge,Button,Card,CardContent,CardDescription,CardHeader,CardTitle,Input,Popover,PopoverContent,PopoverTrigger} from "@/shared/ui/primitives";
 import { PageControlPanel } from "@/shared/ui/page-layout";
