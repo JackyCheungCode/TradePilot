@@ -35,34 +35,5 @@
   --tp-topbar-height: 48px;
 }
 
-.dark {
-  color-scheme: dark;
-  --background: #17191c;
-  --foreground: #f4f5f6;
-  --card: #202328;
-  --card-foreground: #f4f5f6;
-  --popover: #202328;
-  --popover-foreground: #f4f5f6;
-  --primary: #f4f5f6;
-  --primary-foreground: #212529;
-  --secondary: #30343a;
-  --secondary-foreground: #f4f5f6;
-  --muted: #292d32;
-  --muted-foreground: #aab1b9;
-  --accent: #30343a;
-  --accent-foreground: #f4f5f6;
-  --destructive: #ef6b75;
-  --border: #3b4148;
-  --input: #454c55;
-  --ring: #89939e;
-  --tp-sidebar: #202328;
-  --tp-surface: #202328;
-  --tp-canvas: #17191c;
-  --tp-border-subtle: #3b4148;
-  --tp-line: #3b4148;
-  --tp-text: #f4f5f6;
-  --tp-text-muted: #aab1b9;
-}
-
 * { box-sizing: border-box; }
 html, body, #root { min-height: 100%; }
