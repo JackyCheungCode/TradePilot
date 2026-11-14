@@ -1,5 +1,5 @@
 import {useEffect,useMemo,useState} from "react";
-import {Building2,RefreshCw,UserPlus,BriefcaseBusiness,ArrowUpDown,ArrowUp,ArrowDown} from "lucide-react";
+import {Building as Building2,Renew as RefreshCw,UserFollow as UserPlus,BusinessProcesses as BriefcaseBusiness,ArrowsVertical as ArrowUpDown,ArrowUp,ArrowDown} from "@carbon/icons-react";
 import {toast} from "sonner";
 import {Badge,Button,Card,CardContent,CardDescription,CardHeader,CardTitle,Input,Combobox,Checkbox} from "@/shared/ui/primitives";
 import { PageControlPanel } from "@/shared/ui/page-layout";
