@@ -20,6 +20,8 @@ export const tradeApi={
  createOrder:(input:{title:string;order_type:"sales"|"purchase";currency_code?:string})=>request<TradeOrder>("/api/v1/trade/orders",{method:"POST",body:JSON.stringify(input)}),
  listOrderItems:(orderId:string)=>request<TradeOrderItem[]>("/api/v1/trade/orders/"+encodeURIComponent(orderId)+"/items"),
  createOrderItem:(orderId:string,input:{product_id?:string|null;product_name:string;sku?:string|null;quantity:string;unit:string;unit_price:string;discount_amount?:string;tax_rate?:string;hs_code?:string|null})=>request<TradeOrderItem>("/api/v1/trade/orders/"+encodeURIComponent(orderId)+"/items",{method:"POST",body:JSON.stringify(input)}),
+ updateOrderItem:(orderId:string,id:string,input:{product_name?:string;sku?:string|null;quantity?:string;unit?:string;unit_price?:string;discount_amount?:string;tax_rate?:string})=>request<TradeOrderItem>("/api/v1/trade/orders/"+encodeURIComponent(orderId)+"/items",{method:"PATCH",body:JSON.stringify({id,...input})}),
+ deleteOrderItem:(orderId:string,id:string)=>request<{deleted:boolean;id:string}>("/api/v1/trade/orders/"+encodeURIComponent(orderId)+"/items?id="+encodeURIComponent(id),{method:"DELETE"}),
  listDocuments:()=>request<TradeDocument[]>("/api/v1/trade/documents"),
  getDocument:(id:string)=>request<TradeDocumentDetail>("/api/v1/trade/documents/"+encodeURIComponent(id)),
  updateDocument:(id:string,input:{content:Record<string,unknown>;totals:Record<string,unknown>;locale:string;currency_code:string;current_version:number})=>request<TradeDocument>("/api/v1/trade/documents/"+encodeURIComponent(id),{method:"PATCH",body:JSON.stringify(input)}),
