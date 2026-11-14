@@ -363,6 +363,25 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
   const url=new URL(request.url);
   const path=url.pathname.replace(/\/$/,"");
   try{
+    if(path==="/api/v1/agent/profiles"&&request.method==="GET"){
+      const rows=await db<Array<Record<string,unknown>>>(env,"agent_profiles?owner_id=eq."+ownerId+"&select=agent_key,enabled,config,updated_at&order=agent_key.asc");
+      return successResponse(request,rows??[]);
+    }
+    const profileMatch=path.match(/^\/api\/v1\/agent\/profiles\/([a-z][a-z0-9_-]{1,50})$/i);
+    if(profileMatch&&request.method==="PUT"){
+      const allowed=new Set(["buyer_development","market_research","company_research","lead_scoring","multilingual_sales","follow_up","trade_compliance"]);
+      const agentKey=profileMatch[1];
+      if(!allowed.has(agentKey))return errorResponse(request,"AGENT_PROFILE_INVALID","不支持的内置 Agent。",400);
+      let body:Record<string,unknown>;try{body=await request.json() as Record<string,unknown>;}catch{return errorResponse(request,"INVALID_JSON","请求内容不是有效 JSON。",400);}
+      const enabled=typeof body.enabled==="boolean"?body.enabled:true;
+      const input=asRecord(body.config);
+      const systemPrompt=typeof input.systemPrompt==="string"?input.systemPrompt.trim():"";
+      const description=typeof input.description==="string"?input.description.trim():"";
+      if(systemPrompt.length>12000||description.length>1000)return errorResponse(request,"VALIDATION_ERROR","Agent 指令或描述超出长度限制。",400);
+      const config={systemPrompt,description};
+      const rows=await db<Array<Record<string,unknown>>>(env,"agent_profiles?on_conflict=owner_id,agent_key&select=agent_key,enabled,config,updated_at",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=representation"},body:JSON.stringify({owner_id:ownerId,agent_key:agentKey,enabled,config,updated_at:new Date().toISOString()})});
+      return successResponse(request,rows?.[0]??{agent_key:agentKey,enabled,config},200);
+    }
     if(path==="/api/v1/agent/appearance"&&request.method==="GET"){
       const rows=await db<Array<{config:Record<string,unknown>}>>(env,"agent_appearance_settings?owner_id=eq."+ownerId+"&select=config&limit=1");
       const fallback={default:{shape:"mochi",color:"cream",styleId:"vector",variant:"soft",face:"cute"},agents:{}};

@@ -15,7 +15,10 @@ async function request<T>(path:string,init?:RequestInit):Promise<T>{
  if(!response.ok||body.data===undefined)throw new Error(body.error?.message??"Agent API 请求失败（HTTP "+response.status+"）。");
  return body.data;
 }
+export interface AgentProfile {agent_key:string;enabled:boolean;config:{systemPrompt:string;description:string};updated_at:string;}
 export const agentApi={
+ listProfiles:()=>request<AgentProfile[]>("/api/v1/agent/profiles"),
+ saveProfile:(agentKey:string,input:{enabled:boolean;config:{systemPrompt:string;description:string}})=>request<AgentProfile>("/api/v1/agent/profiles/"+encodeURIComponent(agentKey),{method:"PUT",body:JSON.stringify(input)}),
  getAppearance:()=>request<AgentAppearanceConfig>("/api/v1/agent/appearance"),
  saveAppearance:(config:AgentAppearanceConfig)=>request<AgentAppearanceConfig>("/api/v1/agent/appearance",{method:"PUT",body:JSON.stringify({config})}),
  listConnections:()=>request<AgentConnection[]>("/api/v1/agent/connections"),
