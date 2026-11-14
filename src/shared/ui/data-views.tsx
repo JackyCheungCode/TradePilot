@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Search, X } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
+import { Tag as CarbonTag } from "@carbon/react";
 import { Button, Input } from "@/shared/ui/primitives";
 
 export function SearchControlPanel({
@@ -96,28 +97,28 @@ export function FormField({ label, required = false, description, error, childre
   );
 }
 
-const statusTone: Record<string, string> = {
-  draft: "bg-muted text-muted-foreground",
-  planned: "bg-muted text-muted-foreground",
-  queued: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200",
-  running: "bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-200",
-  partial: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200",
-  succeeded: "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200",
-  awaiting_approval: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200",
-  approved: "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200",
-  rejected: "bg-red-100 text-red-900 dark:bg-red-950 dark:text-red-200",
-  expired: "bg-muted text-muted-foreground",
-  pending: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200",
-  review: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200",
-  active: "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200",
-  completed: "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200",
-  issued: "bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-200",
-  cancelled: "bg-muted text-muted-foreground",
-  void: "bg-muted text-muted-foreground",
-  archived: "bg-muted text-muted-foreground",
-  failed: "bg-red-100 text-red-900 dark:bg-red-950 dark:text-red-200",
+const statusTagType: Record<string, "gray" | "blue" | "cyan" | "green" | "red" | "magenta" | "purple" | "teal" | "warm-gray"> = {
+  draft: "gray",
+  planned: "gray",
+  queued: "warm-gray",
+  running: "blue",
+  partial: "warm-gray",
+  succeeded: "green",
+  awaiting_approval: "warm-gray",
+  approved: "green",
+  rejected: "red",
+  expired: "gray",
+  pending: "warm-gray",
+  review: "warm-gray",
+  active: "green",
+  completed: "green",
+  issued: "blue",
+  cancelled: "gray",
+  void: "gray",
+  archived: "gray",
+  failed: "red",
 };
 
 export function StatusBadge({ status, label, className }: { status: string; label: string; className?: string }) {
-  return <span data-status={status} className={cn("inline-flex items-center rounded-[4px] px-2 py-0.5 text-[11px] font-medium", statusTone[status] ?? "bg-muted text-muted-foreground", className)}>{label}</span>;
+  return <CarbonTag data-status={status} type={statusTagType[status] ?? "gray"} size="sm" className={className}>{label}</CarbonTag>;
 }
