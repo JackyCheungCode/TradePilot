@@ -1,0 +1,41 @@
+.tp-login-page {
+  display: grid;
+  min-block-size: 100vh;
+  place-items: center;
+  padding: var(--cds-spacing-07);
+  background: var(--cds-background);
+  color: var(--cds-text-primary);
+}
+
+.tp-login-grid {
+  inline-size: 100%;
+}
+
+.tp-login-column {
+  margin-inline: auto;
+}
+
+.tp-login-tile {
+  padding: var(--cds-spacing-07);
+  background: var(--cds-layer);
+}
+
+.tp-login-logo {
+  display: block;
+  inline-size: min(14rem, 100%);
+  block-size: auto;
+  object-fit: contain;
+}
+
+.tp-login-form {
+  inline-size: 100%;
+}
+
+.tp-login-submit {
+  inline-size: 100%;
+  max-inline-size: none;
+}
+
+.tp-login-footnote {
+  text-align: center;
+}
