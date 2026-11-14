@@ -222,3 +222,8 @@ main { background: var(--tp-canvas); }
   .tp-page-canvas .overflow-x-auto { border-radius: 5px; }
   .tp-page-canvas table { min-width: 640px; }
 }
+
+.tp-page-canvas .tp-list-row { background: #fff; border-color: var(--tp-line); box-shadow: none; }
+.tp-page-canvas .tp-list-row:hover { background: #fafbfc; }
+.tp-page-canvas .tp-list-row + .tp-list-row { margin-top: 8px; }
+.tp-page-canvas .tp-list-row [class*="border-t"] { border-color: var(--tp-line); }
