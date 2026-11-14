@@ -94,10 +94,6 @@
 .tp-agent-market-controls-grid .cds--col{min-width:0}
 .tp-agent-market-controls .cds--search,
 .tp-agent-market-controls .cds--dropdown{width:100%}
-/* Keep Carbon Search's square field: the app-wide generic input rule must not round it. */
-.tp-page-canvas .tp-agent-market-page input.cds--search-input:not([type="checkbox"]):not([type="radio"]){
-  border-radius:0;
-}
 .tp-agent-market-result-column{align-items:flex-end;justify-content:flex-end}
 .tp-agent-market-result-count{
   margin:0 0 var(--cds-spacing-03);
@@ -166,8 +162,9 @@
 .tp-agent-market-detail-grid .tp-agent-market-capabilities{margin-top:var(--cds-spacing-04)}
 .tp-agent-market-prompt{
   padding:var(--cds-spacing-05);
-  background:var(--cds-layer-01);
+  background:var(--cds-layer);
 }
+.tp-agent-market-prompt-layer{display:block;min-width:0}
 .tp-agent-market-prompt .cds--text-area__wrapper{width:100%}
 .tp-agent-market-prompt-actions{
   display:flex;
