@@ -102,7 +102,7 @@ export function Badge({
 export const Input = React.forwardRef<
   HTMLInputElement,
   React.InputHTMLAttributes<HTMLInputElement>
->(function Input({ className, id, defaultValue, value, onClick, size: _nativeSize, ...props }, ref) {
+>(function Input({ className, id, defaultValue, value, onClick, onChange, size: _nativeSize, ...props }, ref) {
   const generatedId = React.useId();
   void _nativeSize;
   if (props.type === "date") {
@@ -128,7 +128,6 @@ export const Input = React.forwardRef<
           type="text"
           placeholder={placeholder ?? "YYYY-MM-DD"}
           disabled={disabled}
-          required={required}
           name={name}
           autoComplete={autoComplete}
         />
