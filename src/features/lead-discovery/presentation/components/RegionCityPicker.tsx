@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import isoCountries from "i18n-iso-countries";
-import { AlertCircle } from "lucide-react";
+import { WarningAltFilled as AlertCircle } from "@carbon/icons-react";
 import { Combobox } from "@/shared/ui/primitives";
 
 interface GeoResponse<T> { error?: boolean; msg?: string; data?: T; }
