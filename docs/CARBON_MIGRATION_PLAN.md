@@ -226,3 +226,14 @@ The first change must be the dependency/lockfile and theme foundation, not broad
 - [ ] Current Checkbox event-contract fix is awaiting its own CI result.
 - [ ] Customer Account Form's full-screen contact-management mode and its internal tab panel still need review against Carbon layout/navigation patterns.
 - [ ] Continue auditing all page-local conditional controls, inline actions, responsive states, and the remaining Carbon Table variants; the presence of Carbon primitives does not by itself constitute a completed visual acceptance pass.
+
+
+### Remaining inline control sweep (2026-11-14)
+- [x] Migrated the Agent Chat result table to Carbon Table components.
+- [x] Migrated Agent Chat history selection, CRM lead sort controls, Order Center sort controls, document print-preview close action, AppShell sidebar actions, Instagram country-chip removal, customer tag removal and AI provider selection to Carbon buttons/actions.
+- [x] Replaced customer form's internal tab strip with Carbon ContentSwitcher; AI/API settings already use Carbon ContentSwitcher.
+- [x] Replaced remaining native `window.confirm` archive/delete prompts with Carbon Modal confirmation flows.
+- [ ] One native color input remains in the document-template brand-color setting. Carbon React does not expose a matching native color-picker component in the current component set; decide whether to keep this specialized browser color input or replace it with a Carbon text field plus swatch while retaining hex editing.
+- [ ] One native button remains as the intentionally invisible mobile-navigation backdrop; it is structural overlay dismissal, not a styled action control.
+- [ ] Complete visual acceptance on all authenticated routes and responsive breakpoints; static source migration and CI do not replace browser-based visual verification.
+- [ ] Current latest commits are running CI; do not treat this migration as release-ready until the current head has a successful full CI run and the remaining visual review is complete.
