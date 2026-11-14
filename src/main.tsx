@@ -17,7 +17,7 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
   <StrictMode>
-    <Theme theme="g10">
+    <Theme theme="white">
       <App />
     </Theme>
   </StrictMode>,
