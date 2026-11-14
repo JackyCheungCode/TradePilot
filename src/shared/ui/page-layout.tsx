@@ -18,7 +18,7 @@ export function PageControlPanel({ title, description, eyebrow, breadcrumb, acti
       <div className="tp-control-panel__main">
         <div className="min-w-0">
           {breadcrumb?.length ? (
-            <nav aria-label="面包屑" className="tp-breadcrumb">
+            <nav aria-label="面包屑" className="tp-breadcrumb cds--type-label-01">
               {breadcrumb.map((item, index) => (
                 <span key={item + index} className="contents">
                   {index > 0 && <span aria-hidden="true" className="tp-breadcrumb__separator">/</span>}
