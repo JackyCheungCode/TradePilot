@@ -3,8 +3,8 @@ import { Activity, Locked as LockKeyhole, Plug as PlugZap } from "@carbon/icons-
 import { AgentChatWorkspace } from "../components/AgentChatWorkspace";
 import { AgentMarketPage } from "./AgentMarketPage";
 import "../agent-center.css";
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, Combobox, Textarea } from "@/shared/ui/primitives";
-import { PageControlPanel, PageSection } from "@/shared/ui/page-layout";
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, Combobox } from "@/shared/ui/primitives";
+import { PageControlPanel } from "@/shared/ui/page-layout";
 import { FormField, SearchControlPanel, StatusBadge } from "@/shared/ui/data-views";
 import { agentApi, type AgentConnection, type AgentProtocol, type AgentRun, type AgentWorkflow } from "../../infrastructure/agent-api";
 type Section="agentWorkbench"|"agentMarket"|"agentOrchestration"|"agentConnections"|"agentRuns"|"agentApprovals"|"agentSettings";
@@ -16,7 +16,6 @@ export function AgentCenterPage({section}:{section:Section}){
  const visibleRuns=runs.filter(run=>(!runStatusFilter||run.status===runStatusFilter)&&[run.goal,run.id,run.status].join(" ").toLowerCase().includes(runSearch.toLowerCase()));
  const visibleConnections=connections.filter(connection=>(!connectionStatusFilter||connection.status===connectionStatusFilter)&&[connection.name,connection.endpoint_url,connection.protocol].join(" ").toLowerCase().includes(connectionSearch.toLowerCase()));
  const visibleApprovals=approvals.filter(approval=>(!approvalStatusFilter||approval.status===approvalStatusFilter)&&[approval.action_type,approval.run_id,approval.id].join(" ").toLowerCase().includes(approvalSearch.toLowerCase()));
- const visibleRoles=roles.filter(([id,name,desc,p])=>{const profile=profiles.find(x=>x.agent_key===id);const enabled=profile?.enabled??true;return (!marketStatusFilter||(marketStatusFilter==="enabled"?enabled:!enabled))&&[id,name,desc,p].join(" ").toLowerCase().includes(marketSearch.toLowerCase());});
  const visibleWorkflows=workflows.filter(workflow=>[workflow.name,workflow.description,...workflow.definition.steps.map(step=>step.agentKey)].join(" ").toLowerCase().includes(workflowSearch.toLowerCase()));
  return <div className={section==="agentMarket"?"tp-page-root tp-agent-market-page space-y-6":"mx-auto w-full min-w-0 max-w-7xl space-y-5 overflow-x-hidden p-3 sm:p-4 lg:p-6"}>
  <PageControlPanel eyebrow="TRADEPILOT INTELLIGENCE / AGENT" title={titles[section]} description="开放式外贸 Agent 平台 · 内置智能体与外部 Agent 协同" actions={<Badge variant="success">开放接入</Badge>}/>
