@@ -12,9 +12,9 @@ export function AppShell({ children, activePage, onNavigate, userEmail, onSignOu
  const [collapsed,setCollapsed]=useState(false),[mobileOpen,setMobileOpen]=useState(false);
  const [agentExpanded,setAgentExpanded]=useState(true),[discoveryExpanded,setDiscoveryExpanded]=useState(false),[crmExpanded,setCrmExpanded]=useState(true),[settingsExpanded,setSettingsExpanded]=useState(false),[documentsExpanded,setDocumentsExpanded]=useState(true),[ordersExpanded,setOrdersExpanded]=useState(true);
  useEffect(()=>{
-  setAgentExpanded(activePage.startsWith("agent"));
+  setAgentExpanded(["agentWorkbench","agentMarket","agentOrchestration","agentConnections","agentRuns","agentApprovals","agentSettings"].includes(activePage));
   setOrdersExpanded(activePage.startsWith("order"));
-  setDocumentsExpanded(activePage.startsWith("document"));
+  setDocumentsExpanded(["documentWorkbench","documentCreate","documentRecords"].includes(activePage));
   setDiscoveryExpanded(["discovery","discoveryTasks","discoveryResults","searchDiscovery","facebookDiscovery","instagramDiscovery"].includes(activePage));
   setCrmExpanded(["leads","crmAccounts","crmContacts","crmOpportunities"].includes(activePage));
   setSettingsExpanded(["enterpriseConfig","productConfig","integrations","searchExclusions","agentAppearance","documentTemplates"].includes(activePage));
