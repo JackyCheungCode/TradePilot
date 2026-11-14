@@ -3,13 +3,49 @@
   "name": "tradepilot",
   "main": "worker/src/index.ts",
   "compatibility_date": "2026-11-13",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "ai": { "binding": "AI" },
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
-    "not_found_handling": "single-page-application"
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
   },
   "observability": {
     "enabled": true
+  },
+  "workflows": [
+    {
+      "name": "tradepilot-lead-discovery",
+      "binding": "LEAD_DISCOVERY_WORKFLOW",
+      "class_name": "LeadDiscoveryWorkflow"
+    },
+    {
+      "name": "tradepilot-contact-enrichment",
+      "binding": "CONTACT_ENRICHMENT_WORKFLOW",
+      "class_name": "ContactEnrichmentWorkflow"
+    },
+    {
+      "name": "tradepilot-facebook-discovery",
+      "binding": "FACEBOOK_DISCOVERY_WORKFLOW",
+      "class_name": "FacebookDiscoveryWorkflow"
+    },
+    {
+      "name": "tradepilot-agent-orchestration",
+      "binding": "AGENT_ORCHESTRATION_WORKFLOW",
+      "class_name": "AgentOrchestrationWorkflow"
+    },
+    {
+      "name": "tradepilot-instagram-discovery",
+      "binding": "INSTAGRAM_DISCOVERY_WORKFLOW",
+      "class_name": "InstagramDiscoveryWorkflow"
+    }
+  ],
+  "account_id": "ea4e98dce9c478d7dd5c07f10e5c722d",
+  "vars": {
+    "SUPABASE_URL": "https://nlklnkkcwapwerkahoyb.supabase.co",
+    "SUPABASE_ANON_KEY": "sb_publishable_9jPg2Sv0VmMho3vOvxU00Q_-kWg8xw_"
   }
 }

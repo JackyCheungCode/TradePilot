@@ -1,0 +1,21 @@
+export type DiscoveryProvider = "google_maps" | "openstreetmap" | "serper" | "serpapi" | "apify";
+export type DiscoveryStatus = "planned" | "queued" | "running" | "completed" | "partial" | "failed" | "cancelled";
+export type SearchEngine = "serper" | "serpapi";
+export type SearchType = "web" | "shopping" | "images" | "news" | "videos" | "scholar" | "patents";
+export interface DiscoveryRunInput { countries: string[]; query: string; limitPerCountry: number; providers: DiscoveryProvider[]; state?: string; city?: string; osmTags?: Array<{key:string;value:string}>; businessTypes?: string[]; filters?: {minRating?:number;openNow?:boolean;requireWebsite?:boolean;requirePhone?:boolean}; originalQuery?:string; translatedQuery?:string; targetLanguage?:string; channel?:"map_local_businesses"|"search_engine"; searchEngines?:SearchEngine[]; searchTypes?:SearchType[]; searchLanguage?:string; advancedQuery?:string; excludeCategories?:string[]; }
+export interface DiscoveryRun {
+  id: string; taskCode?: string; channel?: string; query?: string; countries?: string[];
+  state?: string | null; city?: string | null; providers?: DiscoveryProvider[];
+  searchConfig?: Record<string, unknown>; status: DiscoveryStatus; progress: number; discoveredCount: number; createdLeadCount: number;
+  message: string; createdAt?: string;
+}
+export interface DiscoveryLog { id: string; level: "info" | "success" | "warning" | "error"; message: string; createdAt: string; }
+export interface DiscoveryOccurrence { id: string; run_id: string; provider: DiscoveryProvider; keyword: string; external_id: string; source_url?: string | null; captured_at: string; is_removed?: boolean; run?: {task_code?: string; query?: string} | null; }
+export interface DiscoveryRecord {
+  id: string; entity_id?: string | null; record_type?: string; name: string; country_code: string | null; address: string | null; phone: string | null; email?: string | null;
+  website: string | null; business_type?: string | null; confidence_score?: number | null; latitude: number | null; longitude: number | null;
+  status: "new" | "removed" | "discarded" | "promoted"; channel: string; raw_data?: Record<string, unknown>;
+  discovery_record_occurrences: DiscoveryOccurrence[];
+}
+export interface FormalLead { id: string; entity_id?: string | null; name: string; country_code: string; address: string | null; phone: string | null; email?: string | null; website: string | null; business_type?: string | null; confidence_score?: number | null; created_at: string; discovery_record?: { channel: string; discovery_record_occurrences?: Array<{provider: DiscoveryProvider; keyword: string; source_url?: string | null}> } | null; }
+export interface CountryOption { code: string; numericCode: string; name: string; flag: string; }

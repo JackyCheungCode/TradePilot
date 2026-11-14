@@ -2,6 +2,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --font-sans: Inter, "Noto Sans SC", ui-sans-serif, system-ui, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -28,24 +29,24 @@
 
 :root {
   color-scheme: light;
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
+  --radius: 0.375rem;
+  --background: #f6f7f8;
   --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
+  --card: #ffffff;
   --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
+  --popover: #ffffff;
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  --primary: #1f2937;
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
+  --secondary: #eef0f2;
   --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
+  --muted: #f1f3f5;
   --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
+  --accent: #edf0f2;
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
+  --border: #e5e7eb;
+  --input: #dfe3e7;
   --ring: oklch(0.708 0 0);
 }
 
@@ -85,6 +86,144 @@ body {
   margin: 0;
   background: var(--background);
   color: var(--foreground);
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-family: Inter, "Noto Sans SC", ui-sans-serif, system-ui, sans-serif;
   text-rendering: optimizeLegibility;
 }
+
+
+/* TradePilot · Odoo-inspired global interface system */
+:root {
+  --tp-sidebar: #1f2937;
+  --tp-sidebar-muted: #aeb7c2;
+  --tp-surface: #ffffff;
+  --tp-canvas: #f6f7f8;
+  --tp-border-subtle: #e8ebee;
+  --tp-text: #212529;
+  --tp-radius: 6px;
+  --tp-control-height: 34px;
+}
+html { font-size: 14px; }
+body { font-size: 13px; line-height: 1.45; letter-spacing: 0; }
+button, input, textarea, select { font: inherit; }
+button { -webkit-tap-highlight-color: transparent; }
+::selection { background: #dce3ea; color: #17202a; }
+:focus-visible { outline: 2px solid #64748b; outline-offset: 2px; }
+.tp-sidebar { background: var(--tp-sidebar); color: #f8fafc; border-color: #374151; }
+.tp-sidebar nav button { color: #e5e7eb; border-radius: 5px; min-height: 34px; }
+.tp-sidebar nav button:hover { background: rgba(255,255,255,.09); color: #fff; }
+.tp-sidebar nav button[class*="bg-secondary"] { background: rgba(255,255,255,.14) !important; color: #fff !important; }
+.tp-sidebar nav button svg { color: #c3ccd6; }
+.tp-sidebar nav button[class*="bg-secondary"] svg { color: #fff; }
+.tp-sidebar .border-b, .tp-sidebar .border-t, .tp-sidebar .border-l { border-color: rgba(255,255,255,.12); }
+.tp-topbar { background: rgba(255,255,255,.96); border-color: var(--tp-border-subtle); }
+.tp-page-canvas { min-height: calc(100vh - 56px); background: var(--tp-canvas); }
+.tp-page-canvas > * { max-width: 100%; }
+main { min-width: 0; }
+main h1 { color: var(--tp-text); letter-spacing: -.025em; }
+main h2, main h3 { letter-spacing: -.015em; }
+main .rounded-xl.border, main .rounded-lg.border { border-color: var(--tp-border-subtle); box-shadow: 0 1px 2px rgba(16,24,40,.035); }
+main table { border-collapse: separate; border-spacing: 0; width: 100%; }
+main table thead th { background: #f7f8f9; color: #667085; font-size: 11px; font-weight: 600; letter-spacing: .025em; }
+main table tbody tr:hover { background: #f8fafb; }
+main input:not([type="checkbox"]):not([type="radio"]):not([data-tp-control]), main textarea:not([data-tp-control]), main select {
+  min-height: var(--tp-control-height);
+  border-radius: 5px;
+  border-color: #d8dde3;
+  background-color: #fff;
+  box-shadow: none;
+}
+main input:not([data-tp-control]):focus, main textarea:not([data-tp-control]):focus, main select:focus {
+  border-color: #64748b;
+  box-shadow: 0 0 0 2px rgba(100,116,139,.12);
+}
+main select { padding-right: 2rem; }
+main label { color: #475467; font-size: 12px; font-weight: 500; }
+main button { transition: background-color .14s ease, border-color .14s ease, color .14s ease; }
+main button[class*="bg-primary"] { background: #273444; }
+main button[class*="bg-primary"]:hover { background: #111827; }
+main button[class*="rounded-xl"] { border-radius: 6px; }
+@media (max-width: 767px) {
+  .tp-page-canvas { min-height: calc(100vh - 56px); }
+  main .overflow-x-auto { -webkit-overflow-scrolling: touch; }
+}
+
+
+/* Odoo 20 iconography */
+.material-symbols-outlined {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Material Symbols Outlined";
+  font-weight: 400;
+  font-style: normal;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-feature-settings: "liga";
+  -webkit-font-feature-settings: "liga";
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 20;
+  vertical-align: middle;
+}
+
+
+/* Odoo 20 workspace refinements: consistent list, form and action surfaces */
+:root {
+  --tp-accent: #714b67;
+  --tp-text-muted: #667085;
+  --tp-line: #e7e9ec;
+}
+body { color: #212529; }
+main { background: var(--tp-canvas); }
+.tp-page-canvas { padding: 0; }
+.tp-page-canvas > * { color: #212529; }
+.tp-page-canvas h1 { font-size: 21px; line-height: 1.3; font-weight: 600; }
+.tp-page-canvas h2 { font-size: 17px; line-height: 1.35; font-weight: 600; }
+.tp-page-canvas h3 { font-size: 14px; line-height: 1.4; font-weight: 600; }
+.tp-page-canvas p { line-height: 1.5; }
+.tp-page-canvas .rounded-xl { border-radius: 6px; }
+.tp-page-canvas .rounded-lg { border-radius: 6px; }
+.tp-page-canvas .shadow-sm,
+.tp-page-canvas .shadow-md { box-shadow: 0 1px 2px rgba(16,24,40,.04); }
+.tp-page-canvas .border { border-color: var(--tp-line); }
+.tp-page-canvas table { font-size: 13px; }
+.tp-page-canvas table th { height: 36px; padding: 8px 12px; border-bottom: 1px solid var(--tp-line); white-space: nowrap; }
+.tp-page-canvas table td { min-height: 40px; padding: 9px 12px; border-bottom: 1px solid #eef0f2; vertical-align: middle; }
+.tp-page-canvas table tbody tr:last-child td { border-bottom: 0; }
+.tp-page-canvas table tbody tr { transition: background-color .12s ease; }
+.tp-page-canvas table tbody tr:hover { background: #f7f8f9; }
+.tp-page-canvas [role="dialog"] { border-radius: 7px; border-color: var(--tp-line); box-shadow: 0 12px 36px rgba(16,24,40,.16); }
+.tp-page-canvas input[type="checkbox"],
+.tp-page-canvas input[type="radio"] { accent-color: #344054; }
+.tp-page-canvas textarea:not([data-tp-control]) { min-height: 84px; }
+.tp-page-canvas .material-symbols-outlined { font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 20; }
+.tp-page-canvas svg.lucide { stroke-width: 1.7; }
+.tp-page-canvas .text-2xl { font-size: 21px; line-height: 1.3; }
+.tp-page-canvas .text-xl { font-size: 18px; line-height: 1.35; }
+.tp-page-canvas .text-sm { font-size: 13px; }
+.tp-page-canvas .text-xs { font-size: 11px; }
+.tp-page-canvas button { border-radius: 5px; }
+.tp-page-canvas button[class*="h-10"] { min-height: 34px; height: 34px; }
+.tp-page-canvas button[class*="h-9"] { min-height: 34px; height: 34px; }
+.tp-page-canvas .bg-muted\/50 { background-color: #f5f6f7; }
+.tp-page-canvas .bg-card { background-color: #fff; }
+.tp-page-canvas .bg-primary\/5 { background-color: #f4f5f6; }
+.tp-page-canvas .text-primary { color: #344054; }
+.tp-page-canvas .border-primary\/30 { border-color: #d9dde2; }
+.tp-page-canvas .ring-primary { --tw-ring-color: #98a2b3; }
+.tp-page-canvas .max-w-7xl { max-width: 1600px; }
+.tp-page-canvas .max-w-\[1500px\] { max-width: 1600px; }
+@media (max-width: 767px) {
+  .tp-page-canvas h1 { font-size: 19px; }
+  .tp-page-canvas .overflow-x-auto { border-radius: 5px; }
+  .tp-page-canvas table { min-width: 640px; }
+}
+
+.tp-page-canvas .tp-list-row { background: #fff; border-color: var(--tp-line); box-shadow: none; }
+.tp-page-canvas .tp-list-row:hover { background: #fafbfc; }
+.tp-page-canvas .tp-list-row + .tp-list-row { margin-top: 8px; }
+.tp-page-canvas .tp-list-row [class*="border-t"] { border-color: var(--tp-line); }
