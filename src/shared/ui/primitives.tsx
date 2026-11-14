@@ -4,6 +4,7 @@ import * as ProgressPrimitive from "@radix-ui/react-progress";
 import * as SeparatorPrimitive from "@radix-ui/react-separator";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 import { cn } from "@/shared/lib/utils";
+import { Check, ChevronDown } from "lucide-react";
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & { asChild?: boolean; variant?: "default" | "outline" | "ghost" | "secondary"; size?: "default" | "sm" | "icon" };
 export function Button({ className, variant = "default", size = "default", asChild = false, ...props }: ButtonProps) {
  const Comp = asChild ? Slot.Root : "button";
@@ -33,14 +34,16 @@ export type ComboboxOption = { value: string; label: string; description?: strin
 export function Combobox({ value, onValueChange, options, placeholder = "请选择", searchPlaceholder = "搜索选项…", disabled = false, className }: { value: string; onValueChange: (value: string) => void; options: ComboboxOption[]; placeholder?: string; searchPlaceholder?: string; disabled?: boolean; className?: string }) {
  const [open, setOpen] = React.useState(false);
  const [query, setQuery] = React.useState("");
+ const listId = React.useId();
  const selected = options.find((option) => option.value === value);
+ const searchable = options.length > 8;
  const filtered = options.filter((option) => (option.label + " " + (option.description ?? "")).toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
  return <Popover open={open} onOpenChange={(next) => { setOpen(next); if (!next) setQuery(""); }}>
-  <PopoverTrigger asChild><Button type="button" variant="outline" disabled={disabled} className={cn("h-[34px] w-full justify-between border-transparent bg-muted/45 font-normal text-[13px] hover:border-border hover:bg-muted/65", !selected && "text-muted-foreground", className)}><span className="min-w-0 truncate text-left">{selected?.label ?? placeholder}</span><span aria-hidden="true" className="material-symbols-outlined ml-2 shrink-0 text-[18px] text-muted-foreground">arrow_drop_down</span></Button></PopoverTrigger>
-  <PopoverContent align="start" className="w-[var(--radix-popover-trigger-width)] min-w-64 p-2">
-   <Input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder={searchPlaceholder} className="mb-2 h-9"/>
-   <div className="max-h-60 overflow-y-auto">
-    {filtered.length ? filtered.map((option) => <button key={option.value} type="button" onClick={() => { onValueChange(option.value); setOpen(false); }} className={cn("flex w-full flex-col rounded-[3px] px-3 py-2.5 text-left text-[13px] transition-colors hover:bg-muted", value === option.value && "bg-muted font-medium")}><span className="font-medium">{option.label}</span>{option.description && <span className="text-xs text-muted-foreground">{option.description}</span>}</button>) : <p className="px-3 py-6 text-center text-xs text-muted-foreground">没有匹配选项</p>}
+  <PopoverTrigger asChild><Button type="button" variant="outline" disabled={disabled} aria-haspopup="listbox" aria-expanded={open} aria-controls={listId} className={cn("h-[34px] w-full justify-between border-transparent bg-muted/45 font-normal text-[13px] hover:border-border hover:bg-muted/65", !selected && "text-muted-foreground", className)}><span className="min-w-0 truncate text-left">{selected?.label ?? placeholder}</span><ChevronDown aria-hidden="true" className={cn("ml-2 h-4 w-4 shrink-0 text-muted-foreground transition-transform",open&&"rotate-180")}/></Button></PopoverTrigger>
+  <PopoverContent align="start" className="w-[var(--radix-popover-trigger-width)] min-w-64 p-1.5">
+   {searchable&&<Input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder={searchPlaceholder} className="mb-1.5 h-9"/>}
+   <div id={listId} role="listbox" aria-label={placeholder} className="max-h-64 overflow-y-auto">
+    {filtered.length ? filtered.map((option) => <button key={option.value} type="button" role="option" aria-selected={value===option.value} onClick={() => { onValueChange(option.value); setOpen(false); }} className={cn("flex w-full items-center gap-2 rounded-[4px] px-2.5 py-2 text-left text-[13px] transition-colors hover:bg-muted", value === option.value && "bg-muted font-medium")}><span className="min-w-0 flex-1"><span className="block truncate">{option.label}</span>{option.description && <span className="mt-0.5 block truncate text-[11px] font-normal text-muted-foreground">{option.description}</span>}</span>{value===option.value&&<Check className="h-4 w-4 shrink-0 text-foreground"/>}</button>) : <p className="px-3 py-6 text-center text-xs text-muted-foreground">没有匹配选项</p>}
    </div>
   </PopoverContent>
  </Popover>;
