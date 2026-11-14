@@ -81,5 +81,5 @@ export async function handleMasterData(request:Request,env:Env):Promise<Response
    return successResponse(request,{deleted:true,id});
   }
   return errorResponse(request,"METHOD_NOT_ALLOWED","不支持的请求方法。",405);
- }catch(error){console.error("MASTER_DATA_ERROR",String(error).slice(0,500));return errorResponse(request,"MASTER_DATA_ERROR","主数据操作失败，请检查字段和关联记录。",400);}
+ }catch(error){const detail=String(error);console.error("MASTER_DATA_ERROR",detail.slice(0,500));if(detail.includes("uq_trade_product_variants_owner_sku"))return errorResponse(request,"DUPLICATE_SKU","该 SKU 已被使用，请修改 SKU 后重试。",409);if(detail.includes("uq_trade_product_variants_attribute_combo"))return errorResponse(request,"DUPLICATE_VARIANT","该产品的属性组合已存在，请检查已有 SKU 变体。",409);return errorResponse(request,"MASTER_DATA_ERROR","主数据操作失败，请检查字段和关联记录。",400);}
 }
