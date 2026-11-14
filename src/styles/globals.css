@@ -496,3 +496,17 @@ main h1, .tp-page-canvas h1 {
   .tp-control-panel__toolbar > * { max-width: 100%; }
   .tp-page-section { padding: 12px; }
 }
+
+.tp-mobile-record {
+  min-width: 0;
+  background: var(--tp-surface);
+  border: 1px solid var(--tp-line);
+  border-radius: 6px;
+  box-shadow: 0 1px 1px rgba(16,24,40,.025);
+}
+.tp-mobile-record a { overflow-wrap: anywhere; }
+.tp-mobile-record [data-slot="badge"] { max-width: 100%; }
+.tp-mobile-record .tp-record-meta {
+  color: var(--tp-text-muted);
+  font-size: 11px;
+}
