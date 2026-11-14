@@ -7,7 +7,9 @@ export interface AgentRun {id:string;agent_key:string;goal:string;status:string;
 async function request<T>(path:string,init?:RequestInit):Promise<T>{
  const {data:{session}}=await getSupabaseClient().auth.getSession();
  if(!session?.access_token)throw new Error("请先登录 TradePilot。");
- const response=await fetch(path,{...init,headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token,...init?.headers}});
+ let response:Response;
+ try{response=await fetch(path,{...init,signal:init?.signal??AbortSignal.timeout(path==="/api/v1/agent/chat"?55000:20000),headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token,...init?.headers}});}
+ catch(error){if(error instanceof DOMException&&error.name==="TimeoutError")throw new Error(path==="/api/v1/agent/chat"?"小雅响应超时（55 秒）。请检查「AI 与 API 集成」中的 Agent 对话模型和 API Key，然后重试。":"Agent 服务请求超时，请重试。");throw error;}
  const raw=await response.text();let body:{data?:T;error?:{message?:string}};
  try{body=JSON.parse(raw) as typeof body;}catch{throw new Error("Agent API 返回无效响应（HTTP "+response.status+"）。");}
  if(!response.ok||body.data===undefined)throw new Error(body.error?.message??"Agent API 请求失败（HTTP "+response.status+"）。");

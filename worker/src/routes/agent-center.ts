@@ -26,13 +26,13 @@ const publicConnectionFields = "id,name,protocol,endpoint_url,auth_mode,capabili
 async function ownerFromRequest(request:Request,env:Env):Promise<string|null>{
   const token=request.headers.get("Authorization")?.match(/^Bearer\s+(\S+)$/i)?.[1];
   if(!token)return null;
-  const response=await fetch(env.SUPABASE_URL+"/auth/v1/user",{headers:{apikey:env.SUPABASE_ANON_KEY,Authorization:"Bearer "+token}});
+  const response=await fetch(env.SUPABASE_URL+"/auth/v1/user",{headers:{apikey:env.SUPABASE_ANON_KEY,Authorization:"Bearer "+token},signal:AbortSignal.timeout(10000)});
   if(!response.ok)return null;
   const user=await response.json() as {id?:string};
   return user.id??null;
 }
 async function db<T>(env:Env,path:string,init:RequestInit={}):Promise<T>{
-  const response=await fetch(env.SUPABASE_URL+"/rest/v1/"+path,{...init,headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:"Bearer "+env.SUPABASE_SERVICE_ROLE_KEY,"Content-Type":"application/json",...init.headers}});
+  const response=await fetch(env.SUPABASE_URL+"/rest/v1/"+path,{...init,signal:init.signal??AbortSignal.timeout(12000),headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:"Bearer "+env.SUPABASE_SERVICE_ROLE_KEY,"Content-Type":"application/json",...init.headers}});
   const raw=await response.text();
   if(!response.ok)throw new Error("DATABASE_"+response.status+": "+raw.slice(0,240));
   return raw?JSON.parse(raw) as T:undefined as T;
@@ -267,7 +267,7 @@ async function generateAgentPlan(env:Env,ownerId:string,goal:string,country:stri
    const base=String(provider.baseUrl??"").replace(/\/$/,"");
    const model=String(provider.model??selectedModel);
    if(String(provider.protocol)==="anthropic"){
-     const response=await fetch(base+"/messages",{method:"POST",redirect:"manual",headers:{"x-api-key":key,"anthropic-version":"2023-06-01","content-type":"application/json"},body:JSON.stringify({model,max_tokens:1200,system,messages:[{role:"user",content:user}]}),signal:AbortSignal.timeout(45000)});
+     const response=await fetch(base+"/messages",{method:"POST",redirect:"manual",headers:{"x-api-key":key,"anthropic-version":"2023-06-01","content-type":"application/json"},body:JSON.stringify({model,max_tokens:1200,system,messages:[{role:"user",content:user}]}),signal:AbortSignal.timeout(35000)});
      if(!response.ok)throw new Error("AGENT_PLANNER_HTTP_"+response.status+": "+(await response.text()).slice(0,200));
      const body=await response.json() as Record<string,unknown>;raw=Array.isArray(body.content)?(body.content as unknown[]).map(item=>String(asRecord(item).text??"")).join("\\n"):"";
    }else if(String(provider.protocol)==="gemini"){
@@ -329,7 +329,7 @@ export async function callAgentChatModel(env:Env,messages:ChatTurn[],systemOverr
  let raw="";
  if(String(provider.protocol)==="workers-ai"&&env.AI){
   const model=selectedModel.startsWith("@cf/")?selectedModel:String(provider.model??selectedModel);
-  raw=extractModelText(await env.AI.run(model,{messages:[{role:"system",content:system},...messages],...(jsonResponse?{response_format:{type:"json_object"}}:{}),max_tokens:maxTokens}));
+  raw=extractModelText(await Promise.race([env.AI.run(model,{messages:[{role:"system",content:system},...messages],...(jsonResponse?{response_format:{type:"json_object"}}:{}),max_tokens:maxTokens}),new Promise<never>((_,reject)=>setTimeout(()=>reject(new Error("小雅模型响应超时（35 秒）。请检查 Workers AI 模型可用性或切换 Agent 对话模型。")),35000))]));
  }else{
   const id=String(provider.id??""),secrets:Record<string,string>={openai:"AI_PROVIDER_OPENAI_API_KEY",anthropic:"AI_PROVIDER_ANTHROPIC_API_KEY",gemini:"AI_PROVIDER_GEMINI_API_KEY",deepseek:"AI_PROVIDER_DEEPSEEK_API_KEY",qwen:"AI_PROVIDER_QWEN_API_KEY",zhipu:"AI_PROVIDER_ZHIPU_API_KEY",kimi:"AI_PROVIDER_KIMI_API_KEY",minimax:"AI_PROVIDER_MINIMAX_API_KEY",openrouter:"AI_PROVIDER_OPENROUTER_API_KEY",siliconflow:"AI_PROVIDER_SILICONFLOW_API_KEY",custom:"AI_PROVIDER_CUSTOM_API_KEY"};
   const key=(env as unknown as Record<string,unknown>)[secrets[id]??""];if(typeof key!=="string"||!key)throw new Error("小雅对话模型 API Key 未配置，请在「AI 与 API 集成」保存对应密钥。");
