@@ -1,4 +1,5 @@
 import { errorResponse, successResponse } from "../lib/http";
+import type { DiscoveryRunInput } from "./discovery";
 
 type Protocol = "rest_api" | "mcp" | "webhook";
 type AuthMode = "none" | "bearer" | "header" | "oauth2" | "webhook_secret";
@@ -7,6 +8,9 @@ interface Env {
   SUPABASE_ANON_KEY: string;
   SUPABASE_SERVICE_ROLE_KEY: string;
   AGENT_ENCRYPTION_KEY?: string;
+  SERPER_API_KEY?: string;
+  SERPAPI_API_KEY?: string;
+  LEAD_DISCOVERY_WORKFLOW?: { create(options:{id:string;params:{runId:string;ownerId:string;input:DiscoveryRunInput}}):Promise<{id:string}> };
 }
 type ConnectionRow = {
   id:string; owner_id:string; name:string; protocol:Protocol; endpoint_url:string;
@@ -373,19 +377,40 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
       let body:Record<string,unknown>;try{body=await request.json() as Record<string,unknown>;}catch{return errorResponse(request,"INVALID_JSON","请求内容不是有效 JSON。",400);}
       const goal=typeof body.goal==="string"?body.goal.trim():"";
       if(goal.length<2||goal.length>10000)return errorResponse(request,"VALIDATION_ERROR","任务目标长度必须为 2–10000 个字符。",400);
+      const execution=asRecord(body.execution);
+      const internalSearch=execution.mode==="internal_discovery";
+      let input:DiscoveryRunInput|undefined;
+      let engine:"serper"|"serpapi"="serper";
+      let country="";
+      let limit=50;
+      if(internalSearch){
+        country=typeof execution.country==="string"?execution.country.trim().toUpperCase():"";
+        engine=execution.searchEngine==="serpapi"?"serpapi":"serper";
+        limit=Number.isInteger(execution.limitPerCountry)?Number(execution.limitPerCountry):50;
+        if(!/^[A-Z]{2}$/.test(country)||limit<1||limit>100)return errorResponse(request,"VALIDATION_ERROR","请选择有效的两位国家代码，并将每个市场结果数量设为 1–100。",400);
+        if((engine==="serper"&&!env.SERPER_API_KEY)||(engine==="serpapi"&&!env.SERPAPI_API_KEY))return errorResponse(request,"PROVIDER_NOT_CONFIGURED",engine==="serper"?"Serper API 尚未配置，请先前往 AI 与 API 集成保存密钥。":"SerpApi 尚未配置，请先前往 AI 与 API 集成保存密钥。",400);
+        if(!env.LEAD_DISCOVERY_WORKFLOW)return errorResponse(request,"WORKFLOW_NOT_CONFIGURED","潜客发现工作流尚未部署。",503);
+        input={countries:[country],query:goal,limitPerCountry:limit,providers:[],channel:"search_engine",searchEngines:[engine],searchTypes:["web"],searchLanguage:"en",advancedQuery:goal,excludeCategories:[]};
+      }
       const runId=crypto.randomUUID();
       const taskCode="AGENT-"+new Date().toISOString().slice(0,10).replace(/-/g,"")+"-"+runId.replace(/-/g,"").slice(0,6).toUpperCase();
-      const rows=await db<Array<{id:string;agent_key:string;goal:string;status:string;created_at:string}>>(env,"agent_runs",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({id:runId,owner_id:ownerId,agent_key:"tradepilot_planner",goal,status:"planned",plan:{execution_state:"not_started",reason:"Agent execution adapters are not yet enabled",policy:{search_and_analysis:"automatic",send_email:"approval_required",bulk_import:"approval_required"}}})});
-      const run=rows?.[0];if(!run)return errorResponse(request,"RUN_CREATE_FAILED","Agent 任务草案创建失败。",500);
+      const rows=await db<Array<{id:string;agent_key:string;goal:string;status:string;created_at:string}>>(env,"agent_runs",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({id:runId,owner_id:ownerId,agent_key:internalSearch?"buyer_development":"tradepilot_planner",goal,status:internalSearch?"queued":"planned",plan:{execution_state:internalSearch?"queued":"not_started",reason:internalSearch?null:"等待选择外部 Agent 工具",execution:internalSearch?{mode:"internal_discovery",country,searchEngine:engine,limitPerCountry:limit}:null,policy:{search_and_analysis:"automatic",send_email:"approval_required",bulk_import:"approval_required"}}})});
+      const run=rows?.[0];if(!run)return errorResponse(request,"RUN_CREATE_FAILED","Agent 任务创建失败。",500);
       try{
-        await db(env,"discovery_runs",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({id:runId,owner_id:ownerId,query:goal,countries:["GLOBAL"],limit_per_country:1,status:"planned",progress:0,discovered_count:0,created_lead_count:0,message:"Agent 任务草案已保存，等待执行引擎",task_code:taskCode,channel:"agent",providers:["agent"]})});
-        await db(env,"discovery_run_logs",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({run_id:runId,owner_id:ownerId,level:"info",message:"TradePilot Agent 任务草案已创建；执行引擎接通后将自动进入搜索与分析流程。"})});
+        await db(env,"discovery_runs",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({id:runId,owner_id:ownerId,query:goal,countries:internalSearch?[country]:["GLOBAL"],limit_per_country:internalSearch?limit:1,status:internalSearch?"queued":"planned",progress:0,discovered_count:0,created_lead_count:0,message:internalSearch?"Agent 买家发现任务已排队":"Agent 任务已创建，等待选择工具",task_code:taskCode,channel:"agent",providers:internalSearch?[engine]:["agent"],search_config:internalSearch?{searchEngine:engine,searchTypes:["web"],searchLanguage:"en"}:{}})});
+        await db(env,"discovery_run_logs",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({run_id:runId,owner_id:ownerId,level:"info",message:internalSearch?"TradePilot 买家开发 Agent 已启动原生搜索工作流。":"TradePilot Agent 任务已创建，等待外部工具调用。"})});
+        await db(env,"agent_run_events",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({owner_id:ownerId,run_id:runId,event_type:internalSearch?"execution_queued":"plan_created",message:internalSearch?"已启动原生全球买家发现工作流。":"已保存 Agent 任务，等待选择外部 Agent 工具。",payload:{taskCode,execution:internalSearch?"internal_discovery":"external_agent"}})});
+        if(internalSearch&&input){
+          await env.LEAD_DISCOVERY_WORKFLOW!.create({id:runId,params:{runId,ownerId,input}});
+        }
       }catch(error){
-        await db(env,"agent_runs?id=eq."+runId+"&owner_id=eq."+ownerId,{method:"DELETE",headers:{Prefer:"return=minimal"}});
-        throw error;
+        const message="Agent 任务启动失败："+String(error).slice(0,180);
+        await db(env,"agent_runs?id=eq."+runId+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"failed",error_message:message,completed_at:new Date().toISOString(),updated_at:new Date().toISOString()})});
+        await db(env,"discovery_runs?id=eq."+runId+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"failed",progress:100,message})});
+        await writeRunLog(env,ownerId,runId,"error",message);
+        return errorResponse(request,"AGENT_RUN_START_FAILED",message,503);
       }
-      await db(env,"agent_run_events",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({owner_id:ownerId,run_id:run.id,event_type:"plan_created",message:"已保存 Agent 任务目标并同步至统一任务执行中心；等待执行引擎与工具权限接通。",payload:{execution_state:"not_started",taskCode}})});
-      return successResponse(request,{...run,taskCode,channel:"agent",countries:["GLOBAL"],progress:0,discoveredCount:0,message:"Agent 任务草案已保存"},201);
+      return successResponse(request,{...run,taskCode,channel:"agent",countries:internalSearch?[country]:["GLOBAL"],progress:0,discoveredCount:0,message:internalSearch?"Agent 搜索工作流已启动":"Agent 任务已创建"},internalSearch?202:201);
     }
     if(path==="/api/v1/agent/approvals"&&request.method==="GET"){
       const rows=await db<unknown[]>(env,"agent_approvals?owner_id=eq."+ownerId+"&select=id,run_id,action_type,status,operation_snapshot,decision_note,decided_at,expires_at,created_at&order=created_at.desc&limit=100");
