@@ -284,7 +284,7 @@ async function generateAgentPlan(env:Env,ownerId:string,goal:string,country:stri
    if(/importer|buyer|distributor|wholesaler|采购商|进口商|经销商|批发商|买家|潜客|客户开发/.test(normalized)){
      return {agentKey:"buyer_development",summary:"使用 TradePilot 原生搜索发现目标市场买家。",steps:["根据行业和目标市场构建搜索条件","调用搜索引擎发现企业官网与潜在买家","将结果写入统一搜索结果中心"],action:{type:"internal_discovery",query:goal,country,limitPerCountry:50},specialists:[],model:"deterministic-fallback",fallback:true};
    }
-   return {agentKey:"company_research",summary:"当前未配置可用规划模型，无法可靠判断所需工具。",steps:["配置 AI 规划模型后重新提交任务"],action:{type:"needs_clarification",question:"请先在「AI 与 API 集成」配置一个可用模型，再由 Agent 自动规划此任务。"},model:"none",fallback:true};
+   return {agentKey:"company_research",summary:"当前未配置可用规划模型，无法可靠判断所需工具。",steps:["配置 AI 规划模型后重新提交任务"],action:{type:"needs_clarification",question:"请先在「AI 与 API 集成」配置一个可用模型，再由 Agent 自动规划此任务。"},specialists:[],model:"none",fallback:true};
  }
  const parsed=parsePlannerJson(raw);
  const agentKey=String(parsed.agentKey??"buyer_development");
@@ -309,7 +309,9 @@ async function generateAgentPlan(env:Env,ownerId:string,goal:string,country:stri
  }else if(actionRaw.type==="needs_clarification"){
    action={type:"needs_clarification",question:String(actionRaw.question??"请补充目标市场或执行条件。").slice(0,1000)};
  }else throw new Error("AGENT_PLANNER_INVALID_ACTION");
- return {agentKey,summary,steps,action,model:selectedModel};
+ const allowedSpecialists=new Set(["company_research","market_research","lead_scoring","trade_compliance"]);
+ const specialists=Array.isArray(parsed.specialists)?parsed.specialists.slice(0,3).flatMap(item=>{const row=asRecord(item);const key=String(row.agentKey??"");const instruction=String(row.instruction??"").trim();return allowedSpecialists.has(key)&&instruction.length>0?[{agentKey:key,instruction:instruction.slice(0,1200)}]:[];}):[];
+ return {agentKey,summary,steps,action,specialists,model:selectedModel};
 }
 
 
