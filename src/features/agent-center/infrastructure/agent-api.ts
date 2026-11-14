@@ -18,5 +18,6 @@ export const agentApi={
  deleteConnection:(id:string)=>request<{id:string;deleted:boolean}>("/api/v1/agent/connections/"+encodeURIComponent(id),{method:"DELETE"}),
  listRuns:()=>request<AgentRun[]>("/api/v1/agent/runs"),
  createRun:(goal:string)=>request<AgentRun>("/api/v1/agent/runs",{method:"POST",body:JSON.stringify({goal})}),
- listApprovals:()=>request<Array<{id:string;action_type:string;status:string;created_at:string;expires_at:string}>>("/api/v1/agent/approvals"),
+ listApprovals:()=>request<Array<{id:string;run_id:string;action_type:string;status:string;created_at:string;expires_at:string}>>("/api/v1/agent/approvals"),
+ decideApproval:(id:string,decision:"approve"|"reject",note?:string)=>request<{id:string;status:string;decision:string}>("/api/v1/agent/approvals/"+encodeURIComponent(id)+"/decision",{method:"POST",body:JSON.stringify({decision,note})}),
 };

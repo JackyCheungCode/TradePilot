@@ -56,6 +56,18 @@ function isPublicHttpsEndpoint(value:string):boolean{
 }
 const allowedProtocols:Protocol[]=["rest_api","mcp","webhook"];
 const allowedAuthModes:AuthMode[]=["none","bearer","header","oauth2","webhook_secret"];
+function stableStringify(value:unknown):string{
+  if(value===null||typeof value!=="object")return JSON.stringify(value);
+  if(Array.isArray(value))return "["+value.map(stableStringify).join(",")+"]";
+  const object=value as Record<string,unknown>;
+  return "{"+Object.keys(object).sort().map(key=>JSON.stringify(key)+":"+stableStringify(object[key])).join(",")+"}";
+}
+async function sha256(value:string):Promise<string>{
+  const bytes=new TextEncoder().encode(value);const buffer=new ArrayBuffer(bytes.length);new Uint8Array(buffer).set(bytes);
+  const digest=await crypto.subtle.digest("SHA-256",buffer);
+  return Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,"0")).join("");
+}
+
 
 export async function handleAgentCenter(request:Request,env:Env):Promise<Response>{
   const ownerId=await ownerFromRequest(request,env);
@@ -117,8 +129,40 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
       return successResponse(request,{...run,taskCode,channel:"agent",countries:["GLOBAL"],progress:0,discoveredCount:0,message:"Agent 任务草案已保存"},201);
     }
     if(path==="/api/v1/agent/approvals"&&request.method==="GET"){
-      const rows=await db<unknown[]>(env,"agent_approvals?owner_id=eq."+ownerId+"&select=id,run_id,action_type,operation_snapshot,snapshot_sha256,status,decision_note,decided_at,expires_at,created_at&order=created_at.desc&limit=100");
+      const rows=await db<unknown[]>(env,"agent_approvals?owner_id=eq."+ownerId+"&select=id,run_id,action_type,status,decision_note,decided_at,expires_at,created_at&order=created_at.desc&limit=100");
       return successResponse(request,rows??[]);
+    }
+    if(path==="/api/v1/agent/approvals"&&request.method==="POST"){
+      let body:Record<string,unknown>;try{body=await request.json() as Record<string,unknown>;}catch{return errorResponse(request,"INVALID_JSON","请求内容不是有效 JSON。",400);}
+      const runId=typeof body.runId==="string"?body.runId:"";
+      const actionType=typeof body.actionType==="string"?body.actionType:"";
+      const snapshot=body.operationSnapshot;
+      const allowedActions=["send_email","bulk_import","bulk_update","delete_records","merge_records"];
+      if(!/^[0-9a-f-]{36}$/i.test(runId)||!allowedActions.includes(actionType)||!snapshot||typeof snapshot!=="object"||Array.isArray(snapshot))return errorResponse(request,"VALIDATION_ERROR","审批请求缺少有效任务、操作类型或操作快照。",400);
+      const runs=await db<Array<{id:string}>>(env,"agent_runs?id=eq."+runId+"&owner_id=eq."+ownerId+"&select=id&limit=1");
+      if(!runs?.length)return errorResponse(request,"RUN_NOT_FOUND","找不到该用户的 Agent 任务。",404);
+      const snapshotHash=await sha256(stableStringify(snapshot));
+      const rows=await db<Array<{id:string;run_id:string;action_type:string;status:string;expires_at:string}>>(env,"agent_approvals?select=id,run_id,action_type,status,expires_at",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({owner_id:ownerId,run_id:runId,action_type:actionType,operation_snapshot:snapshot,snapshot_sha256:snapshotHash})});
+      const approval=rows?.[0];if(!approval)return errorResponse(request,"APPROVAL_CREATE_FAILED","无法创建审批记录。",500);
+      await db(env,"agent_run_events",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({owner_id:ownerId,run_id:runId,event_type:"approval_requested",message:"操作已进入人工审批队列："+actionType,payload:{approvalId:approval.id,snapshotSha256:snapshotHash}})});
+      await db(env,"agent_runs?id=eq."+runId+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"awaiting_approval",updated_at:new Date().toISOString()})});
+      return successResponse(request,approval,201);
+    }
+    const approvalDecision=path.match(/^\\/api\\/v1\\/agent\\/approvals\\/([0-9a-f-]{36})\\/decision$/i);
+    if(approvalDecision&&request.method==="POST"){
+      let body:Record<string,unknown>;try{body=await request.json() as Record<string,unknown>;}catch{return errorResponse(request,"INVALID_JSON","请求内容不是有效 JSON。",400);}
+      const decision=body.decision;
+      if(decision!=="approve"&&decision!=="reject")return errorResponse(request,"VALIDATION_ERROR","审批决定只能是 approve 或 reject。",400);
+      const rows=await db<Array<{id:string;run_id:string;operation_snapshot:unknown;snapshot_sha256:string;status:string;expires_at:string}>>(env,"agent_approvals?id=eq."+approvalDecision[1]+"&owner_id=eq."+ownerId+"&select=id,run_id,operation_snapshot,snapshot_sha256,status,expires_at&limit=1");
+      const approval=rows?.[0];if(!approval)return errorResponse(request,"APPROVAL_NOT_FOUND","审批记录不存在。",404);
+      if(approval.status!=="pending")return errorResponse(request,"APPROVAL_ALREADY_DECIDED","该审批已处理，不能重复操作。",409);
+      if(Date.parse(approval.expires_at)<=Date.now()){await db(env,"agent_approvals?id=eq."+approval.id+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"expired"})});return errorResponse(request,"APPROVAL_EXPIRED","该审批已过期，请重新发起。",409);}
+      const verifiedHash=await sha256(stableStringify(approval.operation_snapshot));
+      if(verifiedHash!==approval.snapshot_sha256)return errorResponse(request,"APPROVAL_SNAPSHOT_MISMATCH","审批快照校验失败，已阻止此操作。",409);
+      const status=decision==="approve"?"approved":"rejected";
+      await db(env,"agent_approvals?id=eq."+approval.id+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status,decision_note:typeof body.note==="string"?body.note.slice(0,1000):null,decided_at:new Date().toISOString()})});
+      await db(env,"agent_run_events",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({owner_id:ownerId,run_id:approval.run_id,event_type:"approval_"+decision,message:decision==="approve"?"人工审批已通过。":"人工审批已拒绝。",payload:{approvalId:approval.id}})});
+      return successResponse(request,{id:approval.id,status,decision});
     }
     return errorResponse(request,"NOT_FOUND","Agent API 路由不存在。",404);
   }catch(error){
