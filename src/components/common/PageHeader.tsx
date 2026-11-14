@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
 import { Breadcrumb, BreadcrumbItem, Heading, Section, Stack } from "@carbon/react";
 export type PageBreadcrumb = { label: string; href?: string };
-export type PageHeaderProps = { breadcrumbs?: PageBreadcrumb[]; title: string; actions?: ReactNode };
-export function PageHeader({ breadcrumbs = [], title, actions }: PageHeaderProps) {
-  return <Section as="header" level={1}><Stack gap={6}><Stack gap={3}>
+export type PageHeaderProps = { breadcrumbs?: PageBreadcrumb[]; title: string; actions?: ReactNode; className?: string };
+export function PageHeader({ breadcrumbs = [], title, actions, className }: PageHeaderProps) {
+  return <Section as="header" level={1} className={className}><Stack gap={6}><Stack gap={3}>
     {breadcrumbs.length > 0 ? <Breadcrumb>{breadcrumbs.map((item,index) => {
       const isCurrentPage = index === breadcrumbs.length - 1;
       return <BreadcrumbItem key={item.label + "-" + index} href={isCurrentPage ? undefined : item.href} isCurrentPage={isCurrentPage}>{item.label}</BreadcrumbItem>;
