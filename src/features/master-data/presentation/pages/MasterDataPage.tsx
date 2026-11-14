@@ -1,5 +1,5 @@
 import {useCallback,useEffect,useState} from "react";
-import {Layers,Plus,RefreshCw,SlidersHorizontal,Trash2} from "lucide-react";
+import {Plus,RefreshCw,Trash2} from "lucide-react";
 import {toast} from "sonner";
 import {Badge,Button,Card,CardContent,CardDescription,CardHeader,CardTitle,Input} from "@/shared/ui/primitives";
 import {masterDataApi,type MasterRecord} from "../../infrastructure/master-data-api";
