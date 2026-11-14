@@ -260,6 +260,7 @@ export function Combobox({
       items={options}
       selectedItem={selected}
       itemToString={(item) => item?.label ?? ""}
+      itemToElement={(item) => <span className="flex flex-col"><span>{item.label}</span>{item.description ? <span className="text-xs text-text-secondary">{item.description}</span> : null}</span>}
       onChange={({ selectedItem }) => onValueChange(selectedItem?.value ?? "")}
       placeholder={searchPlaceholder || placeholder}
       titleText=""
