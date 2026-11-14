@@ -611,12 +611,14 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
       const runId=runDetailMatch[1];
       const runs=await db<Array<Record<string,unknown>>>(env,"agent_runs?id=eq."+runId+"&owner_id=eq."+ownerId+"&select=id,agent_key,goal,status,plan,result,error_message,estimated_cost_usd,actual_cost_usd,started_at,completed_at,created_at,updated_at&limit=1");
       const run=runs?.[0];if(!run)return errorResponse(request,"RUN_NOT_FOUND","Agent 任务不存在。",404);
-      const [discovery,events,logs]=await Promise.all([
+      const [discovery,events,logs,records]=await Promise.all([
         db<Array<Record<string,unknown>>>(env,"discovery_runs?id=eq."+runId+"&owner_id=eq."+ownerId+"&select=id,status,progress,message,discovered_count,created_lead_count,search_config,updated_at&limit=1"),
         db<Array<Record<string,unknown>>>(env,"agent_run_events?run_id=eq."+runId+"&owner_id=eq."+ownerId+"&select=id,event_type,message,payload,created_at&order=created_at.asc&limit=100"),
-        db<Array<Record<string,unknown>>>(env,"discovery_run_logs?run_id=eq."+runId+"&owner_id=eq."+ownerId+"&select=id,level,message,payload,created_at&order=created_at.asc&limit=100")
+        db<Array<Record<string,unknown>>>(env,"discovery_run_logs?run_id=eq."+runId+"&owner_id=eq."+ownerId+"&select=id,level,message,payload,created_at&order=created_at.asc&limit=100"),
+        db<Array<Record<string,unknown>>>(env,"discovery_records?owner_id=eq."+ownerId+"&select=id,name,country_code,address,phone,email,website,business_type,confidence_score,channel,record_type,raw_data,status,discovery_record_occurrences!inner(id,run_id,provider,keyword,source_url,raw_data,captured_at)&discovery_record_occurrences.run_id=eq."+runId+"&discovery_record_occurrences.is_removed=eq.false&order=created_at.desc&limit=100")
       ]);
-      return successResponse(request,{run,discoveryRun:discovery?.[0]??null,events:events??[],logs:logs??[]});
+      const detailedRecords=(records??[]).map(record=>({...record,sources:Array.isArray(record.discovery_record_occurrences)?record.discovery_record_occurrences:[]}));
+      return successResponse(request,{run,discoveryRun:discovery?.[0]??null,events:events??[],logs:logs??[],records:detailedRecords});
     }
 
     if(path==="/api/v1/agent/chat"&&request.method==="POST"){
