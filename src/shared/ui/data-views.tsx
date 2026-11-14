@@ -83,11 +83,13 @@ export function FormField({ label, required = false, description, error, childre
 }) {
   return (
     <div className={cn("min-w-0 space-y-1.5", className)}>
-      <div className="flex items-center gap-1">
-        <span className="text-[13px] font-medium text-foreground">{label}</span>
-        {required ? <span aria-label="必填" className="text-destructive">*</span> : null}
-      </div>
-      {children}
+      <label className="flex flex-col items-start gap-1.5">
+        <span className="flex items-center gap-1 text-[13px] font-medium text-foreground">
+          {label}
+          {required ? <span aria-label="必填" className="text-destructive">*</span> : null}
+        </span>
+        {children}
+      </label>
       {description ? <p className="text-xs leading-5 text-muted-foreground">{description}</p> : null}
       {error ? <p role="alert" className="text-xs text-destructive">{error}</p> : null}
     </div>
