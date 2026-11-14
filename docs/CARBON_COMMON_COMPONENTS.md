@@ -11,6 +11,7 @@
 | breadcrumbs | [] | 面包屑数组，元素为 { label, href? }；最后一项自动标记当前页面 |
 | title | 必填 | 页面标题；Section level=1 使 Heading 语义为 h1，使用 productive-heading-04 |
 | actions | undefined | 页面级操作区 ReactNode |
+| className | undefined | 透传给 Carbon Section，仅用于布局定位 |
 
 使用示例：
 
@@ -29,6 +30,7 @@
 | primary | undefined | 唯一主操作，{ label, onClick?, disabled? } |
 | secondary | [] | 次要操作数组 |
 | size | Carbon 默认 | 透传给 Carbon Button |
+| className | undefined | 透传给 Carbon ButtonSet |
 
 次要按钮 kind 默认 secondary，可用 Carbon secondary、tertiary、ghost、danger、danger--tertiary、danger--ghost。主操作固定为 primary。
 
@@ -85,6 +87,7 @@
 | 组件 | Prop | 默认值 | 说明 |
 |---|---|---|---|
 | FormLayout | children | 必填 | 表单限制为 8 列；sm 4 列、md 8 列、lg 及以上 8 列 |
+| FormLayout | className | undefined | 透传给 Carbon Grid |
 | FormGroup | children | 必填 | 字段间距 Carbon Stack gap 6 |
 
 FormLayout 的分组间距为 Carbon Stack gap 7。数值代表 Carbon spacing scale step，不是自定义 CSS 像素值。
@@ -106,6 +109,7 @@ FormLayout 的分组间距为 Carbon Stack gap 7。数值代表 Carbon spacing s
 | dataTable | 必填 | Carbon DataTable React element |
 | pagination | undefined | Carbon Pagination props；提供后渲染分页 |
 | rowSize | md | sm、md、lg，透传至 Carbon DataTable 的 size 属性 |
+| className | undefined | 透传给 Carbon Stack |
 
 使用示例：
 
@@ -136,6 +140,7 @@ FormLayout 的分组间距为 Carbon Stack gap 7。数值代表 Carbon spacing s
 |---|---|---|
 | title | 暂无数据 | 空状态标题 |
 | description | undefined | 说明文字 |
+| action | undefined | 可选操作 ReactNode |
 
 示例： <EmptyState title="暂无搜索结果" description="调整筛选条件后重新搜索。" />
 
