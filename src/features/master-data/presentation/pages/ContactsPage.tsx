@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AtSign, Facebook, Globe, Instagram, Linkedin, Mail, MessageCircle, MessageSquare,
   Music2, Phone, Plus, RefreshCw, Search, Send, Smartphone, Trash2, UserRound,
-  Video, Youtube, X, Pencil, Star, CheckCircle2,
+  Youtube, X, Pencil, Star,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Combobox, Input, Textarea } from "@/shared/ui/primitives";
@@ -14,6 +14,7 @@ type MethodType = "email" | "phone" | "mobile" | "messaging" | "social" | "websi
 type ContactMethod = {
   id?: string;
   draftId: string;
+  contact_id?: string;
   method_type: MethodType;
   platform: string;
   value: string;
@@ -93,7 +94,7 @@ export function ContactsPage() {
       setContacts(contactRows.filter(row => row.is_archived !== true));
       setAccounts(accountRows.filter(row => row.is_archived !== true));
       setMethods(methodRows.map(row => ({
-        id: row.id, draftId: row.id, method_type: String(row.method_type) as MethodType,
+        id: row.id, draftId: row.id, contact_id: String(row.contact_id ?? ""), method_type: String(row.method_type) as MethodType,
         platform: String(row.platform ?? ""), value: String(row.value ?? ""),
         label: String(row.label ?? ""), is_primary: row.is_primary === true, is_verified: row.is_verified === true,
       })));
@@ -107,10 +108,6 @@ export function ContactsPage() {
     const account = accounts.find(item => item.id === id);
     return String(account?.account_name ?? account?.legal_name ?? "未关联客户");
   }, [accounts]);
-  const methodsFor = useCallback((id: string) => methods.filter(item => {
-    const row = contacts.find(contactRow => contactRow.id === id);
-    return item.id && row && String(row.id) === id && (item as ContactMethod & {contact_id?:string}).contact_id !== "__never__";
-  }), [contacts, methods]);
   const visible = useMemo(() => contacts.filter(row => {
     if (accountFilter && row.account_id !== accountFilter) return false;
     const rowMethods = methods.filter(item => {
@@ -144,7 +141,7 @@ export function ContactsPage() {
     setMethodsDraft([...loaded, ...fallback].length ? [...loaded, ...fallback] : [newMethod()]);
     setShowEditor(true);
   };
-  const updateMethod = (draftId: string, patch: Partial<ContactMethod>) => setMethodsDraft(current => current.map(item => item.draftId === draftId ? {...item,...patch} : item));
+  const updateMethod = (draftId: string, patch: Partial<ContactMethod>) => setMethodsDraft(current => current.map(item => { if (item.draftId === draftId) return {...item,...patch}; if (patch.is_primary === true && item.method_type === (current.find(row => row.draftId === draftId)?.method_type ?? item.method_type) && item.platform === (current.find(row => row.draftId === draftId)?.platform ?? item.platform)) return {...item,is_primary:false}; return item; }));
   const addMethod = () => setMethodsDraft(current => [...current,newMethod()]);
   const removeMethod = (draftId: string) => setMethodsDraft(current => current.filter(item => item.draftId !== draftId));
 
@@ -238,7 +235,7 @@ export function ContactsPage() {
           const rowMethods = methods.filter(item=>(item as ContactMethod & {contact_id?:string}).contact_id===row.id);
           const legacyValues = [row.email,row.phone,row.mobile,row.whatsapp,row.linkedin_url].filter(Boolean);
           return <article key={row.id} className="min-w-0 rounded-lg bg-muted/25 p-3 sm:p-4">
-            <div className="flex min-w-0 items-start justify-between gap-3"><div className="flex min-w-0 items-start gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-background"><UserRound className="h-5 w-5 text-muted-foreground"/></div><div className="min-w-0"><h3 className="break-words font-semibold">{String(row.full_name ?? [row.first_name,row.last_name].filter(Boolean).join(" ") || "未命名联系人")}</h3><p className="break-words text-sm text-muted-foreground">{String(row.job_title ?? "未设置职位")} · {accountName(String(row.account_id ?? ""))}</p></div></div><div className="flex shrink-0 gap-1"><Button size="icon" variant="ghost" aria-label="编辑联系人" onClick={()=>void startEdit(row)}><Pencil className="h-4 w-4"/></Button><Button size="icon" variant="ghost" aria-label="归档联系人" onClick={()=>void archive(row)}><Trash2 className="h-4 w-4"/></Button></div></div>
+            <div className="flex min-w-0 items-start justify-between gap-3"><div className="flex min-w-0 items-start gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-background"><UserRound className="h-5 w-5 text-muted-foreground"/></div><div className="min-w-0"><h3 className="break-words font-semibold">{String(row.full_name || [row.first_name,row.last_name].filter(Boolean).join(" ") || "未命名联系人")}</h3><p className="break-words text-sm text-muted-foreground">{String(row.job_title ?? "未设置职位")} · {accountName(String(row.account_id ?? ""))}</p></div></div><div className="flex shrink-0 gap-1"><Button size="icon" variant="ghost" aria-label="编辑联系人" onClick={()=>void startEdit(row)}><Pencil className="h-4 w-4"/></Button><Button size="icon" variant="ghost" aria-label="归档联系人" onClick={()=>void archive(row)}><Trash2 className="h-4 w-4"/></Button></div></div>
             <div className="mt-3 flex flex-wrap gap-2">{rowMethods.length ? rowMethods.map(item=><span key={item.id} className="inline-flex max-w-full items-center gap-2 rounded-md bg-background px-2.5 py-1.5 text-xs"><span className="shrink-0">{iconFor(item.platform,"h-3.5 w-3.5")}</span><span className="break-all">{item.value}</span>{item.is_primary&&<Badge className="shrink-0">主要</Badge>}</span>) : legacyValues.map((value,index)=><span key={index} className="rounded-md bg-background px-2.5 py-1.5 text-xs break-all">{String(value)}</span>)}</div>
           </article>;
         })}</div> : <div className="py-12 text-center text-sm text-muted-foreground">暂无联系人，点击「新建联系人」开始添加。</div>}
