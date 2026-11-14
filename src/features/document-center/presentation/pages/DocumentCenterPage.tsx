@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Archive, Building2, FilePlus2, FileText, LayoutTemplate, Languages, Package, Plus, Printer, RefreshCw, Search } from "lucide-react";
+import { Archive, Building2, FilePlus2, FileText, LayoutTemplate, Languages, Package, Plus, Printer, RefreshCw } from "lucide-react";
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Combobox, Input } from "@/shared/ui/primitives";
 import { PageControlPanel } from "@/shared/ui/page-layout";
 import { SearchControlPanel } from "@/shared/ui/data-views";
