@@ -11,7 +11,7 @@ const columns:Record<string,string[]> = {
  "crm/opportunities":["is_archived","archived_at","archived_reason","forecast_probability","team_id","opportunity_number","account_id","primary_contact_id","name","stage","status","amount","currency_code","probability","expected_close_date","source","competitor","next_step","description","lost_reason","sales_team","sales_person","campaign","lead_source_detail","next_activity_date","forecast_category"],
  "enterprise/profiles":["parent_enterprise_id","branch_code","is_branch","is_archived","archived_at","archived_reason","legal_name","trade_name","short_name","former_names","registration_number","tax_number","vat_number","eori_number","duns_number","country_code","registration_country","registration_authority","established_on","business_status","industry","business_scope","website","email","phone","fax","registered_address","headquarters_address","mailing_address","contact_name","contact_title","default_currency","default_payment_terms","default_incoterms","logo_url","company_size","employee_count","annual_revenue","export_license_number","customs_registration_number","notes","custom_fields","is_default","legal_form","company_code","sales_organization","distribution_channel","division","purchasing_organization","lei_number","parent_company","registered_capital","stock_exchange","fiscal_year_end"],
  "enterprise/banks":["is_archived","archived_at","archived_reason","enterprise_id","bank_name","bank_branch","account_name","account_number","iban","swift_bic","routing_number","sort_code","bank_code","branch_code","currency_code","country_code","bank_address","intermediary_bank","is_default","is_active","notes"]
-};
+,
  "crm/addresses":["account_id","contact_id","address_type","name","street","street2","city","state","postal_code","country_code","phone","email","is_default","is_archived"],
  "crm/activities":["activity_type","summary","note","due_at","status","account_id","contact_id","opportunity_id","assigned_to","completed_at"],
  "crm/teams":["name","team_leader","assignment_mode","is_active"],
@@ -20,6 +20,7 @@ const columns:Record<string,string[]> = {
  "product/attribute-values":["attribute_id","name","sequence","html_color","is_active"],
  "product/attribute-lines":["product_id","attribute_id","value_ids"],
  "product/variants":["product_id","sku","barcode","name","attribute_value_ids","default_unit_price","cost_price","weight","volume","is_active","is_archived"],
+};
 const tables:Record<string,string>={
  "crm/addresses":"crm_account_addresses","crm/activities":"crm_activities","crm/teams":"crm_sales_teams",
  "product/categories":"trade_product_categories","product/attributes":"trade_product_attributes",
