@@ -636,3 +636,9 @@ main h1, .tp-page-canvas h1 {
 .dark .tp-page-canvas table tbody tr:hover { background: #292d32; }
 .dark .tp-control-panel { background: #202328; border-color: #3b4148; }
 .dark .tp-mobile-record { background: #202328; border-color: #3b4148; }
+
+
+/* Carbon typography: reserve IBM Plex Mono for technical and code-oriented content. */
+code, pre, kbd, samp, .font-mono {
+  font-family: "IBM Plex Mono", "Noto Sans Mono CJK SC", ui-monospace, SFMono-Regular, monospace;
+}
