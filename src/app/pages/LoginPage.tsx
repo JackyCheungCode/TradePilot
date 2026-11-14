@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from "react";
-import { LoaderCircle, LockKeyhole, Radar } from "lucide-react";
+import { LoaderCircle, LockKeyhole } from "lucide-react";
 import { toast } from "sonner";
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input } from "@/shared/ui/primitives";
 import { getSupabaseClient } from "@/shared/lib/supabase";
+import tradePilotLogo from "@/assets/tradepilot-logo.svg";
 
 export function LoginPage() {
   const [email, setEmail] = useState("");
@@ -26,7 +27,7 @@ export function LoginPage() {
   return <main className="flex min-h-screen items-center justify-center bg-muted/30 px-5 py-10">
     <Card className="w-full max-w-md border-0 shadow-lg">
       <CardHeader className="space-y-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground"><Radar className="h-6 w-6" /></div>
+        <img src={tradePilotLogo} alt="TradePilot" className="h-auto w-56 max-w-full object-contain" />
         <div><CardTitle className="text-2xl">登录 TradePilot</CardTitle><CardDescription className="mt-2">登录后直接进入你的全球市场情报工作区。</CardDescription></div>
       </CardHeader>
       <CardContent><form onSubmit={signIn} className="space-y-4">
