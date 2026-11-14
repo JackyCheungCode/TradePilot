@@ -4,7 +4,7 @@ import { Button } from "@/shared/ui/primitives";
 import { AgentOrbIcon } from "@/features/agent-center/presentation/components/AgentOrbIcon";
 import { Sparkles, Workflow, PlugZap, ClipboardCheck, Bot, Activity, FileStack, FilePlus2, Archive, LayoutTemplate } from "lucide-react";
 
-type AppPage = "agentWorkbench" | "agentMarket" | "agentOrchestration" | "agentConnections" | "agentRuns" | "agentApprovals" | "agentSettings" | "discovery" | "discoveryTasks" | "discoveryResults" | "searchDiscovery" | "facebookDiscovery" | "instagramDiscovery" | "leads" | "crmAccounts" | "crmContacts" | "crmOpportunities" | "enterpriseConfig" | "productConfig" | "productCatalog" | "integrations" | "searchExclusions" | "agentAppearance" | "orderCenter" | "documentWorkbench" | "documentCreate" | "documentRecords" | "documentTemplates";
+type AppPage = "agentWorkbench" | "agentMarket" | "agentOrchestration" | "agentConnections" | "agentRuns" | "agentApprovals" | "agentSettings" | "orderQuotations" | "orderSales" | "orderPurchase" | "discovery" | "discoveryTasks" | "discoveryResults" | "searchDiscovery" | "facebookDiscovery" | "instagramDiscovery" | "leads" | "crmAccounts" | "crmContacts" | "crmOpportunities" | "enterpriseConfig" | "productConfig" | "productCatalog" | "integrations" | "searchExclusions" | "agentAppearance" | "orderCenter" | "documentWorkbench" | "documentCreate" | "documentRecords" | "documentTemplates";
 
 export function AppShell({ children, activePage, onNavigate, userEmail, onSignOut }: { children: ReactNode; activePage: AppPage; onNavigate: (page: AppPage) => void; userEmail: string; onSignOut: () => void }) {
  const [collapsed,setCollapsed]=useState(false),[mobileOpen,setMobileOpen]=useState(false);
