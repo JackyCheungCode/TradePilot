@@ -1,9 +1,20 @@
 import { useState, type FormEvent } from "react";
-import { Renew as LoaderCircle, Locked as LockKeyhole } from "@carbon/icons-react";
+import { Locked as LockKeyhole } from "@carbon/icons-react";
+import {
+  Button,
+  Column,
+  Grid,
+  Heading,
+  PasswordInput,
+  Section,
+  Stack,
+  TextInput,
+  Tile,
+} from "@carbon/react";
 import { toast } from "sonner";
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input } from "@/shared/ui/primitives";
 import { getSupabaseClient } from "@/shared/lib/supabase";
 import tradePilotLogo from "@/assets/tradepilot-logo.svg";
+import "./login-page.scss";
 
 export function LoginPage() {
   const [email, setEmail] = useState("");
@@ -14,7 +25,10 @@ export function LoginPage() {
     event.preventDefault();
     setSubmitting(true);
     try {
-      const { error } = await getSupabaseClient().auth.signInWithPassword({ email: email.trim(), password });
+      const { error } = await getSupabaseClient().auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
       if (error) throw error;
       setPassword("");
     } catch (error) {
@@ -24,18 +38,59 @@ export function LoginPage() {
     }
   };
 
-  return <main className="flex min-h-screen items-center justify-center bg-muted/30 px-5 py-10">
-    <Card className="w-full max-w-md border-0 shadow-lg">
-      <CardHeader className="space-y-4">
-        <img src={tradePilotLogo} alt="TradePilot" className="h-auto w-56 max-w-full object-contain" />
-        <div><CardTitle className="text-2xl">登录 TradePilot</CardTitle><CardDescription className="mt-2">登录后直接进入你的全球市场情报工作区。</CardDescription></div>
-      </CardHeader>
-      <CardContent><form onSubmit={signIn} className="space-y-4">
-        <div className="space-y-2"><label htmlFor="tradepilot-email" className="text-sm font-medium">邮箱</label><Input id="tradepilot-email" type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="输入登录邮箱" required /></div>
-        <div className="space-y-2"><label htmlFor="tradepilot-password" className="text-sm font-medium">密码</label><Input id="tradepilot-password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="输入账户密码" required /></div>
-        <Button type="submit" className="w-full" disabled={submitting}>{submitting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <LockKeyhole className="h-4 w-4" />}{submitting ? "正在登录…" : "登录并进入系统"}</Button>
-        <p className="text-center text-xs text-muted-foreground">单用户工作空间 · 不开放注册</p>
-      </form></CardContent>
-    </Card>
-  </main>;
+  return (
+    <main className="tp-login-page">
+      <Grid fullWidth className="tp-login-grid">
+        <Column sm={4} md={6} lg={6} xlg={6} max={6} className="tp-login-column">
+          <Tile className="tp-login-tile">
+            <Stack gap={7}>
+              <img src={tradePilotLogo} alt="TradePilot" className="tp-login-logo" />
+              <Section level={1}>
+                <Stack gap={3}>
+                  <Heading className="cds--type-productive-heading-04">登录 TradePilot</Heading>
+                  <p className="cds--type-body-compact-01">
+                    登录后直接进入你的全球市场情报工作区。
+                  </p>
+                </Stack>
+              </Section>
+              <form onSubmit={signIn} className="tp-login-form">
+                <Stack gap={5}>
+                  <TextInput
+                    id="tradepilot-email"
+                    type="email"
+                    labelText="邮箱"
+                    autoComplete="username"
+                    value={email}
+                    onChange={(event) => setEmail(event.currentTarget.value)}
+                    placeholder="输入登录邮箱"
+                    required
+                  />
+                  <PasswordInput
+                    id="tradepilot-password"
+                    labelText="密码"
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(event) => setPassword(event.currentTarget.value)}
+                    placeholder="输入账户密码"
+                    required
+                  />
+                  <Button
+                    type="submit"
+                    className="tp-login-submit"
+                    renderIcon={LockKeyhole}
+                    disabled={submitting}
+                  >
+                    {submitting ? "正在登录…" : "登录并进入系统"}
+                  </Button>
+                  <p className="cds--type-helper-text-01 tp-login-footnote">
+                    单用户工作空间 · 不开放注册
+                  </p>
+                </Stack>
+              </form>
+            </Stack>
+          </Tile>
+        </Column>
+      </Grid>
+    </main>
+  );
 }
