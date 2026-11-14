@@ -35,7 +35,29 @@ async function validateRefs(env:Env,ownerId:string,key:string,body:Json):Promise
  if(key==="product/categories")refs.push(["parent_id","trade_product_categories"]);
  if(key==="product/attribute-values")refs.push(["attribute_id","trade_product_attributes"]);
  if(key==="product/attribute-lines"){refs.push(["product_id","trade_products"]);refs.push(["attribute_id","trade_product_attributes"]);}
- if(key==="product/variants")refs.push(["product_id","trade_products"]);for(const [field,table] of refs){const value=str(body[field],64);if(!value)continue;const rows=await db<Json[]>(env,table+"?select=id&id=eq."+encodeURIComponent(value)+"&owner_id=eq."+ownerId+"&limit=1");if(!rows.length)return "关联字段 "+field+" 对应的记录不存在或无权访问。";}if(key==="crm/opportunities"&&body.account_id&&body.primary_contact_id){const rows=await db<Json[]>(env,"crm_contacts?select=id&id=eq."+encodeURIComponent(str(body.primary_contact_id))+"&account_id=eq."+encodeURIComponent(str(body.account_id))+"&owner_id=eq."+ownerId+"&limit=1");if(!rows.length)return "主要联系人不属于所选客户。";}if(key==="product/attribute-lines"&&Array.isArray(body.value_ids)){const ids=body.value_ids.map(v=>str(v,64)).filter(Boolean);if(ids.length!==body.value_ids.length)return "属性值列表格式不正确。";if(ids.length){const rows=await db<Json[]>(env,"trade_product_attribute_values?select=id&id=in.("+ids.map(encodeURIComponent).join(",")+")&attribute_id=eq."+encodeURIComponent(str(body.attribute_id,64))+"&owner_id=eq."+ownerId);if(rows.length!==ids.length)return "所选属性值必须全部属于当前属性。";}}if(key==="product/variants"&&Array.isArray(body.attribute_value_ids)){const ids=body.attribute_value_ids.map(v=>str(v,64)).filter(Boolean);if(ids.length!==body.attribute_value_ids.length)return "SKU 属性值列表格式不正确。";if(ids.length){const rows=await db<Json[]>(env,"trade_product_attribute_values?select=id&id=in.("+ids.map(encodeURIComponent).join(",")+")&owner_id=eq."+ownerId);if(rows.length!==ids.length)return "SKU 包含不存在或无权访问的属性值。";}}if(key==="product/categories"&&body.parent_id&&str(body.parent_id,64)===str(body.id,64))return "产品分类不能将自身设为上级分类。";return null;}
+ if(key==="product/variants")refs.push(["product_id","trade_products"]);for(const [field,table] of refs){const value=str(body[field],64);if(!value)continue;const rows=await db<Json[]>(env,table+"?select=id&id=eq."+encodeURIComponent(value)+"&owner_id=eq."+ownerId+"&limit=1");if(!rows.length)return "关联字段 "+field+" 对应的记录不存在或无权访问。";}if(key==="crm/opportunities"&&body.account_id&&body.primary_contact_id){const rows=await db<Json[]>(env,"crm_contacts?select=id&id=eq."+encodeURIComponent(str(body.primary_contact_id))+"&account_id=eq."+encodeURIComponent(str(body.account_id))+"&owner_id=eq."+ownerId+"&limit=1");if(!rows.length)return "主要联系人不属于所选客户。";}if(key==="product/attribute-lines"&&Array.isArray(body.value_ids)){const ids=body.value_ids.map(v=>str(v,64)).filter(Boolean);if(ids.length!==body.value_ids.length)return "属性值列表格式不正确。";if(ids.length){const rows=await db<Json[]>(env,"trade_product_attribute_values?select=id&id=in.("+ids.map(encodeURIComponent).join(",")+")&attribute_id=eq."+encodeURIComponent(str(body.attribute_id,64))+"&owner_id=eq."+ownerId);if(rows.length!==ids.length)return "所选属性值必须全部属于当前属性。";}}if(key==="product/variants"&&Array.isArray(body.attribute_value_ids)){
+ const ids=body.attribute_value_ids.map(v=>str(v,64)).filter(Boolean);
+ if(ids.length!==body.attribute_value_ids.length||new Set(ids).size!==ids.length)return "SKU 属性值列表格式不正确或包含重复值。";
+ const productId=str(body.product_id,64);
+ const productRows=await db<Json[]>(env,"trade_products?select=id&id=eq."+encodeURIComponent(productId)+"&owner_id=eq."+ownerId+"&limit=1");
+ if(!productRows.length)return "SKU 所属产品不存在或无权访问。";
+ const [values,lines]=await Promise.all([
+  ids.length?db<Json[]>(env,"trade_product_attribute_values?select=id,attribute_id,name&id=in.("+ids.map(encodeURIComponent).join(",")+")&owner_id=eq."+ownerId):Promise.resolve([] as Json[]),
+  db<Json[]>(env,"trade_product_template_attribute_lines?select=attribute_id,value_ids&product_id=eq."+encodeURIComponent(productId)+"&owner_id=eq."+ownerId)
+ ]);
+ if(values.length!==ids.length)return "SKU 包含不存在或无权访问的属性值。";
+ const attributeIds=[...new Set(values.map(v=>str(v.attribute_id,64)))];
+ if(attributeIds.length!==values.length)return "一个 SKU 不能为同一属性选择多个属性值。";
+ const configured=new Map(lines.map(line=>[str(line.attribute_id,64),Array.isArray(line.value_ids)?line.value_ids.map(v=>str(v,64)):[]]));
+ for(const value of values){const allowed=configured.get(str(value.attribute_id,64));if(!allowed||!allowed.includes(str(value.id,64)))return "SKU 属性值必须来自该产品已配置的属性值范围。";}
+ const attributes=attributeIds.length?await db<Json[]>(env,"trade_product_attributes?select=id,create_variant&id=in.("+attributeIds.map(encodeURIComponent).join(",")+")&owner_id=eq."+ownerId):[];
+ if(attributes.some(a=>a.create_variant==="never"))return "该属性设置为不生成变体，不能用于 SKU 组合。";
+ const requiredLines=lines.filter(line=>line.attribute_id&&line.value_ids&&Array.isArray(line.value_ids));
+ const requiredAttributes=requiredLines.map(line=>str(line.attribute_id,64));
+ const enabled=requiredAttributes.length?await db<Json[]>(env,"trade_product_attributes?select=id,create_variant&id=in.("+requiredAttributes.map(encodeURIComponent).join(",")+")&owner_id=eq."+ownerId):[];
+ const mustSelect=enabled.filter(a=>a.create_variant!=="never").map(a=>str(a.id,64));
+ if(mustSelect.some(id=>!attributeIds.includes(id)))return "SKU 必须为该产品所有启用变体的属性各选择一个属性值。";
+}if(key==="product/categories"&&body.parent_id&&str(body.parent_id,64)===str(body.id,64))return "产品分类不能将自身设为上级分类。";return null;}
 export async function handleMasterData(request:Request,env:Env):Promise<Response>{
  const ownerId=await ownerFromRequest(request,env);if(!ownerId)return errorResponse(request,"UNAUTHORIZED","请先登录 TradePilot。",401);
  const url=new URL(request.url),path=url.pathname.replace(/^\/api\/v1\/master-data\/?/,"").replace(/\/$/,""),parts=path.split("/"),key=parts.slice(0,2).join("/"),id=parts[2],table=tables[key],method=request.method;
