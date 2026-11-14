@@ -1,7 +1,7 @@
 import { errorResponse, successResponse } from "../lib/http";
 interface Env { SUPABASE_URL:string; SUPABASE_ANON_KEY:string; SUPABASE_SERVICE_ROLE_KEY:string; }
 type Json=Record<string,unknown>;
-async function ownerFromRequest(request:Request,env:Env):Promise<string|null>{const token=request.headers.get("Authorization")?.match(/^Bearer\\s+(\\S+)$/i)?.[1];if(!token)return null;const response=await fetch(env.SUPABASE_URL+"/auth/v1/user",{headers:{apikey:env.SUPABASE_ANON_KEY,Authorization:"Bearer "+token},signal:AbortSignal.timeout(10000)});if(!response.ok)return null;const user=await response.json() as {id?:string};return user.id??null;}
+async function ownerFromRequest(request:Request,env:Env):Promise<string|null>{const token=request.headers.get("Authorization")?.match(/^Bearer\s+(\S+)$/i)?.[1];if(!token)return null;const response=await fetch(env.SUPABASE_URL+"/auth/v1/user",{headers:{apikey:env.SUPABASE_ANON_KEY,Authorization:"Bearer "+token},signal:AbortSignal.timeout(10000)});if(!response.ok)return null;const user=await response.json() as {id?:string};return user.id??null;}
 async function db<T>(env:Env,path:string,init:RequestInit={}):Promise<T>{const response=await fetch(env.SUPABASE_URL+"/rest/v1/"+path,{...init,signal:init.signal??AbortSignal.timeout(12000),headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:"Bearer "+env.SUPABASE_SERVICE_ROLE_KEY,"Content-Type":"application/json",...init.headers}});const raw=await response.text();if(!response.ok)throw new Error("DATABASE_"+response.status+": "+raw.slice(0,300));return raw?JSON.parse(raw) as T:undefined as T;}
 const obj=(v:unknown):Json=>v&&typeof v==="object"&&!Array.isArray(v)?v as Json:{};
 const str=(v:unknown,max=500):string=>typeof v==="string"?v.trim().slice(0,max):"";
@@ -16,7 +16,7 @@ const tables:Record<string,string>={"crm/accounts":"crm_accounts","crm/contacts"
 const required:Record<string,string[]>={"crm/accounts":["account_name"],"crm/contacts":["account_id","first_name"],"crm/opportunities":["account_id","name"],"enterprise/profiles":["legal_name"],"enterprise/banks":["enterprise_id","bank_name","account_name","account_number"]};
 export async function handleMasterData(request:Request,env:Env):Promise<Response>{
  const ownerId=await ownerFromRequest(request,env);if(!ownerId)return errorResponse(request,"UNAUTHORIZED","请先登录 TradePilot。",401);
- const url=new URL(request.url),path=url.pathname.replace(/^\\/api\\/v1\\/master-data\\/?/,"").replace(/\\/$/,""),parts=path.split("/"),key=parts.slice(0,2).join("/"),id=parts[2],table=tables[key],method=request.method;
+ const url=new URL(request.url),path=url.pathname.replace(/^\/api\/v1\/master-data\/?/,"").replace(/\/$/,""),parts=path.split("/"),key=parts.slice(0,2).join("/"),id=parts[2],table=tables[key],method=request.method;
  if(!table)return errorResponse(request,"NOT_FOUND","主数据接口不存在。",404);
  try{
   if(method==="GET"){const params=new URLSearchParams({select:"*",owner_id:"eq."+ownerId,order:"updated_at.desc",limit:"200"});if(id)params.set("id","eq."+id);if(key==="crm/contacts"&&url.searchParams.has("account_id"))params.set("account_id","eq."+url.searchParams.get("account_id"));if(key==="enterprise/banks"&&url.searchParams.has("enterprise_id"))params.set("enterprise_id","eq."+url.searchParams.get("enterprise_id"));return successResponse(request,await db(env,table+"?"+params.toString()));}
