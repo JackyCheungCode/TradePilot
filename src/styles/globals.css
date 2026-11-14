@@ -282,7 +282,7 @@ main h1, .tp-page-canvas h1 {
   flex: 1 1 480px;
   justify-content: flex-end;
 }
-.tp-page-canvas > .mx-auto { width: 100%; max-width: 1600px; }
+.tp-page-root > .mx-auto { width: 100%; max-width: 1600px; }
 .tp-page-canvas .tp-list-row { background: #fff; border-color: var(--tp-line); box-shadow: none; }
 .tp-page-canvas .tp-list-row:hover { background: #fafbfc; }
 .tp-page-canvas .tp-list-row + .tp-list-row { margin-top: 8px; }
@@ -326,16 +326,16 @@ main h1, .tp-page-canvas h1 {
 
 
 /* Shared Odoo-style application page architecture */
-.tp-page-canvas > div {
+.tp-page-root {
   width: 100%;
   min-width: 0;
   max-width: 1600px;
   margin-inline: auto;
   padding: 18px 24px;
 }
-.tp-page-canvas > div > * { min-width: 0; }
-.tp-page-canvas > div > .tp-control-panel,
-.tp-page-canvas > div > .tp-page-heading {
+.tp-page-root > * { min-width: 0; }
+.tp-page-root > .tp-control-panel,
+.tp-page-root > .tp-page-heading {
   margin-top: -18px;
 }
 .tp-control-panel {
@@ -454,9 +454,9 @@ main h1, .tp-page-canvas h1 {
 .tp-page-canvas [role="dialog"] input:not([type="checkbox"]):not([type="radio"]),
 .tp-page-canvas [role="dialog"] textarea { background: #f7f8f9; }
 @media (max-width: 767px) {
-  .tp-page-canvas > div { padding: 12px; }
-  .tp-page-canvas > div > .tp-control-panel,
-  .tp-page-canvas > div > .tp-page-heading { margin-top: -12px; }
+  .tp-page-root { padding: 12px; }
+  .tp-page-root > .tp-control-panel,
+  .tp-page-root > .tp-page-heading { margin-top: -12px; }
   .tp-control-panel {
     gap: 12px;
     margin: -12px -12px 14px;
