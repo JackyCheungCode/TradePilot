@@ -119,7 +119,7 @@
   background: var(--cds-background, #f4f4f4);
 }
 
-.tp-carbon-header.cds--header {
+.tp-carbon-header {
   position: sticky;
   top: 0;
   z-index: 30;
@@ -241,7 +241,7 @@
 }
 
 @media (max-width: 671px) {
-  .tp-carbon-header.cds--header {
+  .tp-carbon-header {
     width: 100%;
   }
 }
