@@ -237,6 +237,7 @@ export function AppShell({
         </SideNavItems>
         <div className="tp-carbon-side-nav__footer">
           <div className="tp-carbon-side-nav__user" title={userEmail}>{userEmail}</div>
+          <ul className="cds--side-nav__items">
           <SideNavLink
             href="#"
             renderIcon={() => <MaterialIcon name="logout" />}
@@ -247,6 +248,7 @@ export function AppShell({
           >
             退出登录
           </SideNavLink>
+          </ul>
         </div>
       </div>
     </SideNav>
