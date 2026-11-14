@@ -8,8 +8,6 @@ body {
   font-family: "IBM Plex Sans", "Noto Sans TC", "Noto Sans SC", ui-sans-serif, system-ui, sans-serif;
   text-rendering: optimizeLegibility;
 }
-button, input, textarea, select { font: inherit; }
-button { -webkit-tap-highlight-color: transparent; }
 ::selection { background: #dce3ea; color: #17202a; }
 :focus-visible:not([class*="cds--"]) { outline: 2px solid #64748b; outline-offset: 2px; }
 
