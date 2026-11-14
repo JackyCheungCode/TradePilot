@@ -1,0 +1,22 @@
+import { getSupabaseClient } from "@/shared/lib/supabase";
+export interface TradeParty {id:string;party_type:string;legal_name:string;display_name?:string|null;country_code?:string|null;email?:string|null;phone?:string|null;website?:string|null;address?:Record<string,unknown>;is_active:boolean;created_at:string;updated_at:string;}
+export interface TradeProduct {id:string;sku?:string|null;name:string;description?:string|null;hs_code?:string|null;unit:string;default_currency?:string|null;default_unit_price?:number|null;is_active:boolean;}
+export interface TradeOrder {id:string;order_number:string;order_type:"sales"|"purchase";title:string;status:string;currency_code:string;created_at:string;updated_at:string;trade_order_items?:TradeOrderItem[];}
+export interface TradeOrderItem {id:string;product_name:string;sku?:string|null;quantity:number;unit:string;unit_price:number;amount:number;line_number:number;}
+export interface TradeDocument {id:string;document_number:string;document_type:string;title:string;status:string;locale:string;currency_code:string;order_id:string;current_version:number;created_at:string;}
+async function request<T>(path:string,init?:RequestInit):Promise<T>{
+ const {data:{session}}=await getSupabaseClient().auth.getSession();if(!session?.access_token)throw new Error("请先登录 TradePilot。");
+ const response=await fetch(path,{...init,signal:init?.signal??AbortSignal.timeout(20000),headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token,...init?.headers}});
+ const raw=await response.text();let body:{data?:T;error?:{message?:string}};try{body=JSON.parse(raw) as typeof body;}catch{throw new Error("单据 API 返回无效响应（HTTP "+response.status+"）。");}
+ if(!response.ok||body.data===undefined)throw new Error(body.error?.message??"单据 API 请求失败（HTTP "+response.status+"）。");return body.data;
+}
+export const tradeApi={
+ listParties:()=>request<TradeParty[]>("/api/v1/trade/parties"),
+ createParty:(input:Partial<TradeParty>&{legal_name:string;party_type:string})=>request<TradeParty>("/api/v1/trade/parties",{method:"POST",body:JSON.stringify(input)}),
+ listProducts:()=>request<TradeProduct[]>("/api/v1/trade/products"),
+ createProduct:(input:Partial<TradeProduct>&{name:string})=>request<TradeProduct>("/api/v1/trade/products",{method:"POST",body:JSON.stringify(input)}),
+ listOrders:()=>request<TradeOrder[]>("/api/v1/trade/orders"),
+ createOrder:(input:{title:string;order_type:"sales"|"purchase";currency_code?:string})=>request<TradeOrder>("/api/v1/trade/orders",{method:"POST",body:JSON.stringify(input)}),
+ listDocuments:()=>request<TradeDocument[]>("/api/v1/trade/documents"),
+ createDocument:(input:{order_id:string;document_type:string;title?:string;locale?:string;currency_code?:string})=>request<TradeDocument>("/api/v1/trade/documents",{method:"POST",body:JSON.stringify(input)}),
+};
