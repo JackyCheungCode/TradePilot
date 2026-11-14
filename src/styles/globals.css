@@ -28,24 +28,24 @@
 
 :root {
   color-scheme: light;
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
+  --radius: 0.375rem;
+  --background: #f6f7f8;
   --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
+  --card: #ffffff;
   --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
+  --popover: #ffffff;
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  --primary: #1f2937;
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
+  --secondary: #eef0f2;
   --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
+  --muted: #f1f3f5;
   --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
+  --accent: #edf0f2;
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
+  --border: #e5e7eb;
+  --input: #dfe3e7;
   --ring: oklch(0.708 0 0);
 }
 
@@ -85,6 +85,63 @@ body {
   margin: 0;
   background: var(--background);
   color: var(--foreground);
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-family: Inter, "Noto Sans SC", ui-sans-serif, system-ui, sans-serif;
   text-rendering: optimizeLegibility;
+}
+
+
+/* TradePilot · Odoo-inspired global interface system */
+:root {
+  --tp-sidebar: #1f2937;
+  --tp-sidebar-muted: #aeb7c2;
+  --tp-surface: #ffffff;
+  --tp-canvas: #f6f7f8;
+  --tp-border-subtle: #e8ebee;
+  --tp-text: #212529;
+  --tp-radius: 6px;
+  --tp-control-height: 34px;
+}
+html { font-size: 14px; }
+body { font-size: 13px; line-height: 1.45; letter-spacing: 0; }
+button, input, textarea, select { font: inherit; }
+button { -webkit-tap-highlight-color: transparent; }
+::selection { background: #dce3ea; color: #17202a; }
+:focus-visible { outline: 2px solid #64748b; outline-offset: 2px; }
+.tp-sidebar { background: var(--tp-sidebar); color: #f8fafc; border-color: #374151; }
+.tp-sidebar nav button { color: #e5e7eb; border-radius: 5px; min-height: 34px; }
+.tp-sidebar nav button:hover { background: rgba(255,255,255,.09); color: #fff; }
+.tp-sidebar nav button[class*="bg-secondary"] { background: rgba(255,255,255,.14) !important; color: #fff !important; }
+.tp-sidebar nav button svg { color: #c3ccd6; }
+.tp-sidebar nav button[class*="bg-secondary"] svg { color: #fff; }
+.tp-sidebar .border-b, .tp-sidebar .border-t, .tp-sidebar .border-l { border-color: rgba(255,255,255,.12); }
+.tp-topbar { background: rgba(255,255,255,.96); border-color: var(--tp-border-subtle); }
+.tp-page-canvas { min-height: calc(100vh - 56px); background: var(--tp-canvas); }
+.tp-page-canvas > * { max-width: 100%; }
+main { min-width: 0; }
+main h1 { color: var(--tp-text); letter-spacing: -.025em; }
+main h2, main h3 { letter-spacing: -.015em; }
+main .rounded-xl.border, main .rounded-lg.border { border-color: var(--tp-border-subtle); box-shadow: 0 1px 2px rgba(16,24,40,.035); }
+main table { border-collapse: separate; border-spacing: 0; width: 100%; }
+main table thead th { background: #f7f8f9; color: #667085; font-size: 11px; font-weight: 600; letter-spacing: .025em; }
+main table tbody tr:hover { background: #f8fafb; }
+main input:not([type="checkbox"]):not([type="radio"]), main textarea, main select {
+  min-height: var(--tp-control-height);
+  border-radius: 5px;
+  border-color: #d8dde3;
+  background-color: #fff;
+  box-shadow: none;
+}
+main input:focus, main textarea:focus, main select:focus {
+  border-color: #64748b;
+  box-shadow: 0 0 0 2px rgba(100,116,139,.12);
+}
+main select { padding-right: 2rem; }
+main label { color: #475467; font-size: 12px; font-weight: 500; }
+main button { transition: background-color .14s ease, border-color .14s ease, color .14s ease; }
+main button[class*="bg-primary"] { background: #273444; }
+main button[class*="bg-primary"]:hover { background: #111827; }
+main button[class*="rounded-xl"] { border-radius: 6px; }
+@media (max-width: 767px) {
+  .tp-page-canvas { min-height: calc(100vh - 56px); }
+  main .overflow-x-auto { -webkit-overflow-scrolling: touch; }
 }
