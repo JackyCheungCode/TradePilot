@@ -7,3 +7,238 @@
 @keyframes agent-particle-float{0%{transform:translate3d(0,18px,0) scale(.7);opacity:0}15%{opacity:.8}75%{opacity:.65}100%{transform:translate3d(22px,-95px,0) scale(1.25);opacity:0}}
 @keyframes agent-gradient-drift{0%{background-position:0% 50%}100%{background-position:100% 50%}}
 @media(prefers-reduced-motion:reduce){.agent-workbench-hero{animation:none}.agent-particle{animation:none;opacity:.22}}
+
+
+/* Agent Market page — page-scoped Carbon layout and responsive composition. */
+.tp-agent-market-page {
+  width: 100%;
+  max-width: 1584px;
+  min-width: 0;
+  padding: 16px;
+  margin-inline: auto;
+  color: var(--cds-text-primary, #161616);
+  background: var(--cds-background, #f4f4f4);
+}
+.tp-agent-market-page > .tp-control-panel {
+  margin: -16px -16px 0;
+  padding: 20px 16px 16px;
+  background: var(--cds-layer-01, #ffffff);
+  border-bottom: 1px solid var(--cds-border-subtle, #e0e0e0);
+}
+.tp-agent-market-page .tp-control-panel h1 {
+  font-size: 24px;
+  line-height: 1.25;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.tp-agent-market-page .tp-control-panel__description {
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.tp-agent-market-intro,
+.tp-agent-market-ecosystem {
+  background: var(--cds-layer-01, #ffffff);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.tp-agent-market-intro .tp-page-section__header,
+.tp-agent-market-ecosystem .tp-page-section__header {
+  margin-bottom: 0;
+}
+.tp-agent-market-intro .tp-page-section__header h2,
+.tp-agent-market-ecosystem .tp-page-section__header h2 {
+  font-size: 16px;
+  line-height: 1.4;
+  font-weight: 600;
+}
+.tp-agent-market-intro .tp-page-section__header p,
+.tp-agent-market-ecosystem .tp-page-section__header p {
+  font-size: 13px;
+  line-height: 1.5;
+}
+.tp-agent-market-page .tp-search-control-panel {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
+}
+.tp-agent-market-page .tp-search-control-panel > div:first-child {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+.tp-agent-market-filter {
+  width: 200px;
+  min-width: 160px;
+}
+.tp-agent-market-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 16px;
+  min-width: 0;
+}
+.tp-agent-role-card {
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  background: var(--cds-layer, #ffffff);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.tp-agent-role-card__content {
+  display: flex;
+  height: 100%;
+  min-width: 0;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+}
+.tp-agent-role-card__heading {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.tp-agent-role-card__identity {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.tp-agent-role-card__title {
+  margin: 0;
+  color: var(--cds-text-primary, #161616);
+  font-size: 16px;
+  line-height: 1.4;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.tp-agent-role-card__description {
+  margin: 8px 0 0;
+  color: var(--cds-text-secondary, #525252);
+  font-size: 13px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.tp-agent-role-card__tags {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+.tp-agent-role-card__action {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-block: 12px;
+  border-top: 1px solid var(--cds-border-subtle, #e0e0e0);
+}
+.tp-agent-role-card__status {
+  color: var(--cds-text-secondary, #525252);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.tp-agent-role-card .tp-agent-role-card__prompt {
+  width: 100%;
+  min-height: 128px;
+  color: var(--cds-text-primary, #161616);
+  background: var(--cds-field, #ffffff);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.tp-agent-role-card .tp-agent-role-card__prompt:focus {
+  outline: 2px solid var(--cds-focus, #0f62fe);
+  outline-offset: -2px;
+}
+.tp-agent-ecosystem-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+.tp-agent-ecosystem-item {
+  min-width: 0;
+  padding: 0;
+  background: var(--cds-layer, #ffffff);
+  border: 0;
+  border-left: 3px solid var(--cds-border-strong, #8d8d8d);
+  border-radius: 0;
+  box-shadow: none;
+}
+.tp-agent-ecosystem-item__title {
+  color: var(--cds-text-primary, #161616);
+  font-size: 14px;
+  font-weight: 600;
+}
+.tp-agent-ecosystem-item__description {
+  margin-top: 8px;
+  color: var(--cds-text-secondary, #525252);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.tp-agent-market-empty {
+  grid-column: 1 / -1;
+  padding: 24px 16px;
+  color: var(--cds-text-secondary, #525252);
+  background: var(--cds-layer-01, #ffffff);
+  font-size: 14px;
+}
+.tp-agent-market-notice {
+  padding: 12px 16px;
+  color: var(--cds-text-primary, #161616);
+  background: var(--cds-layer-01, #ffffff);
+  border-left: 3px solid var(--cds-support-success, #24a148);
+  font-size: 13px;
+}
+@media (min-width: 672px) and (max-width: 1055px) {
+  .tp-agent-market-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tp-agent-ecosystem-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 671px) {
+  .tp-agent-market-page {
+    width: 100%;
+    max-width: 100%;
+    padding: 12px;
+    gap: 16px;
+  }
+  .tp-agent-market-page > .tp-control-panel {
+    margin: -12px -12px 0;
+    padding: 16px 12px;
+  }
+  .tp-agent-market-page .tp-control-panel h1 { font-size: 20px; }
+  .tp-agent-market-page .tp-control-panel__description { font-size: 13px; }
+  .tp-agent-market-intro,
+  .tp-agent-market-ecosystem { padding: 12px; }
+  .tp-agent-market-page .tp-search-control-panel {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .tp-agent-market-page .tp-search-control-panel > div:first-child {
+    width: 100%;
+    flex-basis: auto;
+  }
+  .tp-agent-market-filter {
+    width: 100%;
+    min-width: 0;
+  }
+  .tp-agent-market-grid,
+  .tp-agent-ecosystem-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+  .tp-agent-role-card__content { gap: 14px; padding: 16px; }
+  .tp-agent-role-card__title { font-size: 15px; }
+  .tp-agent-role-card__description { font-size: 13px; }
+  .tp-agent-role-card__action { align-items: center; }
+  .tp-agent-role-card__prompt { min-height: 144px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tp-agent-market-page * { scroll-behavior: auto; }
+}
