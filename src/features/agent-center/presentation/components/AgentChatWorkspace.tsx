@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowUp, Bot, Globe2, Wrench, CheckCircle2, Clock3 } from "lucide-react";
 import { AgentOrbIcon } from "./AgentOrbIcon";
 import { Badge, Button, Card, CardContent } from "@/shared/ui/primitives";
@@ -27,6 +27,8 @@ export function AgentChatWorkspace({connections,onNotice}:{connections:AgentConn
  const [showPlan,setShowPlan]=useState(false);
  const [busy,setBusy]=useState(false);
  const [argsJson,setArgsJson]=useState("{}");
+ const [activeRunId,setActiveRunId]=useState<string|null>(null);
+ useEffect(()=>{if(!activeRunId)return;let alive=true;const poll=async()=>{try{const snapshot=await agentApi.getRun(activeRunId);if(!alive)return;const run=snapshot.run;const latest=snapshot.logs.at(-1)?.message??snapshot.events.at(-1)?.message??snapshot.discoveryRun?.message;const status=run.status;const statusText=status==="queued"?"已排队":status==="running"?"正在执行":status==="awaiting_approval"?"等待人工审批":status==="succeeded"?"执行成功":status==="completed"?"执行完成":status==="partial"?"部分完成":status==="failed"?"执行失败":status==="cancelled"?"已取消":status;const progress=snapshot.discoveryRun?.progress;const update=[statusText,typeof progress==="number"?"进度 "+progress+"%":null,latest].filter(Boolean).join(" · ");setMessages(old=>{const index=old.findIndex(item=>item.id===-1);if(index<0)return [...old,{id:-1,role:"assistant",content:update,kind:"progress"}];const next=[...old];next[index]={...next[index],content:update,kind:"progress"};return next;});if(["succeeded","completed","partial","failed","cancelled","awaiting_approval","planned"].includes(status)){setMessages(old=>[...old.filter(item=>item.id!==-2),{id:-2,role:"assistant",content:status==="awaiting_approval"?"任务已暂停，等待你在审批中心确认。":status==="failed"?(run.error_message??"任务执行失败，请查看执行记录。"):status==="partial"?"任务部分完成，请查看统一搜索结果和执行日志。":status==="cancelled"?"任务已取消。":"任务已完成。"+(snapshot.discoveryRun?.discovered_count!==undefined?" 发现 "+snapshot.discoveryRun.discovered_count+" 条结果。":""),kind:"result"}]);setActiveRunId(null);}}catch(error){if(alive)onNotice(error instanceof Error?error.message:"读取任务进度失败。");}};void poll();const timer=window.setInterval(()=>void poll(),3000);return()=>{alive=false;window.clearInterval(timer);};},[activeRunId,onNotice]);
  const activeConnections=connections.filter(c=>c.status==="active");
  const connection=activeConnections.find(c=>c.id===connectionId);
  const tools=connection?.protocol_tools??[];

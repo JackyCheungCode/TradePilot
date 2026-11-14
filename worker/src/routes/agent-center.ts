@@ -463,6 +463,18 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
       await db(env,"agent_connections?id=eq."+connectionMatch[1]+"&owner_id=eq."+ownerId,{method:"DELETE",headers:{Prefer:"return=minimal"}});
       return successResponse(request,{id:connectionMatch[1],deleted:true});
     }
+    const runDetailMatch=path.match(/^\\/api\\/v1\\/agent\\/runs\\/([0-9a-f-]{36})$/i);
+    if(runDetailMatch&&request.method==="GET"){
+      const runId=runDetailMatch[1];
+      const runs=await db<Array<Record<string,unknown>>>(env,"agent_runs?id=eq."+runId+"&owner_id=eq."+ownerId+"&select=id,agent_key,goal,status,plan,result,error_message,estimated_cost_usd,actual_cost_usd,started_at,completed_at,created_at,updated_at&limit=1");
+      const run=runs?.[0];if(!run)return errorResponse(request,"RUN_NOT_FOUND","Agent 任务不存在。",404);
+      const [discovery,events,logs]=await Promise.all([
+        db<Array<Record<string,unknown>>>(env,"discovery_runs?id=eq."+runId+"&owner_id=eq."+ownerId+"&select=id,status,progress,message,discovered_count,created_lead_count,search_config,updated_at&limit=1"),
+        db<Array<Record<string,unknown>>>(env,"agent_run_events?run_id=eq."+runId+"&owner_id=eq."+ownerId+"&select=id,event_type,message,payload,created_at&order=created_at.asc&limit=100"),
+        db<Array<Record<string,unknown>>>(env,"discovery_run_logs?run_id=eq."+runId+"&owner_id=eq."+ownerId+"&select=id,level,message,payload,created_at&order=created_at.asc&limit=100")
+      ]);
+      return successResponse(request,{run,discoveryRun:discovery?.[0]??null,events:events??[],logs:logs??[]});
+    }
     if(path==="/api/v1/agent/runs"&&request.method==="GET"){
       const rows=await db<unknown[]>(env,"agent_runs?owner_id=eq."+ownerId+"&select=id,agent_key,goal,status,plan,result,error_message,estimated_cost_usd,actual_cost_usd,created_at,updated_at&order=created_at.desc&limit=100");
       return successResponse(request,rows??[]);
