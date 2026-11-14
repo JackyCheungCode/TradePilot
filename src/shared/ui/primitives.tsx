@@ -26,3 +26,20 @@ export const PopoverClose = PopoverPrimitive.Close;
 export const PopoverContent = React.forwardRef<React.ElementRef<typeof PopoverPrimitive.Content>, React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>>(function PopoverContent({ className, align = "center", sideOffset = 4, ...props }, ref) {
  return <PopoverPrimitive.Portal><PopoverPrimitive.Content ref={ref} align={align} sideOffset={sideOffset} className={cn("z-50 w-72 rounded-md border bg-popover p-4 text-popover-foreground shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0", className)} {...props} /></PopoverPrimitive.Portal>;
 });
+
+export type ComboboxOption = { value: string; label: string; description?: string };
+export function Combobox({ value, onValueChange, options, placeholder = "请选择", searchPlaceholder = "搜索选项…", disabled = false, className }: { value: string; onValueChange: (value: string) => void; options: ComboboxOption[]; placeholder?: string; searchPlaceholder?: string; disabled?: boolean; className?: string }) {
+ const [open, setOpen] = React.useState(false);
+ const [query, setQuery] = React.useState("");
+ const selected = options.find((option) => option.value === value);
+ const filtered = options.filter((option) => (option.label + " " + (option.description ?? "")).toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
+ return <Popover open={open} onOpenChange={(next) => { setOpen(next); if (!next) setQuery(""); }}>
+  <PopoverTrigger asChild><Button type="button" variant="outline" disabled={disabled} className={cn("h-10 w-full justify-between font-normal", !selected && "text-muted-foreground", className)}><span className="min-w-0 truncate text-left">{selected?.label ?? placeholder}</span><span aria-hidden="true" className="ml-2 shrink-0 text-muted-foreground">⌄</span></Button></PopoverTrigger>
+  <PopoverContent align="start" className="w-[var(--radix-popover-trigger-width)] min-w-64 p-2">
+   <Input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder={searchPlaceholder} className="mb-2 h-9"/>
+   <div className="max-h-60 overflow-y-auto">
+    {filtered.length ? filtered.map((option) => <button key={option.value} type="button" onClick={() => { onValueChange(option.value); setOpen(false); }} className={cn("flex w-full flex-col rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent", value === option.value && "bg-accent")}><span className="font-medium">{option.label}</span>{option.description && <span className="text-xs text-muted-foreground">{option.description}</span>}</button>) : <p className="px-3 py-6 text-center text-xs text-muted-foreground">没有匹配选项</p>}
+   </div>
+  </PopoverContent>
+ </Popover>;
+}
