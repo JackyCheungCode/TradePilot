@@ -382,6 +382,48 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
       const rows=await db<Array<Record<string,unknown>>>(env,"agent_profiles?on_conflict=owner_id,agent_key&select=agent_key,enabled,config,updated_at",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=representation"},body:JSON.stringify({owner_id:ownerId,agent_key:agentKey,enabled,config,updated_at:new Date().toISOString()})});
       return successResponse(request,rows?.[0]??{agent_key:agentKey,enabled,config},200);
     }
+    if(path==="/api/v1/agent/workflows"&&request.method==="GET"){
+      const rows=await db<Array<Record<string,unknown>>>(env,"agent_workflows?owner_id=eq."+ownerId+"&select=id,name,description,enabled,definition,created_at,updated_at&order=updated_at.desc");
+      return successResponse(request,rows??[]);
+    }
+    if(path==="/api/v1/agent/workflows"&&request.method==="POST"){
+      let body:Record<string,unknown>;try{body=await request.json() as Record<string,unknown>;}catch{return errorResponse(request,"INVALID_JSON","请求内容不是有效 JSON。",400);}
+      const name=typeof body.name==="string"?body.name.trim():"",description=typeof body.description==="string"?body.description.trim():"";
+      const definition=asRecord(body.definition),steps=Array.isArray(definition.steps)?definition.steps:[];
+      if(name.length<2||name.length>120||description.length>1000||steps.length<1||steps.length>12)return errorResponse(request,"VALIDATION_ERROR","工作流名称、描述或步骤数量无效（1–12 步）。",400);
+      const validKeys=new Set(["buyer_development","market_research","company_research","lead_scoring","multilingual_sales","follow_up","trade_compliance"]);
+      const normalized=steps.map((step,index)=>{const item=asRecord(step);return {id:typeof item.id==="string"?item.id:"step-"+(index+1),agentKey:typeof item.agentKey==="string"?item.agentKey:"",instruction:typeof item.instruction==="string"?item.instruction.trim():""};});
+      if(normalized.some(step=>!validKeys.has(step.agentKey)||step.instruction.length>2000))return errorResponse(request,"WORKFLOW_STEP_INVALID","步骤包含不支持的 Agent 或指令过长。",400);
+      const rows=await db<Array<Record<string,unknown>>>(env,"agent_workflows?select=id,name,description,enabled,definition,created_at,updated_at",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({owner_id:ownerId,name,description,enabled:false,definition:{steps:normalized},updated_at:new Date().toISOString()})});
+      return successResponse(request,rows?.[0]??{},201);
+    }
+    const workflowMatch=path.match(/^\/api\/v1\/agent\/workflows\/([0-9a-f-]{36})(?:\/(test|enable))?$/i);
+    if(workflowMatch&&request.method==="PUT"&&!workflowMatch[2]){
+      let body:Record<string,unknown>;try{body=await request.json() as Record<string,unknown>;}catch{return errorResponse(request,"INVALID_JSON","请求内容不是有效 JSON。",400);}
+      const name=typeof body.name==="string"?body.name.trim():"",description=typeof body.description==="string"?body.description.trim():"";
+      const definition=asRecord(body.definition),steps=Array.isArray(definition.steps)?definition.steps:[];
+      if(name.length<2||name.length>120||steps.length<1||steps.length>12)return errorResponse(request,"VALIDATION_ERROR","工作流名称或步骤数量无效。",400);
+      const validKeys=new Set(["buyer_development","market_research","company_research","lead_scoring","multilingual_sales","follow_up","trade_compliance"]);
+      const normalized=steps.map((step,index)=>{const item=asRecord(step);return {id:typeof item.id==="string"?item.id:"step-"+(index+1),agentKey:typeof item.agentKey==="string"?item.agentKey:"",instruction:typeof item.instruction==="string"?item.instruction.trim():""};});
+      if(normalized.some(step=>!validKeys.has(step.agentKey)||!step.instruction||step.instruction.length>2000))return errorResponse(request,"WORKFLOW_STEP_INVALID","每个步骤必须选择有效 Agent 并填写执行指令。",400);
+      const rows=await db<Array<Record<string,unknown>>>(env,"agent_workflows?id=eq."+workflowMatch[1]+"&owner_id=eq."+ownerId+"&select=id,name,description,enabled,definition,created_at,updated_at",{method:"PATCH",headers:{Prefer:"return=representation"},body:JSON.stringify({name,description,definition:{steps:normalized},enabled:body.enabled===true,updated_at:new Date().toISOString()})});
+      if(!rows?.length)return errorResponse(request,"NOT_FOUND","工作流不存在。",404);
+      return successResponse(request,rows[0]);
+    }
+    if(workflowMatch&&workflowMatch[2]==="test"&&request.method==="POST"){
+      const rows=await db<Array<Record<string,unknown>>>(env,"agent_workflows?id=eq."+workflowMatch[1]+"&owner_id=eq."+ownerId+"&select=id,name,definition");
+      if(!rows?.length)return errorResponse(request,"NOT_FOUND","工作流不存在。",404);
+      const steps=Array.isArray(asRecord(rows[0].definition).steps)?asRecord(rows[0].definition).steps as unknown[]:[];
+      const profiles=await db<Array<{agent_key:string;enabled:boolean}>>(env,"agent_profiles?owner_id=eq."+ownerId+"&select=agent_key,enabled");
+      const disabled=new Set((profiles??[]).filter(x=>!x.enabled).map(x=>x.agent_key));
+      const unavailable=steps.map(asRecord).filter(x=>disabled.has(String(x.agentKey))).map(x=>String(x.agentKey));
+      return successResponse(request,{valid:steps.length>0&&unavailable.length===0,stepCount:steps.length,disabledAgents:[...new Set(unavailable)],mode:"validation_only",message:unavailable.length?"存在已停用的 Agent，请启用后再运行。":"结构校验通过；此测试不会启动真实任务。"});
+    }
+    if(workflowMatch&&request.method==="DELETE"){
+      const rows=await db<Array<{id:string}>>(env,"agent_workflows?id=eq."+workflowMatch[1]+"&owner_id=eq."+ownerId+"&select=id",{method:"DELETE",headers:{Prefer:"return=representation"}});
+      if(!rows?.length)return errorResponse(request,"NOT_FOUND","工作流不存在。",404);
+      return successResponse(request,{id:rows[0].id,deleted:true});
+    }
     if(path==="/api/v1/agent/appearance"&&request.method==="GET"){
       const rows=await db<Array<{config:Record<string,unknown>}>>(env,"agent_appearance_settings?owner_id=eq."+ownerId+"&select=config&limit=1");
       const fallback={default:{shape:"mochi",color:"cream",styleId:"vector",variant:"soft",face:"cute"},agents:{}};

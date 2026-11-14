@@ -15,8 +15,14 @@ async function request<T>(path:string,init?:RequestInit):Promise<T>{
  if(!response.ok||body.data===undefined)throw new Error(body.error?.message??"Agent API 请求失败（HTTP "+response.status+"）。");
  return body.data;
 }
+export interface AgentWorkflow {id:string;name:string;description:string;enabled:boolean;definition:{steps:Array<{id:string;agentKey:string;instruction:string}>};created_at:string;updated_at:string;}
 export interface AgentProfile {agent_key:string;enabled:boolean;config:{systemPrompt:string;description:string};updated_at:string;}
 export const agentApi={
+ listWorkflows:()=>request<AgentWorkflow[]>("/api/v1/agent/workflows"),
+ createWorkflow:(input:{name:string;description:string;definition:AgentWorkflow["definition"]})=>request<AgentWorkflow>("/api/v1/agent/workflows",{method:"POST",body:JSON.stringify(input)}),
+ saveWorkflow:(id:string,input:{name:string;description:string;enabled:boolean;definition:AgentWorkflow["definition"]})=>request<AgentWorkflow>("/api/v1/agent/workflows/"+encodeURIComponent(id),{method:"PUT",body:JSON.stringify(input)}),
+ testWorkflow:(id:string)=>request<{valid:boolean;stepCount:number;disabledAgents:string[];mode:string;message:string}>("/api/v1/agent/workflows/"+encodeURIComponent(id)+"/test",{method:"POST"}),
+ deleteWorkflow:(id:string)=>request<{id:string;deleted:boolean}>("/api/v1/agent/workflows/"+encodeURIComponent(id),{method:"DELETE"}),
  listProfiles:()=>request<AgentProfile[]>("/api/v1/agent/profiles"),
  saveProfile:(agentKey:string,input:{enabled:boolean;config:{systemPrompt:string;description:string}})=>request<AgentProfile>("/api/v1/agent/profiles/"+encodeURIComponent(agentKey),{method:"PUT",body:JSON.stringify(input)}),
  getAppearance:()=>request<AgentAppearanceConfig>("/api/v1/agent/appearance"),
