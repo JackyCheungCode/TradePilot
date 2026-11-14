@@ -16,8 +16,9 @@ import { getSupabaseClient } from "@/shared/lib/supabase";
 import { AgentCenterPage } from "@/features/agent-center/presentation/pages/AgentCenterPage";
 import { AgentAppearanceSettingsPage } from "@/features/agent-center/presentation/pages/AgentAppearanceSettingsPage";
 import { DocumentCenterPage } from "@/features/document-center/presentation/pages/DocumentCenterPage";
+import { MasterDataPage } from "@/features/master-data/presentation/pages/MasterDataPage";
 
-type AppPage = "agentWorkbench" | "agentMarket" | "agentOrchestration" | "agentConnections" | "agentRuns" | "agentApprovals" | "agentSettings" | "discovery" | "discoveryTasks" | "discoveryResults" | "searchDiscovery" | "facebookDiscovery" | "instagramDiscovery" | "leads" | "integrations" | "searchExclusions" | "agentAppearance" | "documentWorkbench" | "documentCreate" | "documentRecords" | "documentTemplates" | "documentParties" | "documentSettings";
+type AppPage = "agentWorkbench" | "agentMarket" | "agentOrchestration" | "agentConnections" | "agentRuns" | "agentApprovals" | "agentSettings" | "discovery" | "discoveryTasks" | "discoveryResults" | "searchDiscovery" | "facebookDiscovery" | "instagramDiscovery" | "leads" | "crmAccounts" | "crmContacts" | "crmOpportunities" | "enterpriseProfiles" | "enterpriseBanks" | "productCenter" | "integrations" | "searchExclusions" | "agentAppearance" | "documentWorkbench" | "documentCreate" | "documentRecords" | "documentTemplates" | "documentParties" | "documentSettings";
 const ROUTES: Record<AppPage, string> = {
   agentWorkbench: "/agent/workbench", agentMarket: "/agent/market", agentOrchestration: "/agent/orchestration", agentConnections: "/agent/connections", agentRuns: "/agent/runs", agentApprovals: "/agent/approvals", agentSettings: "/agent/settings",
   discovery: "/lead-discovery/map-local-businesses",
@@ -26,7 +27,7 @@ const ROUTES: Record<AppPage, string> = {
   searchDiscovery: "/lead-discovery/search-engine",
   facebookDiscovery: "/lead-discovery/facebook",
   instagramDiscovery: "/lead-discovery/instagram",
-  leads: "/crm/leads",
+  leads: "/crm/leads", crmAccounts:"/crm/accounts", crmContacts:"/crm/contacts", crmOpportunities:"/crm/opportunities", enterpriseProfiles:"/enterprise/profiles", enterpriseBanks:"/enterprise/banks", productCenter:"/products",
   integrations: "/settings/integrations",
   searchExclusions: "/settings/search-exclusions",
   agentAppearance: "/settings/agent-appearance",
@@ -43,6 +44,12 @@ const getPage = (path: string): AppPage | null => {
   if (path === ROUTES.facebookDiscovery) return "facebookDiscovery";
   if (path === ROUTES.instagramDiscovery) return "instagramDiscovery";
   if (path === ROUTES.leads) return "leads";
+  if(path.startsWith("/crm/accounts"))return "crmAccounts";
+  if(path.startsWith("/crm/contacts"))return "crmContacts";
+  if(path.startsWith("/crm/opportunities"))return "crmOpportunities";
+  if(path.startsWith("/enterprise/profiles"))return "enterpriseProfiles";
+  if(path.startsWith("/enterprise/banks"))return "enterpriseBanks";
+  if(path.startsWith("/products"))return "productCenter";
   if (path === ROUTES.integrations) return "integrations";
   if (path === ROUTES.searchExclusions) return "searchExclusions";
   if (path === ROUTES.agentAppearance) return "agentAppearance";
@@ -103,7 +110,7 @@ export function App() {
   if (checkingSession) return <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">正在检查登录状态…</div>;
   if (!session || path === "/login") return <><LoginPage /><Toaster richColors position="top-right" /></>;
   return <AppShell activePage={activePage ?? "discovery"} onNavigate={navigate} userEmail={session.user.email ?? ""} onSignOut={() => void getSupabaseClient().auth.signOut()}>
-    {activePage && ["documentWorkbench","documentCreate","documentRecords","documentTemplates","documentParties","documentSettings"].includes(activePage) ? <DocumentCenterPage initialSection={activePage === "documentCreate" ? "create" : activePage === "documentRecords" ? "documents" : activePage === "documentTemplates" ? "templates" : activePage === "documentParties" ? "parties" : activePage === "documentSettings" ? "settings" : "workbench"} /> : activePage && ["agentWorkbench","agentMarket","agentOrchestration","agentConnections","agentRuns","agentApprovals","agentSettings"].includes(activePage) ? <AgentCenterPage section={activePage as "agentWorkbench" | "agentMarket" | "agentOrchestration" | "agentConnections" | "agentRuns" | "agentApprovals" | "agentSettings"} /> : activePage === "integrations" ? <IntegrationsSettingsPage /> : activePage === "searchExclusions" ? <SearchExclusionRulesPage /> : activePage === "agentAppearance" ? <AgentAppearanceSettingsPage /> : activePage === "discoveryTasks" ? <DiscoveryTasksPage /> : activePage === "discoveryResults" ? <DiscoveryResultsPage /> : activePage === "searchDiscovery" ? <SearchEngineDiscoveryPage /> : activePage === "facebookDiscovery" ? <FacebookDiscoveryPage /> : activePage === "instagramDiscovery" ? <InstagramDiscoveryPage /> : activePage === "leads" ? <LeadsPage /> : <MapLocalDiscoveryPage />}
+    {activePage && ["documentWorkbench","documentCreate","documentRecords","documentTemplates","documentParties","documentSettings"].includes(activePage) ? <DocumentCenterPage initialSection={activePage === "documentCreate" ? "create" : activePage === "documentRecords" ? "documents" : activePage === "documentTemplates" ? "templates" : activePage === "documentParties" ? "parties" : activePage === "documentSettings" ? "settings" : "workbench"} /> : activePage && ["agentWorkbench","agentMarket","agentOrchestration","agentConnections","agentRuns","agentApprovals","agentSettings"].includes(activePage) ? <AgentCenterPage section={activePage as "agentWorkbench" | "agentMarket" | "agentOrchestration" | "agentConnections" | "agentRuns" | "agentApprovals" | "agentSettings"} /> : activePage === "integrations" ? <IntegrationsSettingsPage /> : activePage === "searchExclusions" ? <SearchExclusionRulesPage /> : activePage === "agentAppearance" ? <AgentAppearanceSettingsPage /> : activePage === "discoveryTasks" ? <DiscoveryTasksPage /> : activePage === "discoveryResults" ? <DiscoveryResultsPage /> : activePage === "searchDiscovery" ? <SearchEngineDiscoveryPage /> : activePage === "facebookDiscovery" ? <FacebookDiscoveryPage /> : activePage === "instagramDiscovery" ? <InstagramDiscoveryPage /> : activePage === "leads" ? <LeadsPage /> : ["crmAccounts","crmContacts","crmOpportunities","enterpriseProfiles","enterpriseBanks","productCenter"].includes(activePage??"") ? <MasterDataPage initialSection={activePage==="crmContacts"?"contacts":activePage==="crmOpportunities"?"opportunities":activePage==="enterpriseProfiles"?"company":activePage==="enterpriseBanks"?"banks":activePage==="productCenter"?"products":"accounts"}/> : <MapLocalDiscoveryPage />}
     <Toaster richColors position="top-right" />
   </AppShell>;
 }
