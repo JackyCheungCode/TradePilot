@@ -25,7 +25,7 @@ type AppPage =
   | "orderCenter" | "documentWorkbench" | "documentCreate" | "documentRecords" | "documentTemplates";
 
 type NavItem = { page: AppPage; label: string };
-type NavGroup = { id: string; title: string; icon: string; pages: AppPage[]; items: NavItem[] };
+type NavGroup = { id: string; title: string; icon: string; pages: AppPage[]; items: NavItem[]; navigateOnExpand?: boolean };
 
 function MaterialIcon({ name, className = "" }: { name: string; className?: string }) {
   return <span aria-hidden="true" className={`material-symbols-outlined ${className}`}>{name}</span>;
@@ -102,7 +102,7 @@ export function AppShell({
 
   const groups: NavGroup[] = [
     {
-      id: "agent", title: "TradePilot Agent 智能体", icon: "smart_toy",
+      id: "agent", title: "TradePilot Agent 智能体", icon: "smart_toy", navigateOnExpand: true,
       pages: ["agentWorkbench", "agentMarket", "agentOrchestration", "agentConnections", "agentRuns", "agentApprovals", "agentSettings"],
       items: [
         { page: "agentWorkbench", label: "Agent 工作台" },
@@ -115,7 +115,7 @@ export function AppShell({
       ],
     },
     {
-      id: "orders", title: "订单中心", icon: "assignment",
+      id: "orders", title: "订单中心", icon: "assignment", navigateOnExpand: true,
       pages: ["orderQuotations", "orderSales", "orderPurchase"],
       items: [
         { page: "orderQuotations", label: "报价与询价" },
@@ -124,7 +124,7 @@ export function AppShell({
       ],
     },
     {
-      id: "documents", title: "单据中心", icon: "folder_copy",
+      id: "documents", title: "单据中心", icon: "folder_copy", navigateOnExpand: true,
       pages: ["documentWorkbench", "documentCreate", "documentRecords"],
       items: [
         { page: "documentWorkbench", label: "单据工作台" },
@@ -205,7 +205,7 @@ export function AppShell({
               if ((event.target as HTMLElement).closest("a")) return;
               const wasExpanded = groupExpanded[group.id];
               setGroupExpanded[group.id](!wasExpanded);
-              if (!wasExpanded) navigate(group.items[0].page);
+              if (!wasExpanded && group.navigateOnExpand) navigate(group.items[0].page);
             }}
           >
             {group.items.map((item) => (
