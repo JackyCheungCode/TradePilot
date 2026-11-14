@@ -9,17 +9,17 @@ These rules are mandatory for every contributor and AI coding agent in this repo
 - Never commit secrets, API keys, service-role keys, access tokens, or private credentials.
 - Put environment-specific configuration in environment variables or platform secret stores.
 
-## Mandatory UI system: shadcn/ui
-- shadcn/ui is the exclusive foundational UI component system.
-- Every page, form, dialog, menu, navigation element, table, and interactive control MUST use shadcn/ui components or business components composed from them.
-- Use the official shadcn MCP server for component discovery and usage guidance when it is available in the active development environment.
-- Do not introduce competing UI frameworks, including Ant Design, MUI, Chakra UI, Mantine, or Element Plus.
-- Do not recreate an existing shadcn primitive or substitute native browser controls for available shadcn components.
-- Business components must compose shared shadcn primitives; no parallel component system is allowed.
-- Customize through shared design tokens, CSS variables, variants, and composition.
+## Mandatory UI system: IBM Carbon Design System
+- IBM Carbon Design System v11 and the official `@carbon/react` package are the exclusive foundational visual component system.
+- Every page, form, dialog, menu, navigation element, table, and interactive control MUST use official Carbon React components or a documented domain component composed from Carbon.
+- Use Carbon React components and Carbon Icons; do not recreate Carbon controls with native HTML or custom CSS when a Carbon component exists.
+- Do not add shadcn/ui, Radix UI, or another competing visual component system.
+- Tailwind CSS may be used for layout utilities only; Carbon tokens, typography, component dimensions, states, and visual behavior remain authoritative.
+- Shared wrappers may preserve application-specific prop contracts but must render the corresponding Carbon component.
+- Customize surrounding layout through Carbon design tokens and feature-owned layout classes. Do not override Carbon internal component selectors for typography, dimensions, border, radius, focus, hover, or disabled states.
 - Preserve keyboard behavior, accessibility semantics, focus states, and responsive behavior.
-- Specialized charts, maps, and editors may use dedicated libraries; their surrounding interface must remain shadcn/ui-based.
-- Native semantic HTML is allowed inside component implementations when needed for correct semantics and accessibility.
+- Specialized charts, maps, and editors may use dedicated libraries; their surrounding interface must remain Carbon-based.
+- Native semantic HTML is allowed only where no Carbon component is appropriate and must be documented when it creates a visible control.
 
 ## Modularity rules
 - Organize code by business capability / feature, not by arbitrary technical file type alone.
