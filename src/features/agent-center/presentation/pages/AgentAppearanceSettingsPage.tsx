@@ -141,7 +141,7 @@ export function AgentAppearanceSettingsPage() {
               <Tile className="tp-agent-appearance-tile">
                 <Stack gap={4}>
                   <Section level={2}><Heading className="cds--type-productive-heading-03">配置对象</Heading></Section>
-                  <Dropdown id="agent-appearance-target" titleText="选择要设计的 Agent" label="选择 Agent" items={agentOptions}
+                  <Dropdown id="agent-appearance-target" disabled={loading || Boolean(loadError) || busy} titleText="选择要设计的 Agent" label="选择 Agent" items={agentOptions}
                     selectedItem={selectedAgent} itemToString={(item) => item?.name ?? ""}
                     onChange={({ selectedItem }) => { if (selectedItem) { setActiveAgent(selectedItem.id); setNotice(""); } }} />
                   <p className="cds--type-helper-text-01 tp-agent-appearance-help">
@@ -155,12 +155,12 @@ export function AgentAppearanceSettingsPage() {
                   <Section level={2}><Heading className="cds--type-productive-heading-03">角色与配色</Heading></Section>
                   <Grid narrow className="tp-agent-appearance-field-grid">
                     <Column sm={4} md={4} lg={8}>
-                      <Dropdown id="agent-appearance-shape" titleText="角色造型" label="选择角色造型" items={[...SHAPE_IDS]}
+                      <Dropdown id="agent-appearance-shape" disabled={loading || Boolean(loadError) || busy} titleText="角色造型" label="选择角色造型" items={[...SHAPE_IDS]}
                         selectedItem={current.shape} itemToString={(item) => item ? localized("shape", item) : ""}
                         onChange={({ selectedItem }) => { if (selectedItem) setCurrent({ ...current, shape: selectedItem }); }} />
                     </Column>
                     <Column sm={4} md={4} lg={8}>
-                      <Dropdown id="agent-appearance-color" titleText="主色" label="选择主色" items={[...COLOR_IDS]}
+                      <Dropdown id="agent-appearance-color" disabled={loading || Boolean(loadError) || busy} titleText="主色" label="选择主色" items={[...COLOR_IDS]}
                         selectedItem={current.color} itemToString={(item) => item ? localized("color", item) : ""}
                         onChange={({ selectedItem }) => { if (selectedItem) setCurrent({ ...current, color: selectedItem }); }} />
                     </Column>
@@ -174,13 +174,13 @@ export function AgentAppearanceSettingsPage() {
                     <p className="cds--type-label-01">画风</p>
                     <div className="tp-agent-appearance-choices">
                       {styles.map((style) => <Button key={style.id} size="sm" kind={current.styleId === style.id ? "primary" : "tertiary"}
-                        aria-pressed={current.styleId === style.id} onClick={() => setCurrent({ ...current, styleId: style.id, variant: style.variants[0] })}>{style.label}</Button>)}
+                        aria-pressed={current.styleId === style.id} disabled={loading || Boolean(loadError) || busy} onClick={() => setCurrent({ ...current, styleId: style.id, variant: style.variants[0] })}>{style.label}</Button>)}
                     </div>
                   </Stack>
-                  <Dropdown id="agent-appearance-variant" titleText="画风变体" label="选择画风变体" items={[...variants]}
+                  <Dropdown id="agent-appearance-variant" disabled={loading || Boolean(loadError) || busy} titleText="画风变体" label="选择画风变体" items={[...variants]}
                     selectedItem={current.variant} itemToString={(item) => item ?? ""}
                     onChange={({ selectedItem }) => { if (selectedItem) setCurrent({ ...current, variant: selectedItem }); }} />
-                  <Dropdown id="agent-appearance-face" titleText="脸型" label="选择脸型" items={[...faces]}
+                  <Dropdown id="agent-appearance-face" disabled={loading || Boolean(loadError) || busy} titleText="脸型" label="选择脸型" items={[...faces]}
                     selectedItem={faces.find((item) => item.id === current.face) ?? faces[0]} itemToString={(item) => item?.label ?? ""}
                     onChange={({ selectedItem }) => { if (selectedItem) setCurrent({ ...current, face: selectedItem.id }); }} />
                 </Stack>
