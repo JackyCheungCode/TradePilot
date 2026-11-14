@@ -173,7 +173,7 @@ export function OrderCenterPage({ onCreateQuotation, initialView = "quotations" 
 
     <Card>
       <CardHeader className="space-y-3">
-        <div className="tp-filter-toolbar w-auto flex flex-wrap items-center justify-between gap-3">
+        <div className="tp-filter-toolbar w-full flex flex-wrap items-center justify-between gap-3">
           <div><CardTitle>业务单据</CardTitle><CardDescription>报价单确认后会同步激活其关联订单；历史版本与模板快照保留在单据中心。</CardDescription></div>
           <div className="relative w-full min-w-0 sm:w-[300px] sm:flex-none"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input className="pl-9 w-full" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="搜索编号、名称或客户" /></div>
           <div className="flex flex-wrap items-center gap-2">
