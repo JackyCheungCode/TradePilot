@@ -66,11 +66,11 @@ export function AgentMarketPage() {
     return () => { alive = false; };
   }, []);
 
-  const isEnabled = (id: string) => profiles.find((row) => row.agent_key === id)?.enabled ?? true;
+  const isEnabled = (id: string) => profiles.find((row) => row.agent_key === id)?.enabled ?? false;
   const enabledCount = profilesLoaded ? agentCatalog.filter((agent) => isEnabled(agent.id)).length : null;
   const activeConnectionCount = connectionsLoaded ? connections.filter((connection) => connection.status === "active").length : null;
   const visibleAgents = useMemo(() => agentCatalog.filter((agent) => {
-    const enabled = profiles.find((row) => row.agent_key === agent.id)?.enabled ?? true;
+    const enabled = profiles.find((row) => row.agent_key === agent.id)?.enabled ?? false;
     const matchesStatus = !statusFilter || (statusFilter === "enabled" ? enabled : !enabled);
     const matchesSearch = [agent.name, agent.description, ...agent.capabilities].join(" ").toLocaleLowerCase().includes(search.toLocaleLowerCase());
     return matchesStatus && matchesSearch;
@@ -78,7 +78,7 @@ export function AgentMarketPage() {
 
   const selectedAgent = agentCatalog.find((agent) => agent.id === selectedId);
   const selectedProfile = profiles.find((profile) => profile.agent_key === selectedId);
-  const selectedEnabled = selectedProfile?.enabled ?? true;
+  const selectedEnabled = selectedProfile?.enabled ?? false;
 
   const openDetails = (id: string) => {
     const profile = profiles.find((row) => row.agent_key === id);
@@ -175,6 +175,7 @@ export function AgentMarketPage() {
           <Dropdown
             id="agent-market-status"
             titleText="启用状态"
+            size="lg"
             label="全部状态"
             items={statusItems}
             itemToString={(item) => item?.text ?? ""}
@@ -192,11 +193,12 @@ export function AgentMarketPage() {
         <div className="tp-agent-market-section-heading">
           <div><h2>内置 Agent</h2><p>选择一个 Agent 查看能力、执行边界和配置。</p></div>
         </div>
-        <div className="tp-agent-market-grid">
+        <Grid fullWidth className="tp-agent-market-grid">
           {visibleAgents.map((agent) => {
             const enabled = isEnabled(agent.id);
             return (
-              <Tile key={agent.id} className="tp-agent-market-agent-tile">
+              <Column key={agent.id} sm={4} md={4} lg={4}>
+              <Tile className="tp-agent-market-agent-tile">
                 <div className="tp-agent-market-card-heading">
                   <Bot size={20} aria-hidden="true" />
                   <Tag type={enabled ? "green" : "cool-gray"} size="sm">{enabled ? "已启用" : "已停用"}</Tag>
@@ -208,7 +210,6 @@ export function AgentMarketPage() {
                   <Button kind="ghost" size="sm" renderIcon={Edit} onClick={() => openDetails(agent.id)}>查看详情</Button>
                   <Toggle
                     id={"agent-enabled-" + agent.id}
-                    size="sm"
                     labelText="启用"
                     labelA="关"
                     labelB="开"
@@ -218,10 +219,11 @@ export function AgentMarketPage() {
                   />
                 </div>
               </Tile>
+              </Column>
             );
           })}
-          {visibleAgents.length === 0 && <div className="tp-agent-market-empty">没有匹配的 Agent，请调整搜索或筛选条件。</div>}
-        </div>
+          {visibleAgents.length === 0 && <Column sm={4} md={8} lg={16}><div className="tp-agent-market-empty">没有匹配的 Agent，请调整搜索或筛选条件。</div></Column>}
+        </Grid>
       </section>
 
       {selectedAgent && (
