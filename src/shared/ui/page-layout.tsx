@@ -26,9 +26,9 @@ export function PageControlPanel({ title, description, eyebrow, breadcrumb, acti
                 </span>
               ))}
             </nav>
-          ) : eyebrow ? <p className="tp-control-panel__eyebrow">{eyebrow}</p> : null}
-          <h1>{title}</h1>
-          {description ? <p className="tp-control-panel__description">{description}</p> : null}
+          ) : eyebrow ? <p className="tp-control-panel__eyebrow cds--type-label-01">{eyebrow}</p> : null}
+          <h1 className="cds--type-heading-05">{title}</h1>
+          {description ? <p className="tp-control-panel__description cds--type-body-compact-01">{description}</p> : null}
         </div>
         {actions ? <div className="tp-control-panel__actions">{actions}</div> : null}
       </div>
@@ -49,8 +49,8 @@ export function PageSection({ title, description, actions, children, className }
       {(title || description || actions) && (
         <div className="tp-page-section__header">
           <div className="min-w-0">
-            {title ? <h2>{title}</h2> : null}
-            {description ? <p>{description}</p> : null}
+            {title ? <h2 className="cds--type-heading-03">{title}</h2> : null}
+            {description ? <p className="cds--type-body-compact-01">{description}</p> : null}
           </div>
           {actions ? <div className="tp-page-section__actions">{actions}</div> : null}
         </div>
