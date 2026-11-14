@@ -12,6 +12,14 @@ const columns:Record<string,string[]> = {
  "enterprise/profiles":["parent_enterprise_id","branch_code","is_branch","is_archived","archived_at","archived_reason","legal_name","trade_name","short_name","former_names","registration_number","tax_number","vat_number","eori_number","duns_number","country_code","registration_country","registration_authority","established_on","business_status","industry","business_scope","website","email","phone","fax","registered_address","headquarters_address","mailing_address","contact_name","contact_title","default_currency","default_payment_terms","default_incoterms","logo_url","company_size","employee_count","annual_revenue","export_license_number","customs_registration_number","notes","custom_fields","is_default","legal_form","company_code","sales_organization","distribution_channel","division","purchasing_organization","lei_number","parent_company","registered_capital","stock_exchange","fiscal_year_end"],
  "enterprise/banks":["is_archived","archived_at","archived_reason","enterprise_id","bank_name","bank_branch","account_name","account_number","iban","swift_bic","routing_number","sort_code","bank_code","branch_code","currency_code","country_code","bank_address","intermediary_bank","is_default","is_active","notes"]
 };
+ "crm/addresses":["account_id","contact_id","address_type","name","street","street2","city","state","postal_code","country_code","phone","email","is_default","is_archived"],
+ "crm/activities":["activity_type","summary","note","due_at","status","account_id","contact_id","opportunity_id","assigned_to","completed_at"],
+ "crm/teams":["name","team_leader","assignment_mode","is_active"],
+ "product/categories":["parent_id","name","code","description","sequence","is_active"],
+ "product/attributes":["name","display_type","create_variant","sequence","is_active"],
+ "product/attribute-values":["attribute_id","name","sequence","html_color","is_active"],
+ "product/attribute-lines":["product_id","attribute_id","value_ids"],
+ "product/variants":["product_id","sku","barcode","name","attribute_value_ids","default_unit_price","cost_price","weight","volume","is_active","is_archived"],
 const tables:Record<string,string>={
  "crm/addresses":"crm_account_addresses","crm/activities":"crm_activities","crm/teams":"crm_sales_teams",
  "product/categories":"trade_product_categories","product/attributes":"trade_product_attributes",
@@ -20,7 +28,7 @@ const required:Record<string,string[]>={
  "crm/addresses":["account_id"],"crm/activities":["summary"],"crm/teams":["name"],
  "product/categories":["name"],"product/attributes":["name"],"product/attribute-values":["attribute_id","name"],
  "product/attribute-lines":["product_id","attribute_id"],"product/variants":["product_id"],"crm/accounts":["account_name"],"crm/contacts":["account_id","first_name"],"crm/opportunities":["account_id","name"],"enterprise/profiles":["legal_name"],"enterprise/banks":["enterprise_id","bank_name","account_name","account_number"]};
-async function validateRefs(env:Env,ownerId:string,key:string,body:Json):Promise<string|null>{const refs:[string,string][]=[];if(key==="crm/contacts"||key==="crm/opportunities")refs.push(["account_id","crm_accounts"]);if(key==="crm/opportunities")refs.push(["primary_contact_id","crm_contacts"]);if(key==="enterprise/banks")refs.push(["enterprise_id","enterprise_profiles"]);if(key==="crm/accounts"){refs.push(["source_lead_id","leads"]);refs.push(["parent_account_id","crm_accounts"]);}
+async function validateRefs(env:Env,ownerId:string,key:string,body:Json):Promise<string|null>{const refs:[string,string][]=[];if(key==="crm/contacts"||key==="crm/opportunities")refs.push(["account_id","crm_accounts"]);if(key==="crm/opportunities"){refs.push(["primary_contact_id","crm_contacts"]);refs.push(["team_id","crm_sales_teams"]);}if(key==="enterprise/banks")refs.push(["enterprise_id","enterprise_profiles"]);if(key==="crm/accounts"){refs.push(["source_lead_id","leads"]);refs.push(["parent_account_id","crm_accounts"]);}
  if(key==="crm/addresses"){refs.push(["account_id","crm_accounts"]);refs.push(["contact_id","crm_contacts"]);}
  if(key==="crm/activities"){refs.push(["account_id","crm_accounts"]);refs.push(["contact_id","crm_contacts"]);refs.push(["opportunity_id","crm_opportunities"]);}
  if(key==="product/categories")refs.push(["parent_id","trade_product_categories"]);
