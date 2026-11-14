@@ -97,7 +97,7 @@ export function Badge({
 export const Input = React.forwardRef<
   HTMLInputElement,
   React.InputHTMLAttributes<HTMLInputElement>
->(function Input({ className, id, defaultValue, ...props }, ref) {
+>(function Input({ className, id, defaultValue, value, onClick, ...props }, ref) {
   const generatedId = React.useId();
   return (
     <CarbonTextInput
@@ -108,6 +108,8 @@ export const Input = React.forwardRef<
       data-tp-control="true"
       className={className}
       defaultValue={typeof defaultValue === "string" || typeof defaultValue === "number" ? defaultValue : undefined}
+      value={typeof value === "string" || typeof value === "number" ? value : undefined}
+      onClick={onClick as React.MouseEventHandler<HTMLElement> | undefined}
       {...props}
     />
   );
@@ -134,7 +136,7 @@ export const Checkbox = React.forwardRef<
 export const Textarea = React.forwardRef<
   HTMLTextAreaElement,
   React.TextareaHTMLAttributes<HTMLTextAreaElement>
->(function Textarea({ className, id, defaultValue, ...props }, ref) {
+>(function Textarea({ className, id, defaultValue, value, ...props }, ref) {
   const generatedId = React.useId();
   return (
     <CarbonTextArea
@@ -145,6 +147,7 @@ export const Textarea = React.forwardRef<
       data-tp-control="true"
       className={className}
       defaultValue={typeof defaultValue === "string" || typeof defaultValue === "number" ? defaultValue : undefined}
+      value={typeof value === "string" || typeof value === "number" ? value : undefined}
       {...props}
     />
   );
