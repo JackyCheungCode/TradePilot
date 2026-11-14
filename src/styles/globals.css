@@ -622,3 +622,24 @@ main h1, .tp-page-canvas h1 {
 code, pre, kbd, samp, .font-mono {
   font-family: "IBM Plex Mono", "Noto Sans Mono CJK TC", "Noto Sans Mono CJK SC", ui-monospace, SFMono-Regular, monospace;
 }
+
+
+/* Agent market cards need readable text and full-width actions on narrow screens. */
+@media (max-width: 767px) {
+  .tp-page-canvas .tp-agent-market-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px;
+  }
+  .tp-page-canvas .tp-agent-market-grid > * {
+    width: 100%;
+    min-width: 0;
+  }
+  .tp-page-canvas .tp-agent-market-grid [data-slot="card-content"] {
+    min-width: 0;
+  }
+  .tp-page-canvas .tp-agent-market-grid textarea {
+    width: 100%;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+}
