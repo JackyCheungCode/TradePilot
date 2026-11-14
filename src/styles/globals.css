@@ -30,38 +30,38 @@
 /* Single source of truth: Odoo 20-inspired neutral workspace tokens. */
 :root {
   color-scheme: light;
-  --radius: 6px;
-  --background: #f7f8fa;
-  --foreground: #212529;
-  --card: #ffffff;
-  --card-foreground: #212529;
-  --popover: #ffffff;
-  --popover-foreground: #212529;
-  --primary: #212529;
+  --radius: 0;
+  --background: var(--cds-background, #f4f4f4);
+  --foreground: var(--cds-text-primary, #161616);
+  --card: var(--cds-layer, #ffffff);
+  --card-foreground: var(--cds-text-primary, #161616);
+  --popover: var(--cds-layer, #ffffff);
+  --popover-foreground: var(--cds-text-primary, #161616);
+  --primary: var(--cds-interactive, #0f62fe);
   --primary-foreground: #ffffff;
-  --secondary: #eef0f2;
-  --secondary-foreground: #343a40;
-  --muted: #f1f3f5;
-  --muted-foreground: #6c757d;
-  --accent: #f1f3f5;
-  --accent-foreground: #212529;
-  --destructive: #dc3545;
-  --border: #e5e7eb;
-  --input: #d8dde3;
-  --ring: #89939e;
+  --secondary: var(--cds-layer-02, #e8e8e8);
+  --secondary-foreground: var(--cds-text-primary, #161616);
+  --muted: var(--cds-layer-01, #e0e0e0);
+  --muted-foreground: var(--cds-text-secondary, #525252);
+  --accent: var(--cds-layer-hover-01, #e8e8e8);
+  --accent-foreground: var(--cds-text-primary, #161616);
+  --destructive: var(--cds-support-error, #da1e28);
+  --border: var(--cds-border-subtle, #e0e0e0);
+  --input: var(--cds-border-strong, #8d8d8d);
+  --ring: var(--cds-focus, #0f62fe);
 
-  --tp-sidebar: #ffffff;
-  --tp-sidebar-muted: #6c757d;
-  --tp-surface: #ffffff;
-  --tp-canvas: #f7f8fa;
-  --tp-border-subtle: #e5e7eb;
-  --tp-line: #e5e7eb;
-  --tp-text: #212529;
-  --tp-text-muted: #6c757d;
-  --tp-radius: 6px;
-  --tp-control-height: 34px;
-  --tp-sidebar-width: 240px;
-  --tp-topbar-height: 46px;
+  --tp-sidebar: var(--cds-layer-01, #ffffff);
+  --tp-sidebar-muted: var(--cds-text-secondary, #525252);
+  --tp-surface: var(--cds-layer, #ffffff);
+  --tp-canvas: var(--cds-background, #f4f4f4);
+  --tp-border-subtle: var(--cds-border-subtle, #e0e0e0);
+  --tp-line: var(--cds-border-subtle, #e0e0e0);
+  --tp-text: var(--cds-text-primary, #161616);
+  --tp-text-muted: var(--cds-text-secondary, #525252);
+  --tp-radius: 0;
+  --tp-control-height: 40px;
+  --tp-sidebar-width: 256px;
+  --tp-topbar-height: 48px;
 }
 
 .dark {
@@ -642,4 +642,151 @@ code, pre, kbd, samp, .font-mono {
     max-width: 100%;
     overflow-wrap: anywhere;
   }
+}
+
+
+/* Carbon v11 workspace foundation: theme tokens own all surface and text colors. */
+.tp-carbon-shell,
+.tp-carbon-main,
+.tp-page-canvas {
+  color: var(--cds-text-primary, #161616);
+  background: var(--cds-background, #f4f4f4);
+}
+.tp-carbon-header.cds--header,
+.tp-carbon-sidebar,
+.tp-carbon-mobile-nav__panel {
+  color: var(--cds-text-primary, #161616);
+  background: var(--cds-layer-01, #ffffff);
+  border-color: var(--cds-border-subtle, #e0e0e0);
+}
+.tp-carbon-header .cds--header__name,
+.tp-carbon-header .cds--header__global {
+  background: transparent;
+}
+.tp-page-root {
+  width: 100%;
+  max-width: 1584px;
+  min-width: 0;
+  margin-inline: auto;
+  padding: 16px;
+}
+.tp-control-panel {
+  color: var(--cds-text-primary, #161616);
+  background: var(--cds-background, #f4f4f4);
+  border: 0;
+  border-bottom: 1px solid var(--cds-border-subtle, #e0e0e0);
+}
+.tp-page-section,
+.tp-mobile-record {
+  color: var(--cds-text-primary, #161616);
+  background: var(--cds-layer, #ffffff);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.tp-control-panel h1,
+.tp-page-section__header h2,
+.tp-page-canvas h1,
+.tp-page-canvas h2,
+.tp-page-canvas h3 {
+  color: var(--cds-text-primary, #161616);
+  letter-spacing: 0;
+}
+.tp-control-panel__description,
+.tp-page-section__header p,
+.tp-control-panel__eyebrow {
+  color: var(--cds-text-secondary, #525252);
+}
+
+/* Do not restyle Carbon's own form controls with legacy generic input rules. */
+.tp-page-canvas .cds--text-input,
+.tp-page-canvas .cds--text-area,
+.tp-page-canvas .cds--number input,
+.tp-page-canvas .cds--date-picker input,
+.tp-page-canvas .cds--list-box__field,
+.tp-page-canvas .cds--dropdown,
+.tp-page-canvas .cds--combo-box .cds--text-input,
+.tp-page-canvas .cds--multi-select .cds--text-input {
+  min-height: 40px;
+  color: var(--cds-text-primary, #161616);
+  background: var(--cds-field, #ffffff);
+  border-radius: 0;
+  font-family: inherit;
+  font-size: 14px;
+  box-shadow: none;
+}
+.tp-page-canvas .cds--text-input,
+.tp-page-canvas .cds--text-area,
+.tp-page-canvas .cds--date-picker input {
+  border: 0;
+  border-bottom: 1px solid var(--cds-border-strong, #8d8d8d);
+}
+.tp-page-canvas .cds--text-input:focus,
+.tp-page-canvas .cds--text-area:focus,
+.tp-page-canvas .cds--date-picker input:focus {
+  outline: 2px solid var(--cds-focus, #0f62fe);
+  outline-offset: -2px;
+}
+.tp-page-canvas .cds--label,
+.tp-page-canvas .cds--form__helper-text {
+  color: var(--cds-text-secondary, #525252);
+}
+.tp-page-canvas .cds--btn {
+  border-radius: 0;
+  font-family: inherit;
+}
+.tp-page-canvas .cds--tag {
+  border-radius: 0;
+}
+.tp-page-canvas .cds--tile {
+  border-radius: 0;
+  box-shadow: none;
+}
+.tp-page-canvas .bg-muted\/50,
+.tp-page-canvas .bg-muted\/40,
+.tp-page-canvas .bg-muted {
+  background-color: var(--cds-layer-01, #e0e0e0);
+}
+.tp-page-canvas .bg-card,
+.tp-page-canvas .bg-white {
+  background-color: var(--cds-layer, #ffffff);
+}
+.tp-page-canvas .border,
+.tp-page-canvas .border-b,
+.tp-page-canvas .border-t {
+  border-color: var(--cds-border-subtle, #e0e0e0);
+}
+.tp-page-canvas .text-muted-foreground {
+  color: var(--cds-text-secondary, #525252);
+}
+.tp-page-canvas .text-primary {
+  color: var(--cds-interactive, #0f62fe);
+}
+.tp-page-canvas .tp-search-control-panel {
+  align-items: flex-end;
+  gap: 16px;
+}
+@media (max-width: 671px) {
+  .tp-page-root { padding: 16px 0; }
+  .tp-control-panel { padding: 16px; margin-inline: 0; }
+  .tp-page-section { padding: 16px; }
+  .tp-page-canvas .tp-mobile-card-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  .tp-page-canvas .tp-agent-market-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+@media (min-width: 672px) and (max-width: 1055px) {
+  .tp-page-root { padding-inline: 16px; }
+}
+@media (min-width: 1056px) and (max-width: 1311px) {
+  .tp-page-root { padding-inline: 16px; }
+}
+@media (min-width: 1312px) and (max-width: 1583px) {
+  .tp-page-root { padding-inline: 16px; }
+}
+@media (min-width: 1584px) {
+  .tp-page-root { padding-inline: 24px; }
 }
