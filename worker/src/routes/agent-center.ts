@@ -10,7 +10,7 @@ interface Env {
   AGENT_ENCRYPTION_KEY?: string;
   SERPER_API_KEY?: string;
   SERPAPI_API_KEY?: string;
-  LEAD_DISCOVERY_WORKFLOW?: { create(options:{id:string;params:{runId:string;ownerId:string;input:DiscoveryRunInput}}):Promise<{id:string}> };
+  AI?: {run(model:string,input:Record<string,unknown>):Promise<unknown>};\n  LEAD_DISCOVERY_WORKFLOW?: { create(options:{id:string;params:{runId:string;ownerId:string;input:DiscoveryRunInput}}):Promise<{id:string}> };
 }
 type ConnectionRow = {
   id:string; owner_id:string; name:string; protocol:Protocol; endpoint_url:string;
@@ -216,7 +216,98 @@ async function writeRunLog(env:Env,ownerId:string,runId:string,level:"info"|"err
   await db(env,"agent_run_events",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({owner_id:ownerId,run_id:runId,event_type:level==="error"?"execution_failed":"execution_update",message,payload})});
 }
 
-export async function handleAgentCenter(request:Request,env:Env):Promise<Response>{
+
+type PlannerAction =
+ | {type:"internal_discovery";query:string;country:string;limitPerCountry:number}
+ | {type:"external_tool";connectionId:string;toolName:string;arguments:Record<string,unknown>}
+ | {type:"needs_clarification";question:string};
+type PlannerResult={agentKey:string;summary:string;steps:string[];action:PlannerAction;model:string;fallback?:boolean};
+function extractModelText(value:unknown):string{
+ const root=asRecord(value);
+ if(typeof root.response==="string")return root.response;
+ const choices=Array.isArray(root.choices)?root.choices:[];
+ const choice=asRecord(choices[0]);
+ const message=asRecord(choice.message);
+ if(typeof message.content==="string")return message.content;
+ if(Array.isArray(message.content))return message.content.map(item=>String(asRecord(item).text??"")).join("\\n");
+ const candidates=Array.isArray(root.candidates)?root.candidates:[];
+ const content=asRecord(asRecord(candidates[0]).content);
+ if(Array.isArray(content.parts))return content.parts.map(item=>String(asRecord(item).text??"")).join("\\n");
+ return "";
+}
+function parsePlannerJson(raw:string):Record<string,unknown>{
+ const cleaned=raw.trim().replace(/^```(?:json)?/i,"").replace(/```$/,"").trim();
+ const start=cleaned.indexOf("{"),end=cleaned.lastIndexOf("}");
+ if(start<0||end<=start)throw new Error("AGENT_PLANNER_INVALID_JSON");
+ return JSON.parse(cleaned.slice(start,end+1)) as Record<string,unknown>;
+}
+async function generateAgentPlan(env:Env,ownerId:string,goal:string,country:string,searchEngine:"serper"|"serpapi",connections:ConnectionRow[]):Promise<PlannerResult>{
+ const settings=await db<Array<{config:Record<string,unknown>}>>(env,"ai_provider_settings?id=eq.true&select=config&limit=1");
+ const config=asRecord(settings?.[0]?.config);
+ const taskModels=asRecord(config.taskModels);
+ const selectedModel=String(taskModels.agent_planning??taskModels.company_analysis??config.defaultModel??"@cf/google/gemma-4-26b-a4b-it");
+ const providers=Array.isArray(config.providers)?config.providers.map(asRecord):[];
+ const provider=providers.find(item=>item.model===selectedModel)??(selectedModel.startsWith("@cf/")?{id:"workers-ai",protocol:"workers-ai",baseUrl:"",model:selectedModel}:null);
+ const tools=connections.filter(row=>row.status==="active").flatMap(row=>(row.protocol_tools??[]).map(tool=>({connectionId:row.id,connectionName:row.name,protocol:row.protocol,name:tool.name,description:tool.description??"",risk:tool.risk==="read_only"?"read_only":"approval_required",inputSchema:tool.inputSchema??{}})));
+ const system="You are TradePilot's task planner for international B2B trade. Return ONLY strict JSON, no markdown. Schema: {agentKey:string,summary:string,steps:string[],action:{type:'internal_discovery',query:string,country:string,limitPerCountry:number}|{type:'external_tool',connectionId:string,toolName:string,arguments:object}|{type:'needs_clarification',question:string}}. Available agentKey values: buyer_development, market_research, company_research, lead_scoring, multilingual_sales, follow_up, trade_compliance. Choose exactly one executable action. For finding importers, distributors, wholesalers, buyers, or prospects use internal_discovery unless an exact suitable external tool is listed. For external_tool you MUST choose exact connectionId and toolName from the supplied list and provide arguments matching its schema. Never invent tools. If the goal is not executable with available tools, use needs_clarification. All read-only research/search tools may run automatically. Never plan sending email, CRM imports, writes, deletes, merges, purchases, or other side effects as automatic; choose the relevant write tool only if it will be gated by human approval. Country must be a two-letter ISO code. Keep steps to 2-5 concise actions.";
+ const user=JSON.stringify({goal,marketCountry:country,searchEngine,availableTools:tools});
+ let raw="";
+ if(provider&&String(provider.protocol)==="workers-ai"&&env.AI){
+   const model=selectedModel.startsWith("@cf/")?selectedModel:String(provider.model??selectedModel);
+   raw=extractModelText(await env.AI.run(model,{messages:[{role:"system",content:system},{role:"user",content:user}],response_format:{type:"json_object"},max_tokens:1200}));
+ }else if(provider){
+   const id=String(provider.id??"");
+   const secretNames:Record<string,string>={openai:"AI_PROVIDER_OPENAI_API_KEY",anthropic:"AI_PROVIDER_ANTHROPIC_API_KEY",gemini:"AI_PROVIDER_GEMINI_API_KEY",deepseek:"AI_PROVIDER_DEEPSEEK_API_KEY",qwen:"AI_PROVIDER_QWEN_API_KEY",zhipu:"AI_PROVIDER_ZHIPU_API_KEY",kimi:"AI_PROVIDER_KIMI_API_KEY",minimax:"AI_PROVIDER_MINIMAX_API_KEY",openrouter:"AI_PROVIDER_OPENROUTER_API_KEY",siliconflow:"AI_PROVIDER_SILICONFLOW_API_KEY",custom:"AI_PROVIDER_CUSTOM_API_KEY"};
+   const keyName=secretNames[id],key=keyName?(env as unknown as Record<string,unknown>)[keyName]:undefined;
+   if(typeof key!=="string"||!key)throw new Error("AGENT_PLANNER_MODEL_NOT_CONFIGURED: 请在 AI 与 API 集成配置 Agent 规划模型及 API Key。");
+   const base=String(provider.baseUrl??"").replace(/\/$/,"");
+   const model=String(provider.model??selectedModel);
+   if(String(provider.protocol)==="anthropic"){
+     const response=await fetch(base+"/messages",{method:"POST",redirect:"manual",headers:{"x-api-key":key,"anthropic-version":"2023-06-01","content-type":"application/json"},body:JSON.stringify({model,max_tokens:1200,system,messages:[{role:"user",content:user}]}),signal:AbortSignal.timeout(45000)});
+     if(!response.ok)throw new Error("AGENT_PLANNER_HTTP_"+response.status+": "+(await response.text()).slice(0,200));
+     const body=await response.json() as Record<string,unknown>;raw=Array.isArray(body.content)?(body.content as unknown[]).map(item=>String(asRecord(item).text??"")).join("\\n"):"";
+   }else if(String(provider.protocol)==="gemini"){
+     const response=await fetch(base+"/models/"+encodeURIComponent(model)+":generateContent?key="+encodeURIComponent(key),{method:"POST",redirect:"manual",headers:{"content-type":"application/json"},body:JSON.stringify({systemInstruction:{parts:[{text:system}]},contents:[{parts:[{text:user}]}],generationConfig:{responseMimeType:"application/json",maxOutputTokens:1200}}),signal:AbortSignal.timeout(45000)});
+     if(!response.ok)throw new Error("AGENT_PLANNER_HTTP_"+response.status+": "+(await response.text()).slice(0,200));
+     raw=extractModelText(await response.json());
+   }else{
+     const response=await fetch(base+"/chat/completions",{method:"POST",redirect:"manual",headers:{Authorization:"Bearer "+key,"Content-Type":"application/json"},body:JSON.stringify({model,messages:[{role:"system",content:system},{role:"user",content:user}],response_format:{type:"json_object"},max_tokens:1200}),signal:AbortSignal.timeout(45000)});
+     if(!response.ok)throw new Error("AGENT_PLANNER_HTTP_"+response.status+": "+(await response.text()).slice(0,200));
+     raw=extractModelText(await response.json());
+   }
+ }else{
+   const normalized=goal.toLowerCase();
+   if(/importer|buyer|distributor|wholesaler|采购商|进口商|经销商|批发商|买家|潜客|客户开发/.test(normalized)){
+     return {agentKey:"buyer_development",summary:"使用 TradePilot 原生搜索发现目标市场买家。",steps:["根据行业和目标市场构建搜索条件","调用搜索引擎发现企业官网与潜在买家","将结果写入统一搜索结果中心"],action:{type:"internal_discovery",query:goal,country,limitPerCountry:50},model:"deterministic-fallback",fallback:true};
+   }
+   return {agentKey:"company_research",summary:"当前未配置可用规划模型，无法可靠判断所需工具。",steps:["配置 AI 规划模型后重新提交任务"],action:{type:"needs_clarification",question:"请先在「AI 与 API 集成」配置一个可用模型，再由 Agent 自动规划此任务。"},model:"none",fallback:true};
+ }
+ const parsed=parsePlannerJson(raw);
+ const agentKey=String(parsed.agentKey??"buyer_development");
+ const allowedAgents=new Set(["buyer_development","market_research","company_research","lead_scoring","multilingual_sales","follow_up","trade_compliance"]);
+ if(!allowedAgents.has(agentKey))throw new Error("AGENT_PLANNER_INVALID_AGENT");
+ const summary=String(parsed.summary??"已生成执行方案。").slice(0,1000);
+ const steps=Array.isArray(parsed.steps)?parsed.steps.filter((item):item is string=>typeof item==="string").slice(0,8).map(item=>item.slice(0,300)):[];
+ const actionRaw=asRecord(parsed.action);
+ let action:PlannerAction;
+ if(actionRaw.type==="internal_discovery"){
+   const plannedCountry=String(actionRaw.country??country).toUpperCase();
+   const limit=Number(actionRaw.limitPerCountry??50);
+   if(!/^[A-Z]{2}$/.test(plannedCountry)||!Number.isInteger(limit)||limit<1||limit>100)throw new Error("AGENT_PLANNER_INVALID_SEARCH_ACTION");
+   action={type:"internal_discovery",query:String(actionRaw.query??goal).slice(0,500),country:plannedCountry,limitPerCountry:limit};
+ }else if(actionRaw.type==="external_tool"){
+   const connectionId=String(actionRaw.connectionId??"");
+   const toolName=String(actionRaw.toolName??"");
+   const connection=connections.find(row=>row.id===connectionId&&row.status==="active");
+   const tool=connection?.protocol_tools?.find(item=>item.name===toolName);
+   if(!connection||!tool)throw new Error("AGENT_PLANNER_SELECTED_UNKNOWN_TOOL");
+   action={type:"external_tool",connectionId,toolName,arguments:asRecord(actionRaw.arguments)};
+ }else if(actionRaw.type==="needs_clarification"){
+   action={type:"needs_clarification",question:String(actionRaw.question??"请补充目标市场或执行条件。").slice(0,1000)};
+ }else throw new Error("AGENT_PLANNER_INVALID_ACTION");
+ return {agentKey,summary,steps,action,model:selectedModel};
+}
+\nexport async function handleAgentCenter(request:Request,env:Env):Promise<Response>{
   const ownerId=await ownerFromRequest(request,env);
   if(!ownerId)return errorResponse(request,"UNAUTHORIZED","请先登录 TradePilot。",401);
   const url=new URL(request.url);
@@ -379,30 +470,70 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
       const goal=typeof body.goal==="string"?body.goal.trim():"";
       if(goal.length<2||goal.length>10000)return errorResponse(request,"VALIDATION_ERROR","任务目标长度必须为 2–10000 个字符。",400);
       const execution=asRecord(body.execution);
-      const internalSearch=execution.mode==="internal_discovery";
-      let input:DiscoveryRunInput|undefined;
-      let engine:"serper"|"serpapi"="serper";
-      let country="";
-      let limit=50;
+      const plannerMode=execution.mode==="planner";
+      const explicitInternal=execution.mode==="internal_discovery";
+      let engine:"serper"|"serpapi"=execution.searchEngine==="serpapi"?"serpapi":"serper";
+      let country=typeof execution.country==="string"?execution.country.trim().toUpperCase():"US";
+      let limit=Number.isInteger(execution.limitPerCountry)?Number(execution.limitPerCountry):50;
+      let planner:PlannerResult|undefined;
+      let connection:ConnectionRow|undefined;
+      let selectedTool:Record<string,unknown>|undefined;
+      if(plannerMode){
+        if(!/^[A-Z]{2}$/.test(country))return errorResponse(request,"VALIDATION_ERROR","请选择有效的目标国家。",400);
+        const available=await db<ConnectionRow[]>(env,"agent_connections?owner_id=eq."+ownerId+"&select=id,owner_id,name,protocol,endpoint_url,auth_mode,encrypted_credentials,capabilities,protocol_tools,protocol_metadata,status,last_tested_at,last_error,created_at,updated_at&order=created_at.desc&limit=100");
+        planner=await generateAgentPlan(env,ownerId,goal,country,engine,available??[]);
+        if(planner.action.type==="internal_discovery"){country=planner.action.country;limit=planner.action.limitPerCountry;}
+        if(planner.action.type==="external_tool"){
+          connection=available?.find(row=>row.id===planner!.action.connectionId);
+          selectedTool=connection?.protocol_tools?.find(tool=>tool.name===(planner!.action as Extract<PlannerAction,{type:"external_tool"}>).toolName);
+          if(!connection||!selectedTool)return errorResponse(request,"AGENT_PLAN_TOOL_INVALID","规划器选择的工具已不可用，请重新规划。",409);
+        }
+      }
+      const internalSearch=explicitInternal||(planner?.action.type==="internal_discovery");
       if(internalSearch){
-        country=typeof execution.country==="string"?execution.country.trim().toUpperCase():"";
-        engine=execution.searchEngine==="serpapi"?"serpapi":"serper";
-        limit=Number.isInteger(execution.limitPerCountry)?Number(execution.limitPerCountry):50;
-        if(!/^[A-Z]{2}$/.test(country)||limit<1||limit>100)return errorResponse(request,"VALIDATION_ERROR","请选择有效的两位国家代码，并将每个市场结果数量设为 1–100。",400);
+        if(!/^[A-Z]{2}$/.test(country)||limit<1||limit>100)return errorResponse(request,"VALIDATION_ERROR","目标国家代码无效，或每个市场结果数量不在 1–100 范围内。",400);
         if((engine==="serper"&&!env.SERPER_API_KEY)||(engine==="serpapi"&&!env.SERPAPI_API_KEY))return errorResponse(request,"PROVIDER_NOT_CONFIGURED",engine==="serper"?"Serper API 尚未配置，请先前往 AI 与 API 集成保存密钥。":"SerpApi 尚未配置，请先前往 AI 与 API 集成保存密钥。",400);
         if(!env.LEAD_DISCOVERY_WORKFLOW)return errorResponse(request,"WORKFLOW_NOT_CONFIGURED","潜客发现工作流尚未部署。",503);
-        input={countries:[country],query:goal,limitPerCountry:limit,providers:[],channel:"search_engine",searchEngines:[engine],searchTypes:["web"],searchLanguage:"en",advancedQuery:goal,excludeCategories:[]};
       }
+      let input:DiscoveryRunInput|undefined;
+      if(internalSearch)input={countries:[country],query:planner?.action.type==="internal_discovery"?planner.action.query:goal,limitPerCountry:limit,providers:[],channel:"search_engine",searchEngines:[engine],searchTypes:["web"],searchLanguage:"en",advancedQuery:goal,excludeCategories:[]};
+      const actionType=planner?.action.type??(explicitInternal?"internal_discovery":"needs_clarification");
       const runId=crypto.randomUUID();
       const taskCode="AGENT-"+new Date().toISOString().slice(0,10).replace(/-/g,"")+"-"+runId.replace(/-/g,"").slice(0,6).toUpperCase();
-      const rows=await db<Array<{id:string;agent_key:string;goal:string;status:string;created_at:string}>>(env,"agent_runs",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({id:runId,owner_id:ownerId,agent_key:internalSearch?"buyer_development":"tradepilot_planner",goal,status:internalSearch?"queued":"planned",plan:{execution_state:internalSearch?"queued":"not_started",reason:internalSearch?null:"等待选择外部 Agent 工具",execution:internalSearch?{mode:"internal_discovery",country,searchEngine:engine,limitPerCountry:limit}:null,policy:{search_and_analysis:"automatic",send_email:"approval_required",bulk_import:"approval_required"}}})});
+      const initialStatus=internalSearch||actionType==="external_tool"?"queued":"planned";
+      const agentKey=planner?.agentKey??"buyer_development";
+      const plan={planner:{summary:planner?.summary??"直接执行用户指定的买家发现任务。",steps:planner?.steps??["启动 TradePilot 原生买家发现搜索"],model:planner?.model??"manual",fallback:planner?.fallback??false},execution_state:initialStatus,action:planner?.action??{type:"internal_discovery",country,searchEngine:engine,limitPerCountry:limit},policy:{search_and_analysis:"automatic",send_email:"approval_required",bulk_import:"approval_required"}};
+      const rows=await db<Array<{id:string;agent_key:string;goal:string;status:string;created_at:string}>>(env,"agent_runs",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({id:runId,owner_id:ownerId,agent_key:agentKey,goal,status:initialStatus,plan,connection_id:connection?.id??null})});
       const run=rows?.[0];if(!run)return errorResponse(request,"RUN_CREATE_FAILED","Agent 任务创建失败。",500);
       try{
-        await db(env,"discovery_runs",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({id:runId,owner_id:ownerId,query:goal,countries:internalSearch?[country]:["GLOBAL"],limit_per_country:internalSearch?limit:1,status:internalSearch?"queued":"planned",progress:0,discovered_count:0,created_lead_count:0,message:internalSearch?"Agent 买家发现任务已排队":"Agent 任务已创建，等待选择工具",task_code:taskCode,channel:"agent",providers:internalSearch?[engine]:["agent"],search_config:internalSearch?{searchEngine:engine,searchTypes:["web"],searchLanguage:"en"}:{}})});
-        await db(env,"discovery_run_logs",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({run_id:runId,owner_id:ownerId,level:"info",message:internalSearch?"TradePilot 买家开发 Agent 已启动原生搜索工作流。":"TradePilot Agent 任务已创建，等待外部工具调用。"})});
-        await db(env,"agent_run_events",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({owner_id:ownerId,run_id:runId,event_type:internalSearch?"execution_queued":"plan_created",message:internalSearch?"已启动原生全球买家发现工作流。":"已保存 Agent 任务，等待选择外部 Agent 工具。",payload:{taskCode,execution:internalSearch?"internal_discovery":"external_agent"}})});
+        const userMessage=planner?.summary??(internalSearch?"TradePilot 买家开发 Agent 已启动原生搜索工作流。":"Agent 任务已创建。");
+        await db(env,"discovery_runs",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({id:runId,owner_id:ownerId,query:goal,countries:internalSearch?[country]:["GLOBAL"],limit_per_country:internalSearch?limit:1,status:initialStatus,progress:0,discovered_count:0,created_lead_count:0,message:userMessage,task_code:taskCode,channel:"agent",providers:internalSearch?[engine]:connection?[connection.protocol]:["agent"],search_config:{...(internalSearch?{searchEngine:engine,searchTypes:["web"],searchLanguage:"en"}:{}),agentKey,planner:plan.planner}})});
+        await db(env,"discovery_run_logs",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({run_id:runId,owner_id:ownerId,level:"info",message:"Agent 规划完成："+userMessage,payload:{agentKey,steps:plan.planner.steps,actionType}})});
+        await db(env,"agent_run_events",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({owner_id:ownerId,run_id:runId,event_type:"plan_created",message:"Agent 已自动选择专业角色并生成执行方案。",payload:{agentKey,steps:plan.planner.steps,actionType,model:plan.planner.model}})});
         if(internalSearch&&input){
           await env.LEAD_DISCOVERY_WORKFLOW!.create({id:runId,params:{runId,ownerId,input}});
+        }else if(actionType==="external_tool"&&connection&&selectedTool&&planner?.action.type==="external_tool"){
+          const risk=selectedTool.risk==="read_only"?"read_only":"approval_required";
+          const args=planner.action.arguments;
+          const snapshot={connectionId:connection.id,connectionName:connection.name,endpointUrl:connection.endpoint_url,protocol:connection.protocol,toolName:planner.action.toolName,tool:selectedTool,arguments:args,runId,goal};
+          if(risk==="approval_required"){
+            const action=approvalActionType(planner.action.toolName,String(selectedTool.description??""),typeof selectedTool.method==="string"?selectedTool.method:undefined);
+            const hash=await sha256(stableStringify(snapshot));
+            const approvals=await db<Array<{id:string;expires_at:string}>>(env,"agent_approvals?select=id,expires_at",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({owner_id:ownerId,run_id:runId,action_type:action,operation_snapshot:snapshot,snapshot_sha256:hash})});
+            const approval=approvals?.[0];if(!approval)throw new Error("APPROVAL_CREATE_FAILED");
+            await db(env,"agent_runs?id=eq."+runId+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"awaiting_approval",plan:{...plan,execution_state:"awaiting_approval",approvalId:approval.id}})});
+            await db(env,"discovery_runs?id=eq."+runId+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"awaiting_approval",message:"方案中的工具操作等待人工审批："+planner.action.toolName})});
+            await writeRunLog(env,ownerId,runId,"info","Agent 已自动规划并提交人工审批："+planner.action.toolName,{approvalId:approval.id});
+            return successResponse(request,{...run,taskCode,agentKey,plan,status:"awaiting_approval",approvalId:approval.id,message:"方案已生成，等待人工审批后执行。"},202);
+          }
+          await db(env,"agent_runs?id=eq."+runId+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"running",started_at:new Date().toISOString(),plan:{...plan,execution_state:"running"}})});
+          await db(env,"discovery_runs?id=eq."+runId+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"running",progress:15,message:"Agent 正在调用："+planner.action.toolName})});
+          const result=boundedResult(await executeExternalTool(env,ownerId,connection,selectedTool,{id:runId,goal},args));
+          await db(env,"agent_runs?id=eq."+runId+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"succeeded",result:{toolName:planner.action.toolName,connectionId:connection.id,data:result},completed_at:new Date().toISOString(),updated_at:new Date().toISOString(),plan:{...plan,execution_state:"completed"}})});
+          await db(env,"discovery_runs?id=eq."+runId+"&owner_id=eq."+ownerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"completed",progress:100,message:"Agent 工具执行完成："+planner.action.toolName})});
+          await writeRunLog(env,ownerId,runId,"info","Agent 工具执行完成："+planner.action.toolName,{connectionId:connection.id});
+        }else{
+          await writeRunLog(env,ownerId,runId,"info",planner?.action.type==="needs_clarification"?planner.action.question:"Agent 方案已生成。");
         }
       }catch(error){
         const message="Agent 任务启动失败："+String(error).slice(0,180);
@@ -411,7 +542,7 @@ export async function handleAgentCenter(request:Request,env:Env):Promise<Respons
         await writeRunLog(env,ownerId,runId,"error",message);
         return errorResponse(request,"AGENT_RUN_START_FAILED",message,503);
       }
-      return successResponse(request,{...run,taskCode,channel:"agent",countries:internalSearch?[country]:["GLOBAL"],progress:0,discoveredCount:0,message:internalSearch?"Agent 搜索工作流已启动":"Agent 任务已创建"},internalSearch?202:201);
+      return successResponse(request,{...run,taskCode,channel:"agent",agentKey,plan,countries:internalSearch?[country]:["GLOBAL"],progress:internalSearch?0:actionType==="external_tool"?100:0,discoveredCount:0,message:planner?.summary??"Agent 任务已创建"},internalSearch?202:201);
     }
     if(path==="/api/v1/agent/approvals"&&request.method==="GET"){
       const rows=await db<unknown[]>(env,"agent_approvals?owner_id=eq."+ownerId+"&select=id,run_id,action_type,status,operation_snapshot,decision_note,decided_at,expires_at,created_at&order=created_at.desc&limit=100");
