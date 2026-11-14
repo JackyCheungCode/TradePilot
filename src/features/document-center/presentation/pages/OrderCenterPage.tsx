@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ArrowDown, ArrowUp, ArrowUpDown, ArrowUpRight, CheckCircle2, ClipboardList, FileText, Pencil, RefreshCw, Search, ShoppingCart, Truck } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, ArrowUpRight, CheckCircle2, FileText, Pencil, RefreshCw, Search, ShoppingCart, Truck } from "lucide-react";
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Combobox, Checkbox } from "@/shared/ui/primitives";
 import { PageControlPanel } from "@/shared/ui/page-layout";
 import { tradeApi, type TradeDocument, type TradeOrder } from "@/features/document-center/infrastructure/trade-api";
