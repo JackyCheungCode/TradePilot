@@ -282,14 +282,13 @@ export function AppShell({
           ) : (
             <img src={tradePilotLogo} alt="TradePilot" />
           )}
-          <button
-            type="button"
+          <HeaderGlobalAction
             className="tp-carbon-sidebar__collapse"
             aria-label={collapsed ? "展开侧边栏" : "收起侧边栏"}
             onClick={() => setCollapsed((value) => !value)}
           >
             <MaterialIcon name={collapsed ? "left_panel_open" : "left_panel_close"} />
-          </button>
+          </HeaderGlobalAction>
         </div>
         {sideNavigation}
       </aside>
@@ -305,9 +304,9 @@ export function AppShell({
           <aside className="tp-carbon-mobile-nav__panel">
             <div className="tp-carbon-sidebar__brand">
               <img src={tradePilotLogo} alt="TradePilot" />
-              <button type="button" className="tp-carbon-sidebar__collapse" aria-label="关闭菜单" onClick={closeMobile}>
+              <HeaderGlobalAction className="tp-carbon-sidebar__collapse" aria-label="关闭菜单" onClick={closeMobile}>
                 <MaterialIcon name="close" />
-              </button>
+              </HeaderGlobalAction>
             </div>
             {sideNavigation}
           </aside>
