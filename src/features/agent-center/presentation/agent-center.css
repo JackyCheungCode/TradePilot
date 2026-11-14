@@ -45,51 +45,6 @@
   padding:var(--cds-spacing-07);
   background:var(--cds-layer-01);
 }
-/* Carbon type utility classes are mapped explicitly here because legacy page-wide
-   heading and paragraph selectors have higher specificity in the shared stylesheet. */
-.tp-page-canvas .tp-agent-market-page h1.cds--type-heading-05{
-  font-size:var(--cds-heading-05-font-size);
-  font-weight:var(--cds-heading-05-font-weight);
-  line-height:var(--cds-heading-05-line-height);
-  letter-spacing:var(--cds-heading-05-letter-spacing);
-}
-.tp-page-canvas .tp-agent-market-page h2.cds--type-heading-03{
-  font-size:var(--cds-heading-03-font-size);
-  font-weight:var(--cds-heading-03-font-weight);
-  line-height:var(--cds-heading-03-line-height);
-  letter-spacing:var(--cds-heading-03-letter-spacing);
-}
-.tp-page-canvas .tp-agent-market-page h3.cds--type-heading-compact-01,
-.tp-page-canvas .tp-agent-market-page strong.cds--type-heading-compact-01{
-  font-size:var(--cds-heading-compact-01-font-size);
-  font-weight:var(--cds-heading-compact-01-font-weight);
-  line-height:var(--cds-heading-compact-01-line-height);
-  letter-spacing:var(--cds-heading-compact-01-letter-spacing);
-}
-.tp-page-canvas .tp-agent-market-page p.cds--type-body-compact-01{
-  font-size:var(--cds-body-compact-01-font-size);
-  font-weight:var(--cds-body-compact-01-font-weight);
-  line-height:var(--cds-body-compact-01-line-height);
-  letter-spacing:var(--cds-body-compact-01-letter-spacing);
-}
-.tp-page-canvas .tp-agent-market-page p.cds--type-body-01{
-  font-size:var(--cds-body-01-font-size);
-  font-weight:var(--cds-body-01-font-weight);
-  line-height:var(--cds-body-01-line-height);
-  letter-spacing:var(--cds-body-01-letter-spacing);
-}
-.tp-page-canvas .tp-agent-market-page p.cds--type-helper-text-01{
-  font-size:var(--cds-helper-text-01-font-size);
-  font-weight:var(--cds-helper-text-01-font-weight);
-  line-height:var(--cds-helper-text-01-line-height);
-  letter-spacing:var(--cds-helper-text-01-letter-spacing);
-}
-.tp-page-canvas .tp-agent-market-page p.cds--type-label-01{
-  font-size:var(--cds-label-01-font-size);
-  font-weight:var(--cds-label-01-font-weight);
-  line-height:var(--cds-label-01-line-height);
-  letter-spacing:var(--cds-label-01-letter-spacing);
-}
 .tp-agent-market-header__content{min-width:0}
 .tp-agent-market-eyebrow{
   margin:0 0 var(--cds-spacing-03);
