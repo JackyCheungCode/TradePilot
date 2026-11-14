@@ -1,5 +1,5 @@
 import {useEffect,useMemo,useState} from "react";
-import {Activity,LoaderCircle,MessageCircle,Search,Sparkles,Terminal,Users,Wallet} from "lucide-react";
+import {Activity,Renew as LoaderCircle,Chat as MessageCircle,Search,MagicWand as Sparkles,Terminal,UserMultiple as Users,Wallet} from "@carbon/icons-react";
 import {toast} from "sonner";
 import {Badge,Button,Card,CardContent,CardDescription,CardHeader,CardTitle,Input,Checkbox,Textarea,MultiSelect,Combobox} from "@/shared/ui/primitives";
 import { PageControlPanel } from "@/shared/ui/page-layout";
