@@ -43,6 +43,10 @@ export class AgentOrchestrationWorkflow extends WorkflowEntrypoint<WorkflowEnv,P
    const rows=await db<Array<{plan:Record<string,unknown>}>>(this.env,"agent_runs?id=eq."+runId+"&owner_id=eq."+ownerId+"&select=plan&limit=1");
    plan=rows?.[0]?.plan??{};
    await patchRun(this.env,runId,ownerId,{status:"running",started_at:new Date().toISOString(),plan:{...plan,execution_state:"running"}});
+   const profileRows=await db<Array<{agent_key:string;enabled:boolean;config:Record<string,unknown>}>>(this.env,"agent_profiles?owner_id=eq."+ownerId+"&select=agent_key,enabled,config");
+   const profileMap=new Map((profileRows??[]).map(profile=>[profile.agent_key,profile]));
+   const disabled=specialists.filter(item=>profileMap.has(item.agentKey)&&profileMap.get(item.agentKey)?.enabled===false);
+   if(disabled.length)throw new Error("AGENT_DISABLED: "+disabled.map(item=>item.agentKey).join(", "));
    await log(this.env,runId,ownerId,"小雅启动多 Agent 协作：先发现买家，再由专业 Agent 依次分析。",{specialists:specialists.map(s=>s.agentKey)});
    const discovery=await step.do("buyer-discovery",{retries:{limit:1,delay:"10 seconds"},timeout:"30 minutes"},async()=>{
     const result=await processRun(this.env,runId,ownerId,input);
@@ -67,7 +71,9 @@ export class AgentOrchestrationWorkflow extends WorkflowEntrypoint<WorkflowEnv,P
      await patchDiscovery(this.env,runId,ownerId,{status:"running",progress:Math.min(90,40+Math.round((index/specialists.length)*45)),message:label+" 正在分析 "+dataset.records.length+" 条线索。"});
      await log(this.env,runId,ownerId,label+" 开始执行。",{agentKey:specialist.agentKey,records:dataset.records.length});
      const context={goal,instruction:specialist.instruction,discovery,records:dataset.records.slice(0,150),sources:dataset.occurrences.slice(0,200),previousAgents:specialistResults};
-     const system="你是 TradePilot 的"+label+"。"+(prompts[specialist.agentKey]??"请对输入数据进行专业分析。")+"\n请用中文输出清晰、可执行的分析结果。只依据输入证据，不要虚构。若没有搜索结果，要明确说明无法得出结论。不得发送邮件、导入 CRM 或执行外部写操作。";
+     const profile=profileMap.get(specialist.agentKey);
+     const customPrompt=typeof profile?.config?.systemPrompt==="string"?profile.config.systemPrompt.trim():"";
+     const system="你是 TradePilot 的"+label+"。"+(customPrompt||(prompts[specialist.agentKey]??"请对输入数据进行专业分析。"))+"\\n请用中文输出清晰、可执行的分析结果。只依据输入证据，不要虚构。若没有搜索结果，要明确说明无法得出结论。不得发送邮件、导入 CRM 或执行外部写操作。";
      const generated=await callAgentChatModel(this.env,[{role:"user",content:JSON.stringify(context)}],system,"company_analysis",false,1800);
      const output=generated.text.slice(0,16000);
      const completedSteps=Array.isArray(plan.execution_steps)?[...(plan.execution_steps as Array<Record<string,unknown>>)]:[];
