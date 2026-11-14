@@ -23,5 +23,5 @@ export const tradeApi={
  listDocuments:()=>request<TradeDocument[]>("/api/v1/trade/documents"),
  getDocument:(id:string)=>request<TradeDocumentDetail>("/api/v1/trade/documents/"+encodeURIComponent(id)),
  updateDocument:(id:string,input:{content:Record<string,unknown>;totals:Record<string,unknown>;locale:string;currency_code:string;current_version:number})=>request<TradeDocument>("/api/v1/trade/documents/"+encodeURIComponent(id),{method:"PATCH",body:JSON.stringify(input)}),
- createDocument:(input:{order_id:string;document_type:string;title?:string;locale?:string;currency_code?:string;content?:Record<string,unknown>;totals?:Record<string,unknown>})=>request<TradeDocument>("/api/v1/trade/documents",{method:"POST",body:JSON.stringify(input)}),
+ createDocument:(input:{order_id:string;document_type:string;title?:string;locale?:string;currency_code?:string;source_document_id?:string;content?:Record<string,unknown>;totals?:Record<string,unknown>})=>request<TradeDocument>("/api/v1/trade/documents",{method:"POST",body:JSON.stringify(input)}),
 };
