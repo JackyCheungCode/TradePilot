@@ -306,7 +306,6 @@ main h1, .tp-page-canvas h1 {
 .tp-page-canvas .tp-list-row { background: #fff; border-color: var(--tp-line); box-shadow: none; }
 .tp-page-canvas .tp-list-row:hover { background: #fafbfc; }
 .tp-page-canvas .tp-list-row + .tp-list-row { margin-top: 8px; }
-.tp-page-canvas .tp-list-row [class*="border-t"] { border-color: var(--tp-line); }
 
 /* Mobile summary tiles stay two-up. Data-heavy tables must provide a mobile view
    in their owning page; do not force a global min-width that creates page overflow. */
