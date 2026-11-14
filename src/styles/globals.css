@@ -125,14 +125,14 @@ main .rounded-xl.border, main .rounded-lg.border { border-color: var(--tp-border
 main table { border-collapse: separate; border-spacing: 0; width: 100%; }
 main table thead th { background: #f7f8f9; color: #667085; font-size: 11px; font-weight: 600; letter-spacing: .025em; }
 main table tbody tr:hover { background: #f8fafb; }
-main input:not([type="checkbox"]):not([type="radio"]), main textarea, main select {
+main input:not([type="checkbox"]):not([type="radio"]):not([data-tp-control]), main textarea:not([data-tp-control]), main select {
   min-height: var(--tp-control-height);
   border-radius: 5px;
   border-color: #d8dde3;
   background-color: #fff;
   box-shadow: none;
 }
-main input:focus, main textarea:focus, main select:focus {
+main input:not([data-tp-control]):focus, main textarea:not([data-tp-control]):focus, main select:focus {
   border-color: #64748b;
   box-shadow: 0 0 0 2px rgba(100,116,139,.12);
 }
@@ -199,7 +199,7 @@ main { background: var(--tp-canvas); }
 .tp-page-canvas [role="dialog"] { border-radius: 7px; border-color: var(--tp-line); box-shadow: 0 12px 36px rgba(16,24,40,.16); }
 .tp-page-canvas input[type="checkbox"],
 .tp-page-canvas input[type="radio"] { accent-color: #344054; }
-.tp-page-canvas textarea { min-height: 84px; }
+.tp-page-canvas textarea:not([data-tp-control]) { min-height: 84px; }
 .tp-page-canvas .material-symbols-outlined { font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 20; }
 .tp-page-canvas svg.lucide { stroke-width: 1.7; }
 .tp-page-canvas .text-2xl { font-size: 21px; line-height: 1.3; }
