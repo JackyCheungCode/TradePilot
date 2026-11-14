@@ -224,6 +224,7 @@ export function Combobox({
   options,
   placeholder = "请选择",
   searchPlaceholder = "搜索选项…",
+  filterable = false,
   disabled = false,
   className,
 }: {
