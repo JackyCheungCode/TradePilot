@@ -1,14 +1,14 @@
 import { useState, type ReactNode } from "react";
-import { Compass, Facebook, Instagram, KeyRound, LogOut, MapPinned, Menu, PanelLeftClose, PanelLeftOpen, Radar, Search, Settings, ShieldBan, Users, X, ChevronDown, ChevronRight, ListTodo, Files, ContactRound } from "lucide-react";
+import { Compass, Facebook, Instagram, KeyRound, LogOut, MapPinned, Menu, PanelLeftClose, PanelLeftOpen, Radar, Search, Settings, ShieldBan, Users, X, ChevronDown, ChevronRight, ListTodo, Files, ContactRound, Building2, Handshake, Factory, Landmark, Package } from "lucide-react";
 import { Button } from "@/shared/ui/primitives";
 import { AgentOrbIcon } from "@/features/agent-center/presentation/components/AgentOrbIcon";
 import { Sparkles, Workflow, PlugZap, ClipboardCheck, Bot, Activity, Settings2, FileStack, FilePlus2, Archive, LayoutTemplate } from "lucide-react";
 
-type AppPage = "agentWorkbench" | "agentMarket" | "agentOrchestration" | "agentConnections" | "agentRuns" | "agentApprovals" | "agentSettings" | "discovery" | "discoveryTasks" | "discoveryResults" | "searchDiscovery" | "facebookDiscovery" | "instagramDiscovery" | "leads" | "integrations" | "searchExclusions" | "agentAppearance" | "documentWorkbench" | "documentCreate" | "documentRecords" | "documentTemplates" | "documentParties" | "documentSettings";
+type AppPage = "agentWorkbench" | "agentMarket" | "agentOrchestration" | "agentConnections" | "agentRuns" | "agentApprovals" | "agentSettings" | "discovery" | "discoveryTasks" | "discoveryResults" | "searchDiscovery" | "facebookDiscovery" | "instagramDiscovery" | "leads" | "crmAccounts" | "crmContacts" | "crmOpportunities" | "enterpriseProfiles" | "enterpriseBanks" | "productCenter" | "integrations" | "searchExclusions" | "agentAppearance" | "documentWorkbench" | "documentCreate" | "documentRecords" | "documentTemplates" | "documentParties" | "documentSettings";
 
 export function AppShell({ children, activePage, onNavigate, userEmail, onSignOut }: { children: ReactNode; activePage: AppPage; onNavigate: (page: AppPage) => void; userEmail: string; onSignOut: () => void }) {
  const [collapsed,setCollapsed]=useState(false),[mobileOpen,setMobileOpen]=useState(false);
- const [agentExpanded,setAgentExpanded]=useState(true),[discoveryExpanded,setDiscoveryExpanded]=useState(false),[crmExpanded,setCrmExpanded]=useState(false),[settingsExpanded,setSettingsExpanded]=useState(false),[documentsExpanded,setDocumentsExpanded]=useState(true);
+ const [agentExpanded,setAgentExpanded]=useState(true),[discoveryExpanded,setDiscoveryExpanded]=useState(false),[crmExpanded,setCrmExpanded]=useState(true),[masterExpanded,setMasterExpanded]=useState(true),[settingsExpanded,setSettingsExpanded]=useState(false),[documentsExpanded,setDocumentsExpanded]=useState(true);
  const navClass="flex w-full items-center justify-start gap-3 px-3 py-2.5 text-left text-sm";
  const childNavClass="flex w-full items-center justify-start gap-3 px-3 py-2.5 text-left text-sm";
  const sidebar=<div className="flex h-full min-h-0 flex-col bg-card text-foreground">
@@ -33,7 +33,7 @@ export function AppShell({ children, activePage, onNavigate, userEmail, onSignOu
      <Button variant={activePage==="documentCreate"?"secondary":"ghost"} onClick={()=>{onNavigate("documentCreate");setMobileOpen(false);}} className={childNavClass}><FilePlus2 className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>单据制作</span>}</Button>
      <Button variant={activePage==="documentRecords"?"secondary":"ghost"} onClick={()=>{onNavigate("documentRecords");setMobileOpen(false);}} className={childNavClass}><Archive className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>单据管理</span>}</Button>
      <Button variant={activePage==="documentTemplates"?"secondary":"ghost"} onClick={()=>{onNavigate("documentTemplates");setMobileOpen(false);}} className={childNavClass}><LayoutTemplate className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>模板中心</span>}</Button>
-     <Button variant={activePage==="documentParties"?"secondary":"ghost"} onClick={()=>{onNavigate("documentParties");setMobileOpen(false);}} className={childNavClass}><Users className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>业务资料库</span>}</Button>
+     
      <Button variant={activePage==="documentSettings"?"secondary":"ghost"} onClick={()=>{onNavigate("documentSettings");setMobileOpen(false);}} className={childNavClass}><Settings2 className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>单据设置</span>}</Button>
     </div>}
    </div>
@@ -50,8 +50,12 @@ export function AppShell({ children, activePage, onNavigate, userEmail, onSignOu
     </div>}
    </div>
    <div>
-    <Button variant="ghost" onClick={()=>setCrmExpanded(!crmExpanded)} className={navClass}><Users className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<><span className="flex-1 text-left">客户关系管理</span>{crmExpanded?<ChevronDown className="ml-auto h-4 w-4"/>:<ChevronRight className="ml-auto h-4 w-4"/>}</>}</Button>
-    {crmExpanded&&<div className={`ml-5 space-y-1 pl-3 ${collapsed&&!mobileOpen?"":"border-l"}`}><Button variant={activePage==="leads"?"secondary":"ghost"} onClick={()=>{onNavigate("leads");setMobileOpen(false);}} className={childNavClass}><ContactRound className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<span>线索</span>}</Button></div>}
+    <Button variant={activePage.startsWith("crm")?"secondary":"ghost"} onClick={()=>setCrmExpanded(!crmExpanded)} className={navClass}><Users className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<><span className="flex-1 text-left">客户关系管理</span>{crmExpanded?<ChevronDown className="ml-auto h-4 w-4"/>:<ChevronRight className="ml-auto h-4 w-4"/>}</>}</Button>
+    {crmExpanded&&<div className={`ml-5 space-y-1 pl-3 ${collapsed&&!mobileOpen?"":"border-l"}`}><Button variant={activePage==="leads"?"secondary":"ghost"} onClick={()=>{onNavigate("leads");setMobileOpen(false);}} className={childNavClass}><ContactRound className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<span>线索</span>}</Button><Button variant={activePage==="crmAccounts"?"secondary":"ghost"} onClick={()=>{onNavigate("crmAccounts");setMobileOpen(false);}} className={childNavClass}><Building2 className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>客户</span>}</Button><Button variant={activePage==="crmContacts"?"secondary":"ghost"} onClick={()=>{onNavigate("crmContacts");setMobileOpen(false);}} className={childNavClass}><ContactRound className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>联系人</span>}</Button><Button variant={activePage==="crmOpportunities"?"secondary":"ghost"} onClick={()=>{onNavigate("crmOpportunities");setMobileOpen(false);}} className={childNavClass}><Handshake className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>商机</span>}</Button></div>}
+   </div>
+   <div>
+    <Button variant={["enterpriseProfiles","enterpriseBanks","productCenter"].includes(activePage)?"secondary":"ghost"} onClick={()=>setMasterExpanded(!masterExpanded)} className={navClass}><Factory className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<><span className="flex-1 text-left">企业中心</span>{masterExpanded?<ChevronDown className="ml-auto h-4 w-4"/>:<ChevronRight className="ml-auto h-4 w-4"/>}</>}</Button>
+    {masterExpanded&&<div className={`ml-5 space-y-1 pl-3 ${collapsed&&!mobileOpen?"":"border-l"}`}><Button variant={activePage==="enterpriseProfiles"?"secondary":"ghost"} onClick={()=>{onNavigate("enterpriseProfiles");setMobileOpen(false);}} className={childNavClass}><Building2 className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>企业资料</span>}</Button><Button variant={activePage==="enterpriseBanks"?"secondary":"ghost"} onClick={()=>{onNavigate("enterpriseBanks");setMobileOpen(false);}} className={childNavClass}><Landmark className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>银行资料</span>}</Button><Button variant={activePage==="productCenter"?"secondary":"ghost"} onClick={()=>{onNavigate("productCenter");setMobileOpen(false);}} className={childNavClass}><Package className="h-4 w-4"/>{(!collapsed||mobileOpen)&&<span>产品中心</span>}</Button></div>}
    </div>
    <div>
     <Button variant="ghost" onClick={()=>setSettingsExpanded(!settingsExpanded)} className={navClass}><Settings className="h-4 w-4 shrink-0"/>{(!collapsed||mobileOpen)&&<><span className="flex-1 text-left">系统设置</span>{settingsExpanded?<ChevronDown className="ml-auto h-4 w-4"/>:<ChevronRight className="ml-auto h-4 w-4"/>}</>}</Button>
