@@ -1,10 +1,13 @@
 import { useEffect, useState, type ElementType, type ReactNode } from "react";
 import {
+  Content,
   Header,
   HeaderGlobalAction,
   HeaderGlobalBar,
   HeaderMenuButton,
   HeaderName,
+  HeaderNavigation,
+  HeaderMenuItem,
   SideNav,
   SideNavItems,
   SideNavLink,
@@ -12,10 +15,10 @@ import {
   SideNavMenuItem,
   SkipToContent,
 } from "@carbon/react";
-import { AgentOrbIcon } from "@/features/agent-center/presentation/components/AgentOrbIcon";
-import { Bot, Task, Folder, Explore, Group, Settings, InventoryManagement, Logout, Radar, SidePanelOpen, SidePanelClose, Close } from "@carbon/icons-react";
+import { Bot, Task, Folder, Explore, Group, Settings, InventoryManagement, Logout, Radar, SidePanelOpen, SidePanelClose, Close, Search, Notification, UserAvatar } from "@carbon/icons-react";
 import tradePilotLogo from "@/assets/tradepilot-logo.svg";
 import "./app-shell.css";
+import "./app-shell-header.scss";
 
 type AppPage =
   | "agentWorkbench" | "agentMarket" | "agentOrchestration" | "agentConnections" | "agentRuns" | "agentApprovals" | "agentSettings"
@@ -104,38 +107,7 @@ export function AppShell({
     onNavigate(page);
     closeMobile();
   };
-  const isSettingsPage = ["enterpriseConfig", "productConfig", "integrations", "searchExclusions", "agentAppearance", "documentTemplates"].includes(activePage);
-  const isDiscoveryPage = ["discovery", "discoveryTasks", "discoveryResults", "searchDiscovery", "facebookDiscovery", "instagramDiscovery"].includes(activePage);
-  const isCrmPage = ["leads", "crmAccounts", "crmContacts", "crmOpportunities"].includes(activePage);
-  const isAgentPage = activePage.startsWith("agent");
-  const pageTitle =
-    activePage.startsWith("order") ? "订单中心" :
-    activePage === "documentWorkbench" ? "单据工作台" :
-    activePage === "documentCreate" ? "单据制作" :
-    activePage === "documentRecords" ? "单据管理" :
-    activePage === "documentTemplates" ? "模板中心" :
-    activePage === "agentWorkbench" ? "Agent 工作台" :
-    activePage === "agentMarket" ? "Agent 市场" :
-    activePage === "agentOrchestration" ? "Agent 编排" :
-    activePage === "agentConnections" ? "外部 Agent 接入" :
-    activePage === "agentRuns" ? "Agent 执行记录" :
-    activePage === "agentApprovals" ? "审批中心" :
-    activePage === "agentSettings" ? "Agent 设置" :
-    activePage === "integrations" ? "AI 与 API 集成" :
-    activePage === "searchExclusions" ? "搜索排除规则" :
-    activePage === "agentAppearance" ? "Agent 形象设计" :
-    activePage === "leads" ? "线索" :
-    activePage === "crmAccounts" ? "客户" :
-    activePage === "crmContacts" ? "联系人" :
-    activePage === "crmOpportunities" ? "商机" :
-    activePage === "enterpriseConfig" ? "企业配置" :
-    activePage === "productConfig" ? "产品基础配置" :
-    activePage === "productCatalog" ? "产品资料" :
-    activePage === "discoveryTasks" ? "任务执行中心" :
-    activePage === "discoveryResults" ? "搜索结果" :
-    activePage === "searchDiscovery" ? "搜索引擎发现" :
-    activePage === "facebookDiscovery" ? "Facebook 发现" :
-    activePage === "instagramDiscovery" ? "Instagram 发现" : "地图与本地商家";
+
 
   const groups: NavGroup[] = [
     {
@@ -231,6 +203,9 @@ export function AppShell({
     >
       <div className="tp-carbon-side-nav__inner">
         <SideNavItems className="tp-carbon-side-nav__items">
+          <SideNavLink href="#" isActive={activePage.startsWith("agent")} renderIcon={() => <MaterialIcon name="smart_toy" />} onClick={(event) => { event.preventDefault(); navigate("agentWorkbench"); }}>Agent 工作台</SideNavLink>
+          <SideNavLink href="#" isActive={["discovery", "discoveryTasks", "discoveryResults", "searchDiscovery", "facebookDiscovery", "instagramDiscovery"].includes(activePage)} renderIcon={() => <MaterialIcon name="explore" />} onClick={(event) => { event.preventDefault(); navigate("discovery"); }}>潜客发现</SideNavLink>
+          <SideNavLink href="#" isActive={activePage.startsWith("order")} renderIcon={() => <MaterialIcon name="assignment" />} onClick={(event) => { event.preventDefault(); navigate("orderQuotations"); }}>订单中心</SideNavLink>
         {groups.map((group) => (
           <SideNavMenu
             key={`${group.id}-${activePage}-${groupExpanded[group.id]}`}
@@ -334,45 +309,39 @@ export function AppShell({
       )}
 
       <main className="tp-carbon-main min-w-0 flex-1">
-        <Header aria-label="TradePilot 工作区" className="tp-carbon-header">
+        <Header aria-label="TradePilot 主导航">
           <SkipToContent href="#main-content">跳转到主要内容</SkipToContent>
-          <div className="md:hidden">
+          <div className="tp-header-mobile-menu">
             <HeaderMenuButton
               isCollapsible
-              aria-label="打开侧边栏菜单"
+              aria-label={mobileOpen ? "关闭主导航" : "打开主导航"}
               isActive={mobileOpen}
               onClick={() => setMobileOpen((value) => !value)}
             />
           </div>
-          <div className="hidden md:block">
-            <HeaderMenuButton
-              isCollapsible
-              aria-label={collapsed ? "展开侧边栏" : "收起侧边栏"}
-              isActive={!collapsed}
-              onClick={() => setCollapsed((value) => !value)}
-            />
-          </div>
-          <HeaderName href="#" prefix="" className="tp-carbon-header__brand" onClick={(event) => event.preventDefault()}>
-            <img src={tradePilotLogo} alt="TradePilot" className="tp-carbon-header__logo" />
+          <HeaderName href="#" prefix="TradePilot" onClick={(event) => event.preventDefault()}>
+            工作区
           </HeaderName>
-          <div className="tp-carbon-header__context cds--type-label-01">
-            <span>工作区</span>
-            <span aria-hidden="true">/</span>
-            <span>{isSettingsPage ? "设置" : isAgentPage ? "Agent" : activePage.startsWith("order") ? "订单中心" : activePage === "productCatalog" ? "产品资料" : activePage.startsWith("document") ? "单据中心" : isDiscoveryPage ? "潜客发现" : isCrmPage ? "客户关系管理" : "业务数据"}</span>
-            <span aria-hidden="true">/</span>
-            <strong>{pageTitle}</strong>
-          </div>
+          <HeaderNavigation aria-label="TradePilot 一级导航" className="tp-header-navigation">
+            <HeaderMenuItem href="#" isActive={activePage.startsWith("agent")} onClick={(event) => { event.preventDefault(); navigate("agentWorkbench"); }}>Agent 工作台</HeaderMenuItem>
+            <HeaderMenuItem href="#" isActive={["discovery", "discoveryTasks", "discoveryResults", "searchDiscovery", "facebookDiscovery", "instagramDiscovery"].includes(activePage)} onClick={(event) => { event.preventDefault(); navigate("discovery"); }}>潜客发现</HeaderMenuItem>
+            <HeaderMenuItem href="#" isActive={activePage.startsWith("order")} onClick={(event) => { event.preventDefault(); navigate("orderQuotations"); }}>订单中心</HeaderMenuItem>
+          </HeaderNavigation>
           <HeaderGlobalBar>
-            <HeaderGlobalAction
-              aria-label="打开小雅 Agent 工作台"
-              onClick={() => navigate("agentWorkbench")}
-              tooltipAlignment="end"
-            >
-              <AgentOrbIcon agentKey="default" className="h-8 w-8" sizePx={32} state={activePage === "agentWorkbench" ? "happy" : "idle"} />
+            <HeaderGlobalAction aria-label="搜索" tooltipAlignment="center">
+              <Search size={20} />
+            </HeaderGlobalAction>
+            <HeaderGlobalAction aria-label="通知" tooltipAlignment="center">
+              <Notification size={20} />
+            </HeaderGlobalAction>
+            <HeaderGlobalAction aria-label="用户账户" tooltipAlignment="end">
+              <UserAvatar size={20} />
             </HeaderGlobalAction>
           </HeaderGlobalBar>
         </Header>
-        <div id="main-content" className="tp-page-canvas" tabIndex={-1}><div className="tp-page-root">{children}</div></div>
+        <Content id="main-content" className="tp-page-canvas">
+          <div className="tp-page-root">{children}</div>
+        </Content>
       </main>
     </div>
   );
