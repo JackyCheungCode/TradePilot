@@ -13,6 +13,7 @@ import {
   SkipToContent,
 } from "@carbon/react";
 import { AgentOrbIcon } from "@/features/agent-center/presentation/components/AgentOrbIcon";
+import { Bot, Task, Folder, Explore, Group, Settings, InventoryManagement, Logout, Radar, SidePanelOpen, SidePanelClose, Close } from "@carbon/icons-react";
 import tradePilotLogo from "@/assets/tradepilot-logo.svg";
 import "./app-shell.css";
 
@@ -27,8 +28,24 @@ type AppPage =
 type NavItem = { page: AppPage; label: string };
 type NavGroup = { id: string; title: string; icon: string; pages: AppPage[]; items: NavItem[]; navigateOnExpand?: boolean };
 
+const carbonNavIcons: Record<string, React.ElementType> = {
+  smart_toy: Bot,
+  assignment: Task,
+  folder_copy: Folder,
+  explore: Explore,
+  group: Group,
+  settings: Settings,
+  inventory_2: InventoryManagement,
+  logout: Logout,
+  radar: Radar,
+  left_panel_open: SidePanelOpen,
+  left_panel_close: SidePanelClose,
+  close: Close,
+};
+
 function MaterialIcon({ name, className = "" }: { name: string; className?: string }) {
-  return <span aria-hidden="true" className={`material-symbols-outlined ${className}`}>{name}</span>;
+  const Icon = carbonNavIcons[name] ?? Folder;
+  return <Icon size={20} className={className} aria-hidden="true" />;
 }
 
 export function AppShell({
