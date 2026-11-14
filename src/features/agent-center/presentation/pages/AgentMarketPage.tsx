@@ -44,7 +44,8 @@ export function AgentMarketPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [savingPrompt, setSavingPrompt] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
-  const [loadError, setLoadError] = useState("");
+  const [profileLoadError, setProfileLoadError] = useState("");
+  const [connectionLoadError, setConnectionLoadError] = useState("");
 
   useEffect(() => {
     let alive = true;
@@ -53,13 +54,13 @@ export function AgentMarketPage() {
       if (profileResult.status === "fulfilled") {
         setProfiles(profileResult.value);
       } else {
-        setLoadError(profileResult.reason instanceof Error ? profileResult.reason.message : "加载 Agent 状态失败。");
+        setProfileLoadError(profileResult.reason instanceof Error ? profileResult.reason.message : "加载 Agent 状态失败。");
       }
       setProfilesLoaded(true);
       if (connectionResult.status === "fulfilled") {
         setConnections(connectionResult.value);
       } else {
-        setLoadError((current) => current || (connectionResult.reason instanceof Error ? connectionResult.reason.message : "加载外部 Agent 连接失败。"));
+        setConnectionLoadError(connectionResult.reason instanceof Error ? connectionResult.reason.message : "加载外部 Agent 连接失败。");
       }
       setConnectionsLoaded(true);
     });
@@ -89,7 +90,7 @@ export function AgentMarketPage() {
 
   const toggleAgent = async (id: string) => {
     const current = profiles.find((row) => row.agent_key === id);
-    const enabled = current?.enabled ?? true;
+    const enabled = current?.enabled ?? false;
     setBusyId(id);
     setNotice(null);
     try {
@@ -132,9 +133,9 @@ export function AgentMarketPage() {
     <main className="tp-agent-market-page">
       <header className="tp-agent-market-header">
         <div className="tp-agent-market-header__content">
-          <p className="tp-agent-market-eyebrow">TRADEPILOT / AGENT</p>
-          <h1>Agent 市场</h1>
-          <p>发现、查看和管理 TradePilot 的业务智能体。</p>
+          <p className="tp-agent-market-eyebrow cds--type-label-01">TRADEPILOT / AGENT</p>
+          <h1 className="cds--type-heading-05">Agent 市场</h1>
+          <p className="cds--type-body-compact-01">发现、查看和管理 TradePilot 的业务智能体。</p>
         </div>
         <Button kind="primary" onClick={openConnections} renderIcon={Plug}>接入外部 Agent</Button>
       </header>
@@ -142,56 +143,61 @@ export function AgentMarketPage() {
       <Grid fullWidth className="tp-agent-market-summary">
         <Column sm={4} md={4} lg={5}>
           <Tile className="tp-agent-market-metric">
-            <p className="tp-agent-market-metric__value">{agentCatalog.length}</p>
-            <p className="tp-agent-market-metric__label">内置 Agent</p>
+            <p className="tp-agent-market-metric__value cds--type-heading-05">{agentCatalog.length}</p>
+            <p className="tp-agent-market-metric__label cds--type-body-compact-01">内置 Agent</p>
           </Tile>
         </Column>
         <Column sm={4} md={4} lg={5}>
           <Tile className="tp-agent-market-metric">
             <p className="tp-agent-market-metric__value">{profilesLoaded ? enabledCount : "—"}</p>
-            <p className="tp-agent-market-metric__label">{profilesLoaded ? "已启用" : "正在读取启用状态"}</p>
+            <p className="tp-agent-market-metric__label cds--type-body-compact-01">{profilesLoaded ? "已启用" : "正在读取启用状态"}</p>
           </Tile>
         </Column>
         <Column sm={4} md={4} lg={6}>
           <Tile className="tp-agent-market-metric">
             <p className="tp-agent-market-metric__value">{connectionsLoaded ? activeConnectionCount : "—"}</p>
-            <p className="tp-agent-market-metric__label">已验证的外部 Agent 连接</p>
+            <p className="tp-agent-market-metric__label cds--type-body-compact-01">已验证的外部 Agent 连接</p>
           </Tile>
         </Column>
       </Grid>
 
       <section className="tp-agent-market-controls" aria-label="搜索和筛选 Agent">
-        <div className="tp-agent-market-search">
-          <Search
-            id="agent-market-search"
-            labelText="搜索 Agent"
-            placeholder="按名称、业务能力或用途搜索"
-            value={search}
-            size="lg"
-            onChange={(event) => setSearch(event.currentTarget.value)}
-          />
-        </div>
-        <div className="tp-agent-market-status">
-          <Dropdown
-            id="agent-market-status"
-            titleText="启用状态"
-            size="lg"
-            label="全部状态"
-            items={statusItems}
-            itemToString={(item) => item?.text ?? ""}
-            selectedItem={statusItems.find((item) => item.id === statusFilter) ?? statusItems[0]}
-            onChange={({ selectedItem }) => setStatusFilter(selectedItem?.id ?? "")}
-          />
-        </div>
-        <p className="tp-agent-market-result-count">{visibleAgents.length} 个 Agent</p>
+        <Grid fullWidth className="tp-agent-market-controls-grid">
+          <Column sm={4} md={8} lg={8}>
+            <Search
+              id="agent-market-search"
+              labelText="搜索 Agent"
+              placeholder="按名称、业务能力或用途搜索"
+              value={search}
+              size="lg"
+              onChange={(event) => setSearch(event.currentTarget.value)}
+            />
+          </Column>
+          <Column sm={4} md={4} lg={4}>
+            <Dropdown
+              id="agent-market-status"
+              titleText="启用状态"
+              size="lg"
+              label="全部状态"
+              items={statusItems}
+              itemToString={(item) => item?.text ?? ""}
+              selectedItem={statusItems.find((item) => item.id === statusFilter) ?? statusItems[0]}
+              onChange={({ selectedItem }) => setStatusFilter(selectedItem?.id ?? "")}
+            />
+          </Column>
+          <Column sm={4} md={4} lg={4} className="tp-agent-market-result-column">
+            <p className="tp-agent-market-result-count cds--type-label-01">{visibleAgents.length} 个 Agent</p>
+          </Column>
+        </Grid>
       </section>
 
-      {loadError && <InlineNotification kind="error" title="数据读取失败" subtitle={loadError} lowContrast hideCloseButton />}
+      {profileLoadError && <InlineNotification kind="error" title="内置 Agent 状态读取失败" subtitle={profileLoadError} lowContrast hideCloseButton />}
+      {connectionLoadError && <InlineNotification kind="error" title="外部 Agent 连接读取失败" subtitle={connectionLoadError} lowContrast hideCloseButton />}
       {notice && <InlineNotification kind={notice.kind} title={notice.title} subtitle={notice.subtitle} lowContrast hideCloseButton />}
 
       <section className="tp-agent-market-catalog" aria-label="内置 Agent 目录">
         <div className="tp-agent-market-section-heading">
-          <div><h2>内置 Agent</h2><p>选择一个 Agent 查看能力、执行边界和配置。</p></div>
+          <div><h2 className="cds--type-heading-03">内置 Agent</h2><p className="cds--type-body-compact-01">选择一个 Agent 查看能力、执行边界和配置。</p></div>
         </div>
         <Grid fullWidth className="tp-agent-market-grid">
           {visibleAgents.map((agent) => {
@@ -203,8 +209,8 @@ export function AgentMarketPage() {
                   <Bot size={20} aria-hidden="true" />
                   <Tag type={enabled ? "green" : "cool-gray"} size="sm">{enabled ? "已启用" : "已停用"}</Tag>
                 </div>
-                <h3>{agent.name}</h3>
-                <p className="tp-agent-market-card-description">{agent.description}</p>
+                <h3 className="cds--type-heading-compact-01">{agent.name}</h3>
+                <p className="tp-agent-market-card-description cds--type-body-compact-01">{agent.description}</p>
                 <div className="tp-agent-market-capabilities">{agent.capabilities.map((capability) => <Tag key={capability} type="blue" size="sm">{capability}</Tag>)}</div>
                 <div className="tp-agent-market-card-actions">
                   <Button kind="ghost" size="sm" renderIcon={Edit} onClick={() => openDetails(agent.id)}>查看详情</Button>
@@ -214,7 +220,7 @@ export function AgentMarketPage() {
                     labelA="关"
                     labelB="开"
                     toggled={enabled}
-                    disabled={!profilesLoaded || Boolean(loadError) || busyId !== null}
+                    disabled={!profilesLoaded || Boolean(profileLoadError) || busyId !== null}
                     onToggle={() => void toggleAgent(agent.id)}
                   />
                 </div>
@@ -229,18 +235,18 @@ export function AgentMarketPage() {
       {selectedAgent && (
         <section className="tp-agent-market-detail" aria-label="Agent 详情与配置">
           <div className="tp-agent-market-section-heading">
-            <div><h2>{selectedAgent.name}</h2><p>Agent 详情与专业指令配置</p></div>
+            <div><h2 className="cds--type-heading-03">{selectedAgent.name}</h2><p className="cds--type-body-compact-01">Agent 详情与专业指令配置</p></div>
             <Button kind="ghost" size="sm" onClick={() => setSelectedId(null)}>关闭</Button>
           </div>
           <Grid fullWidth className="tp-agent-market-detail-grid">
             <Column sm={4} md={4} lg={8}>
-              <h3>业务能力</h3>
-              <p>{selectedAgent.detail}</p>
+              <h3 className="cds--type-heading-compact-01">业务能力</h3>
+              <p className="cds--type-body-01">{selectedAgent.detail}</p>
               <div className="tp-agent-market-capabilities">{selectedAgent.capabilities.map((capability) => <Tag key={capability} type="blue" size="sm">{capability}</Tag>)}</div>
             </Column>
             <Column sm={4} md={4} lg={8}>
-              <h3>执行边界</h3>
-              <p>搜索、研究和分析按系统预算策略执行；发送消息、批量导入及其他外部写操作仍需人工审批。</p>
+              <h3 className="cds--type-heading-compact-01">执行边界</h3>
+              <p className="cds--type-body-01">搜索、研究和分析按系统预算策略执行；发送消息、批量导入及其他外部写操作仍需人工审批。</p>
             </Column>
           </Grid>
           <div className="tp-agent-market-prompt">
@@ -253,8 +259,8 @@ export function AgentMarketPage() {
               placeholder="定义该 Agent 的专业职责、分析规则和输出要求。"
             />
             <div className="tp-agent-market-prompt-actions">
-              <p>修改后需明确保存，未保存内容不会自动提交。</p>
-              <Button disabled={savingPrompt || Boolean(loadError)} onClick={() => void savePrompt()} renderIcon={Checkmark}>保存专业指令</Button>
+              <p className="cds--type-helper-text-01">修改后需明确保存，未保存内容不会自动提交。</p>
+              <Button disabled={savingPrompt || Boolean(profileLoadError)} onClick={() => void savePrompt()} renderIcon={Checkmark}>保存专业指令</Button>
             </div>
           </div>
         </section>
@@ -262,11 +268,11 @@ export function AgentMarketPage() {
 
       <section className="tp-agent-market-external">
         <div className="tp-agent-market-section-heading">
-          <div><h2>外部 Agent</h2><p>仅统计已登记并通过连接验证的外部 Agent。尚未接入的服务不会作为可用 Agent 展示。</p></div>
+          <div><h2 className="cds--type-heading-03">外部 Agent</h2><p className="cds--type-body-compact-01">仅统计已登记并通过连接验证的外部 Agent。尚未接入的服务不会作为可用 Agent 展示。</p></div>
         </div>
         <Tile className="tp-agent-market-external-empty">
           <Plug size={22} aria-hidden="true" />
-          <div><strong>外部 Agent 通过连接管理接入</strong><p>连接验证通过后，将在此目录统计并管理。</p></div>
+          <div><strong className="cds--type-heading-compact-01">外部 Agent 通过连接管理接入</strong><p className="cds--type-body-compact-01">连接验证通过后，将在此目录统计并管理。</p></div>
           <Button kind="ghost" onClick={openConnections} renderIcon={ArrowRight}>管理连接</Button>
         </Tile>
       </section>
