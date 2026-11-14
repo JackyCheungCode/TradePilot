@@ -12,9 +12,9 @@ import {
   SideNavMenuItem,
   SkipToContent,
 } from "@carbon/react";
-import { Facebook, Instagram } from "lucide-react";
 import { AgentOrbIcon } from "@/features/agent-center/presentation/components/AgentOrbIcon";
 import tradePilotLogo from "@/assets/tradepilot-logo.svg";
+import "./app-shell.css";
 
 type AppPage =
   | "agentWorkbench" | "agentMarket" | "agentOrchestration" | "agentConnections" | "agentRuns" | "agentApprovals" | "agentSettings"
@@ -24,7 +24,7 @@ type AppPage =
   | "enterpriseConfig" | "productConfig" | "productCatalog" | "integrations" | "searchExclusions" | "agentAppearance"
   | "orderCenter" | "documentWorkbench" | "documentCreate" | "documentRecords" | "documentTemplates";
 
-type NavItem = { page: AppPage; label: string; icon?: ReactNode };
+type NavItem = { page: AppPage; label: string };
 type NavGroup = { id: string; title: string; icon: string; pages: AppPage[]; items: NavItem[] };
 
 function MaterialIcon({ name, className = "" }: { name: string; className?: string }) {
@@ -192,7 +192,8 @@ export function AppShell({
       expanded={!collapsed || mobileOpen}
       className="tp-carbon-side-nav"
     >
-      <SideNavItems>
+      <div className="tp-carbon-side-nav__inner">
+        <SideNavItems>
         {groups.map((group) => (
           <SideNavMenu
             key={`${group.id}-${activePage}-${groupExpanded[group.id]}`}
@@ -233,6 +234,7 @@ export function AppShell({
         >
           产品资料
         </SideNavLink>
+        </SideNavItems>
         <div className="tp-carbon-side-nav__footer">
           <div className="tp-carbon-side-nav__user" title={userEmail}>{userEmail}</div>
           <SideNavLink
@@ -246,7 +248,7 @@ export function AppShell({
             退出登录
           </SideNavLink>
         </div>
-      </SideNavItems>
+      </div>
     </SideNav>
   );
 
