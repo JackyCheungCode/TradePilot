@@ -1,6 +1,6 @@
 import {useEffect,useMemo,useState} from "react";
 import { ContentSwitcher, Switch } from "@carbon/react";
-import {BrainCircuit,CheckCircle2,Cloud,Database,Eye,EyeOff,Globe2,KeyRound,Languages,LoaderCircle,LockKeyhole,Save,Search,ShieldCheck,TestTube2,Plus} from "lucide-react";
+import {Brainstorm as BrainCircuit,CheckmarkFilled as CheckCircle2,Cloud,DataBase as Database,View as Eye,ViewOff as EyeOff,Earth as Globe2,KeyValues as KeyRound,Translate as Languages,Renew as LoaderCircle,Locked as LockKeyhole,Save,Search,Security as ShieldCheck,Chemistry as TestTube2,Add as Plus} from "@carbon/icons-react";
 import {toast} from "sonner";
 import {Badge,Button,Card,CardContent,CardDescription,CardHeader,CardTitle,Input,Combobox} from "@/shared/ui/primitives";
 import { PageControlPanel } from "@/shared/ui/page-layout";
