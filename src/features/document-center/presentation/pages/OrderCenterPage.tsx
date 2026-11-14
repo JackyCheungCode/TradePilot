@@ -1,7 +1,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ArrowDown, ArrowUp, ArrowUpDown, ArrowUpRight, CheckCircle2, FileText, Pencil, RefreshCw, ShoppingCart, Truck } from "lucide-react";
-import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Combobox, Checkbox } from "@/shared/ui/primitives";
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Combobox, Checkbox } from "@/shared/ui/primitives";
 import { PageControlPanel } from "@/shared/ui/page-layout";
 import { SearchControlPanel, StatusBadge } from "@/shared/ui/data-views";
 import { tradeApi, type TradeDocument, type TradeOrder } from "@/features/document-center/infrastructure/trade-api";
