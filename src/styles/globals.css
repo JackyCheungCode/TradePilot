@@ -625,3 +625,26 @@ main h1, .tp-page-canvas h1 {
   }
   .tp-page-canvas .tp-responsive-table--master tbody tr:has(td[colspan]) td::before { content: none; }
 }
+
+.dark .tp-sidebar nav button { color: #c5cbd2; }
+.dark .tp-sidebar nav button:hover { background: #30343a; color: #f4f5f6; }
+.dark .tp-sidebar nav button[data-tp-variant="secondary"] {
+  background: #30343a !important;
+  color: #f4f5f6 !important;
+  box-shadow: inset 2px 0 0 #f4f5f6;
+}
+.dark .tp-sidebar nav button svg { color: #aab1b9; }
+.dark .tp-sidebar nav button[data-tp-variant="secondary"] svg { color: #f4f5f6; }
+.dark .tp-sidebar .border-b,
+.dark .tp-sidebar .border-t,
+.dark .tp-sidebar .border-l { border-color: #3b4148; }
+.dark .tp-page-canvas .bg-muted\/50 { background-color: #292d32; }
+.dark .tp-page-canvas .bg-card { background-color: #202328; }
+.dark .tp-page-canvas .bg-primary\/5 { background-color: #292d32; }
+.dark .tp-page-canvas .text-primary { color: #e2e6ea; }
+.dark .tp-page-canvas label { color: #c5cbd2; }
+.dark .tp-page-canvas table thead th { background: #202328; color: #aab1b9; border-color: #3b4148; }
+.dark .tp-page-canvas table td { border-color: #30343a; }
+.dark .tp-page-canvas table tbody tr:hover { background: #292d32; }
+.dark .tp-control-panel { background: #202328; border-color: #3b4148; }
+.dark .tp-mobile-record { background: #202328; border-color: #3b4148; }
