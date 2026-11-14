@@ -8,7 +8,7 @@ export async function handleInstagramDiscovery(request:Request,env:Env):Promise<
  if(request.method!=="POST")return errorResponse(request,"METHOD_NOT_ALLOWED","只支持 POST 请求。",405);
  const ownerId=await auth(request,env);if(!ownerId)return errorResponse(request,"UNAUTHORIZED","请先登录 TradePilot。",401);
  let body:InstagramInput;try{body=await request.json() as InstagramInput;}catch{return errorResponse(request,"INVALID_JSON","请求内容不是有效 JSON。",400);}
- const keywords=[...new Set((Array.isArray(body.keywords)?body.keywords:[]).map(x=>String(x).trim().replace(/^#/,"")).filter(Boolean))].slice(0,30);
+ const keywords=[...new Set((Array.isArray(body.keywords)?body.keywords:[]).map(x=>String(x).trim()).filter(Boolean))].slice(0,30);
  const countries=[...new Set((Array.isArray(body.countries)?body.countries:[]).map(x=>String(x).toUpperCase()).filter(x=>/^[A-Z]{2}$/.test(x)))].slice(0,20);
  const languageCodes=[...new Set((Array.isArray(body.languageCodes)?body.languageCodes:[]).map(String).filter(x=>/^[a-z]{2,3}$/.test(x)))].slice(0,20);
  const accountTypes=[...new Set((Array.isArray(body.accountTypes)?body.accountTypes:[]).filter((x):x is AccountType=>["business","creator","personal"].includes(x)))];
@@ -16,7 +16,7 @@ export async function handleInstagramDiscovery(request:Request,env:Env):Promise<
  if(!keywords.length||!countries.length||!accountTypes.length||!Number.isInteger(minFollowers)||minFollowers<0||!Number.isInteger(maxFollowers)||maxFollowers<minFollowers||maxFollowers>100000000||!Number.isInteger(recentDays)||recentDays<0||recentDays>3650||!Number.isInteger(limit)||limit<1||limit>1000)return errorResponse(request,"VALIDATION_ERROR","请检查关键词、国家、账号类型、粉丝数范围、活跃时间和候选数量。",400);
  const excludeTerms=(Array.isArray(body.excludeTerms)?body.excludeTerms:[]).map(x=>String(x).trim()).filter(Boolean).slice(0,50);
  const input:InstagramInput={keywords,countries,languageCodes,accountTypes,minFollowers,maxFollowers,recentDays,requireContact:body.requireContact!==false,excludeTerms,limit,maxCostUsd:typeof body.maxCostUsd==="number"&&body.maxCostUsd>0?Math.min(body.maxCostUsd,10000):undefined,includeCaptions:body.includeCaptions===true};
- const query=keywords.map(x=>x.startsWith("#")?"#"+x:x).join(" · ");
+ const query=keywords.join(" · ");
  const taskCode="IG-"+countries[0]+"-"+new Date().toISOString().slice(0,10).replace(/-/g,"")+"-"+crypto.randomUUID().replace(/-/g,"").slice(0,6).toUpperCase();
  const searchConfig={keywords,countries,languageCodes,accountTypes,minFollowers,maxFollowers,recentDays,requireContact:input.requireContact,excludeTerms,limit,maxCostUsd:input.maxCostUsd??null,includeCaptions:input.includeCaptions,validCount:0,actualCostUsd:0,costPerValidLeadUsd:null,actorVersions:{}};
  try{
@@ -27,3 +27,4 @@ export async function handleInstagramDiscovery(request:Request,env:Env):Promise<
   return successResponse(request,{id:run.id,taskCode,channel:"instagram",query,countries,providers:["apify"],status:"queued",progress:0,discoveredCount:0,createdLeadCount:0,message:"Instagram 发现任务已排队",searchConfig},202);
  }catch(error){return errorResponse(request,"RUN_CREATE_FAILED",error instanceof Error?error.message:"创建 Instagram 任务失败。",500);}
 }
+

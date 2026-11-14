@@ -16,7 +16,7 @@ export function InstagramDiscoveryPage(){
  const [configured,setConfigured]=useState(false),[run,setRun]=useState<DiscoveryRun|null>(null),[logs,setLogs]=useState<DiscoveryLog[]>([]),[busy,setBusy]=useState(false),[actorConfig,setActorConfig]=useState<{discoveryCostPer1000?:number;profileCostPer1000?:number}|null>(null);
  useEffect(()=>{void integrationsApi.getStatus().then(s=>setConfigured(s.apify)).catch(()=>setConfigured(false));void integrationsApi.getInstagramDiscoveryConfig().then(setActorConfig).catch(()=>setActorConfig(null));},[]);
  useEffect(()=>{if(!run||!["queued","running"].includes(run.status))return;let active=true;const poll=async()=>{try{const v=await discoveryApi.getRun(run.id);if(active){setRun(v);setLogs(v.logs??[]);}}catch{/* retry */}};void poll();const timer=window.setInterval(poll,2500);return()=>{active=false;window.clearInterval(timer)};},[run?.id,run?.status]);
- const tags=useMemo(()=>keywords.split(/[\n,;]+/).map(x=>x.trim().replace(/^#/,"")).filter(Boolean).slice(0,30),[keywords]);
+ const tags=useMemo(()=>keywords.split(/[\n,;]+/).map(x=>x.trim()).filter(Boolean).slice(0,30),[keywords]);
  const cap=Math.max(1,Math.min(1000,Number(limit)||100));
  const estimatedCost=actorConfig&&typeof actorConfig.discoveryCostPer1000==="number"&&actorConfig.discoveryCostPer1000>0&&typeof actorConfig.profileCostPer1000==="number"&&actorConfig.profileCostPer1000>0?cap/1000*(actorConfig.discoveryCostPer1000+actorConfig.profileCostPer1000):null;
  const running=!!run&&["queued","running"].includes(run.status);
@@ -43,3 +43,4 @@ export function InstagramDiscoveryPage(){
   </div>
  </div>;
 }
+
