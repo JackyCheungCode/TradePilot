@@ -202,7 +202,7 @@ export function AgentAppearanceSettingsPage() {
           <Stack gap={5}>
             <Tile>
               <Stack gap={5}>
-                <Heading className="cds--type-heading-03">实时预览</Heading>
+                <Heading className="cds--type-heading-02">实时预览</Heading>
                 <Stack gap={4}>
                   <CharacterMark
                     key={`${activeAgent}:${current.shape}:${current.color}:${current.styleId}:${current.variant}:${current.face}:${previewState}`}
@@ -275,7 +275,7 @@ export function AgentAppearanceSettingsPage() {
           <Stack gap={5}>
             <Tile>
               <Stack gap={4}>
-                <Heading className="cds--type-heading-03">配置对象</Heading>
+                <Heading className="cds--type-heading-02">配置对象</Heading>
                 <Dropdown
                   id="agent-appearance-target"
                   disabled={loading || Boolean(loadError) || busy}
@@ -300,7 +300,7 @@ export function AgentAppearanceSettingsPage() {
 
             <Tile>
               <Stack gap={5}>
-                <Heading className="cds--type-heading-03">角色与配色</Heading>
+                <Heading className="cds--type-heading-02">角色与配色</Heading>
                 <Grid>
                   <Column sm={4} md={4} lg={8}>
                     <Dropdown
@@ -336,7 +336,7 @@ export function AgentAppearanceSettingsPage() {
 
             <Tile>
               <Stack gap={5}>
-                <Heading className="cds--type-heading-03">画风与脸型</Heading>
+                <Heading className="cds--type-heading-02">画风与脸型</Heading>
                 <Stack gap={3}>
                   <p className="cds--type-label-01">画风</p>
                   <Stack gap={2} orientation="horizontal">
@@ -387,7 +387,7 @@ export function AgentAppearanceSettingsPage() {
 
             <Tile>
               <Stack gap={2}>
-                <Heading className="cds--type-heading-compact-01">角色组件与授权</Heading>
+                <Heading className="cds--type-heading-02">角色组件与授权</Heading>
                 <p className="cds--type-helper-text-01">
                   角色预览与动画由 Aora Bot 提供。感谢 sam70361 的开源创作。
                 </p>
