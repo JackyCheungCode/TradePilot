@@ -17,11 +17,8 @@
 
 /* Pair Carbon's native Tile class with the page modifier so these layer and
    spacing tokens remain authoritative over the base .cds--tile rule. */
-.cds--tile.tp-agent-appearance-tile {
-  box-sizing: border-box;
+.tp-agent-appearance-tile {
   min-width: 0;
-  padding: var(--cds-spacing-05);
-  background: var(--cds-layer-01);
 }
 
 .tp-agent-appearance-help {
@@ -32,7 +29,6 @@
 
 .tp-agent-appearance-field-grid {
   min-width: 0;
-  padding-inline: var(--cds-spacing-05);
   row-gap: var(--cds-spacing-05);
 }
 
@@ -45,11 +41,8 @@
   row-gap: var(--cds-spacing-03);
 }
 
-.cds--tile.tp-agent-appearance-preview {
-  box-sizing: border-box;
+.tp-agent-appearance-preview {
   min-width: 0;
-  padding: var(--cds-spacing-05);
-  background: var(--cds-layer-02);
 }
 
 .tp-agent-appearance-preview-content {
@@ -93,11 +86,8 @@
   max-inline-size: none;
 }
 
-.cds--tile.tp-agent-appearance-attribution {
-  box-sizing: border-box;
+.tp-agent-appearance-attribution {
   min-width: 0;
-  padding: var(--cds-spacing-05);
-  background: var(--cds-layer-01);
 }
 
 .tp-agent-appearance-attribution p {
@@ -128,13 +118,7 @@
 
 @media (max-width: 767px) {
   .tp-agent-appearance-grid {
-    /* Keep the page canvas nearly full-bleed on phones while retaining a 4px edge inset. */
-    padding-inline: 0;
     row-gap: var(--cds-spacing-06);
-  }
-
-  .tp-agent-appearance-grid > .cds--col {
-    padding-inline: 4px;
   }
 
   .tp-agent-appearance-preview-art {
