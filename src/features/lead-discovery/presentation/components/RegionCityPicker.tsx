@@ -144,9 +144,9 @@ export function RegionCityPicker({ countryCode, state, city, onStateChange, onCi
   const cityAvailable = !!countryName && (!!state || (statesLoaded && states.length === 0));
 
   return (
-    <Stack gap={4}>
+    <Stack gap={5}>
       <Grid narrow>
-        <Column sm={4} md={4} lg={4}>
+        <Column sm={4} md={4} lg={8}>
           <SearchablePicker
             id="map-region-select"
             label="省 / 州"
@@ -161,7 +161,7 @@ export function RegionCityPicker({ countryCode, state, city, onStateChange, onCi
             }}
           />
         </Column>
-        <Column sm={4} md={4} lg={4}>
+        <Column sm={4} md={4} lg={8}>
           <SearchablePicker
             id="map-city-select"
             label="城市"

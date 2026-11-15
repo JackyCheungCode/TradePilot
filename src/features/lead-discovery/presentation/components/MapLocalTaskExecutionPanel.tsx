@@ -79,8 +79,10 @@ export function MapLocalTaskExecutionPanel({
           </Stack>
         ) : (
           <Stack gap={3}>
-            <Clock size={20} aria-hidden="true" />
-            <Heading className="cds--type-productive-heading-02">尚未启动发现任务</Heading>
+            <Stack orientation="horizontal" gap={3}>
+              <Clock size={20} aria-hidden="true" />
+              <Heading className="cds--type-productive-heading-02">尚未启动发现任务</Heading>
+            </Stack>
             <p className="cds--type-body-compact-01">配置目标国家、省州、城市和关键词后，点击开始发现潜在客户。</p>
           </Stack>
         )}
@@ -91,21 +93,23 @@ export function MapLocalTaskExecutionPanel({
             <Heading className="cds--type-productive-heading-02">实时执行日志</Heading>
             <Tag type="gray">{logs.length}</Tag>
           </Stack>
-          {logs.length ? (
-            <Stack gap={3}>
-              {logs.map((log) => (
-                <Stack key={log.id} gap={2}>
-                  <Stack orientation="horizontal" gap={3}>
-                    <span className="cds--type-caption-01">{new Date(log.createdAt).toLocaleTimeString()}</span>
-                    <Tag type={logTypes[log.level]}>{log.level}</Tag>
+          <div role="log" aria-label="任务执行日志" aria-live="polite" style={{ maxHeight: 320, overflowY: "auto", overflowX: "hidden" }}>
+            {logs.length ? (
+              <Stack gap={3}>
+                {logs.map((log) => (
+                  <Stack key={log.id} gap={2}>
+                    <Stack orientation="horizontal" gap={3}>
+                      <span className="cds--type-caption-01">{new Date(log.createdAt).toLocaleTimeString()}</span>
+                      <Tag type={logTypes[log.level]}>{log.level}</Tag>
+                    </Stack>
+                    <p className="cds--type-body-compact-01">{log.message}</p>
                   </Stack>
-                  <p className="cds--type-body-compact-01">{log.message}</p>
-                </Stack>
-              ))}
-            </Stack>
-          ) : (
-            <p className="cds--type-body-compact-01">任务启动后，执行日志会显示在这里。</p>
-          )}
+                ))}
+              </Stack>
+            ) : (
+              <p className="cds--type-body-compact-01">任务启动后，执行日志会显示在这里。</p>
+            )}
+          </div>
         </Stack>
       </Stack>
     </Tile>

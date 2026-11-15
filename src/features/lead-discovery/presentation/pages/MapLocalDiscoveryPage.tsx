@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import {
   Accordion,
   AccordionItem,
+  Breadcrumb,
+  BreadcrumbItem,
   Button,
   Checkbox,
   Column,
@@ -19,7 +21,6 @@ import {
 } from "@carbon/react";
 import {
   Add,
-  ArrowRight,
   Building,
   Translate as Language,
   Map,
@@ -28,7 +29,7 @@ import {
   TrashCan,
   UserMultiple,
 } from "@carbon/icons-react";
-import { Notify, PageHeader } from "@/components/common";
+import { Notify } from "@/components/common";
 import { CountrySelect } from "../components/CountrySelect";
 import { RegionCityPicker } from "../components/RegionCityPicker";
 import { discoveryApi } from "../../infrastructure/discovery-api";
@@ -161,35 +162,27 @@ export function MapLocalDiscoveryPage() {
   };
 
   return (
-    <div style={{ paddingInline: "var(--cds-spacing-02)" }}>
-      <PageHeader
-        breadcrumbs={[{ label: "潜客发现", href: "/lead-discovery" }, { label: "地图与本地商家" }]}
-        title="地图与本地商家"
-        actions={
-          <Stack orientation="horizontal" gap={3}>
-            <Tag type="green">Google Maps</Tag>
-            <Tag type="blue">OpenStreetMap</Tag>
+    <>
+      <Section level={1}>
+        <Stack gap={5}>
+          <Stack gap={3}>
+            <Breadcrumb>
+              <BreadcrumbItem href="/lead-discovery">潜客发现</BreadcrumbItem>
+              <BreadcrumbItem isCurrentPage>地图与本地商家</BreadcrumbItem>
+            </Breadcrumb>
+            <Heading className="cds--type-productive-heading-04">地图与本地商家</Heading>
           </Stack>
-        }
-      />
+          <Stack orientation="horizontal" gap={3}>
+            {providers.includes("google_maps") ? <Tag type="green">Google Maps</Tag> : null}
+            {providers.includes("openstreetmap") ? <Tag type="blue">OpenStreetMap</Tag> : null}
+            {!providers.length ? <Tag type="warm-gray">未选择数据来源</Tag> : null}
+          </Stack>
+        </Stack>
+      </Section>
 
       <Grid>
         <Column sm={4} md={8} lg={8} xlg={8} max={8}>
           <Stack gap={7}>
-            {run ? (
-              <Tile>
-                <Stack gap={3}>
-                  <Stack gap={2}>
-                    <Heading className="cds--type-productive-heading-02">本次搜索任务</Heading>
-                    <p className="cds--type-body-compact-01">{run.taskCode ?? run.id}</p>
-                  </Stack>
-                  <Button kind="tertiary" size="md" renderIcon={ArrowRight} onClick={() => window.location.assign("/lead-discovery/results?runId=" + encodeURIComponent(run.id))}>
-                    查看任务详情
-                  </Button>
-                </Stack>
-              </Tile>
-            ) : null}
-
             <Tile>
               <Stack gap={6}>
                 <Section level={2}>
@@ -209,12 +202,12 @@ export function MapLocalDiscoveryPage() {
                     }}
                   />
                   <Grid narrow>
-                    <Column sm={4} md={4} lg={4}>
+                    <Column sm={4} md={4} lg={8}>
                       <Button kind="secondary" size="md" renderIcon={Language} onClick={() => void translate()} disabled={translating || !query.trim()}>
                         {translating ? "正在翻译…" : "DeepL 翻译"}
                       </Button>
                     </Column>
-                    <Column sm={4} md={4} lg={4}>
+                    <Column sm={4} md={4} lg={8}>
                       <ComboBox
                         id="map-target-language"
                         titleText="DeepL 目标语言"
@@ -232,8 +225,7 @@ export function MapLocalDiscoveryPage() {
                   </Grid>
                   <p className="cds--type-helper-text-01">按目标国家推荐语言；无对应映射时默认英语，可自行更改。翻译会消耗 DeepL 字符额度。</p>
                   {translation ? (
-                    <Tile>
-                      <Stack gap={3}>
+                    <Stack gap={3}>
                         <Stack orientation="horizontal" gap={3}>
                           <Heading className="cds--type-productive-heading-02">翻译预览</Heading>
                           <Tag type="blue">{targetLanguage}</Tag>
@@ -252,17 +244,15 @@ export function MapLocalDiscoveryPage() {
                             保留原关键词
                           </Button>
                         </Stack>
-                      </Stack>
-                    </Tile>
+                    </Stack>
                   ) : null}
                 </Stack>
 
-                <Tile>
-                  <Stack gap={5}>
-                    <Stack orientation="horizontal" gap={3}>
-                      <Map size={20} aria-hidden="true" />
-                      <Heading className="cds--type-productive-heading-02">目标市场</Heading>
-                    </Stack>
+                <Stack gap={5}>
+                  <Stack orientation="horizontal" gap={3}>
+                    <Map size={20} aria-hidden="true" />
+                    <Heading className="cds--type-productive-heading-03">目标市场</Heading>
+                  </Stack>
                     <CountrySelect value={country} onChange={(next) => {
                       if (translationApplied && translation) setQuery(translation.source);
                       setCountry(next);
@@ -279,13 +269,12 @@ export function MapLocalDiscoveryPage() {
                       onStateChange={setState}
                       onCityChange={setCity}
                     />
-                  </Stack>
-                </Tile>
+                </Stack>
 
                 <Stack gap={3}>
-                  <Heading className="cds--type-productive-heading-02">数据来源</Heading>
+                  <Heading className="cds--type-productive-heading-03">数据来源</Heading>
                   <Grid narrow>
-                    <Column sm={4} md={4} lg={4}>
+                    <Column sm={4} md={4} lg={8}>
                       <Checkbox
                         id="map-provider-google"
                         labelText="Google Maps"
@@ -293,7 +282,7 @@ export function MapLocalDiscoveryPage() {
                         onChange={(event) => toggleProvider("google_maps", event.currentTarget.checked)}
                       />
                     </Column>
-                    <Column sm={4} md={4} lg={4}>
+                    <Column sm={4} md={4} lg={8}>
                       <Checkbox
                         id="map-provider-osm"
                         labelText="OpenStreetMap"
@@ -306,7 +295,7 @@ export function MapLocalDiscoveryPage() {
 
                 <Stack gap={3}>
                   <Stack orientation="horizontal" gap={3}>
-                    <Heading className="cds--type-productive-heading-02">业务类型</Heading>
+                    <Heading className="cds--type-productive-heading-03">业务类型</Heading>
                     <Tag type="blue">{businessTypes.length} 项已选</Tag>
                   </Stack>
                   <MultiSelect
@@ -325,10 +314,10 @@ export function MapLocalDiscoveryPage() {
                 <Stack gap={4}>
                   <Stack orientation="horizontal" gap={3}>
                     <SettingsAdjust size={20} aria-hidden="true" />
-                    <Heading className="cds--type-productive-heading-02">精准筛选条件</Heading>
+                    <Heading className="cds--type-productive-heading-03">精准筛选条件</Heading>
                   </Stack>
                   <Grid narrow>
-                    <Column sm={4} md={4} lg={4}>
+                    <Column sm={4} md={4} lg={8}>
                       <NumberInput
                         id="map-min-rating"
                         label="Google 最低评分"
@@ -341,7 +330,7 @@ export function MapLocalDiscoveryPage() {
                       />
                       <p className="cds--type-helper-text-01">仅 Google Maps 支持</p>
                     </Column>
-                    <Column sm={4} md={4} lg={4}>
+                    <Column sm={4} md={4} lg={8}>
                       <Checkbox
                         id="map-open-now"
                         labelText="仅搜索当前营业商家"
@@ -441,20 +430,20 @@ export function MapLocalDiscoveryPage() {
         <Column sm={4} md={8} lg={8} xlg={8} max={8}>
           <Stack gap={7}>
             <Grid narrow>
-              <Column sm={4} md={4} lg={4}>
+              <Column sm={4} md={4} lg={8}>
                 <Tile>
                   <Stack gap={3}>
                     <UserMultiple size={20} aria-hidden="true" />
-                    <Heading className="cds--type-productive-heading-04">{run?.discoveredCount ?? "—"}</Heading>
+                    <Heading className="cds--type-productive-heading-05">{run?.discoveredCount ?? "—"}</Heading>
                     <p className="cds--type-helper-text-01">发现候选</p>
                   </Stack>
                 </Tile>
               </Column>
-              <Column sm={4} md={4} lg={4}>
+              <Column sm={4} md={4} lg={8}>
                 <Tile>
                   <Stack gap={3}>
                     <Building size={20} aria-hidden="true" />
-                    <Heading className="cds--type-productive-heading-04">{run?.createdLeadCount ?? "—"}</Heading>
+                    <Heading className="cds--type-productive-heading-05">{run?.createdLeadCount ?? "—"}</Heading>
                     <p className="cds--type-helper-text-01">发现记录</p>
                   </Stack>
                 </Tile>
@@ -473,6 +462,6 @@ export function MapLocalDiscoveryPage() {
           </Stack>
         </Column>
       </Grid>
-    </div>
+    </>
   );
 }
