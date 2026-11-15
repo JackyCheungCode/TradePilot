@@ -31,11 +31,10 @@ import {
   Clock,
   Earth,
   History,
-  Message,
   Tools,
 } from "@carbon/icons-react";
 import { AgentOrbIcon } from "./AgentOrbIcon";
-import { agentApi, type AgentConnection, type AgentRun } from "../../infrastructure/agent-api";
+import { agentApi, type AgentConnection } from "../../infrastructure/agent-api";
 
 type ChatRecord = {
   id: string;
