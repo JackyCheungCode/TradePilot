@@ -144,7 +144,7 @@ export function AgentAppearanceSettingsPage() {
             <Stack gap={5}>
               <Tile className="tp-agent-appearance-tile">
                 <Stack gap={4}>
-                  <Section level={2}><Heading className="cds--type-productive-heading-03">配置对象</Heading></Section>
+                  <Section level={2}><Heading className="cds--type-heading-03">配置对象</Heading></Section>
                   <Dropdown id="agent-appearance-target" disabled={loading || Boolean(loadError) || busy} titleText="选择要设计的 Agent" label="选择 Agent" items={agentOptions}
                     selectedItem={selectedAgent} itemToString={(item) => item?.name ?? ""}
                     onChange={({ selectedItem }) => { if (selectedItem) { setActiveAgent(selectedItem.id); setNotice(""); } }} />
@@ -156,7 +156,7 @@ export function AgentAppearanceSettingsPage() {
               </Tile>
               <Tile className="tp-agent-appearance-tile">
                 <Stack gap={5}>
-                  <Section level={2}><Heading className="cds--type-productive-heading-03">角色与配色</Heading></Section>
+                  <Section level={2}><Heading className="cds--type-heading-03">角色与配色</Heading></Section>
                   <Grid narrow className="tp-agent-appearance-field-grid">
                     <Column sm={4} md={4} lg={8}>
                       <Dropdown id="agent-appearance-shape" disabled={loading || Boolean(loadError) || busy} titleText="角色造型" label="选择角色造型" items={[...SHAPE_IDS]}
@@ -173,7 +173,7 @@ export function AgentAppearanceSettingsPage() {
               </Tile>
               <Tile className="tp-agent-appearance-tile">
                 <Stack gap={5}>
-                  <Section level={2}><Heading className="cds--type-productive-heading-03">画风与脸型</Heading></Section>
+                  <Section level={2}><Heading className="cds--type-heading-03">画风与脸型</Heading></Section>
                   <Stack gap={3}>
                     <p className="cds--type-label-01">画风</p>
                     <div className="tp-agent-appearance-choices">
