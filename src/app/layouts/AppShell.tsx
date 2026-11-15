@@ -340,7 +340,7 @@ export function AppShell({
           </HeaderGlobalBar>
         </Header>
         <Content id="main-content" tagName="div" className="tp-page-canvas">
-          <div className={`tp-page-root${activePage === "agentAppearance" ? " tp-page-root--grid-owned" : ""}`}>{children}</div>
+          <div className="tp-page-root">{children}</div>
         </Content>
       </main>
     </div>
