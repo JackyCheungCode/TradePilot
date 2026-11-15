@@ -11,6 +11,7 @@ import {
   MultiSelect,
   NumberInput,
   Section,
+  Search as CarbonSearch,
   Stack,
   Tag,
   TextInput,
@@ -196,7 +197,7 @@ export function MapLocalDiscoveryPage() {
                 </Section>
 
                 <Stack gap={3}>
-                  <TextInput
+                  <CarbonSearch
                     id="map-discovery-query"
                     labelText="企业 / 行业关键词"
                     value={query}
