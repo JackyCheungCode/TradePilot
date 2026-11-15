@@ -203,7 +203,7 @@ export function AgentAppearanceSettingsPage() {
             <Tile>
               <Stack gap={5}>
                 <Heading className="cds--type-heading-03">实时预览</Heading>
-                <Stack gap={4} align="center">
+                <Stack gap={4}>
                   <CharacterMark
                     key={`${activeAgent}:${current.shape}:${current.color}:${current.styleId}:${current.variant}:${current.face}:${previewState}`}
                     shape={current.shape as ShapeId}
@@ -217,7 +217,7 @@ export function AgentAppearanceSettingsPage() {
                     entryEffects={false}
                     seed={`tradepilot-preview-${activeAgent}`}
                   />
-                  <Stack gap={2} align="center">
+                  <Stack gap={2}>
                     <Heading className="cds--type-heading-02">{activeName}</Heading>
                     <p className="cds--type-body-compact-01">
                       {states.find((item) => item.id === previewState)?.label}状态 · {localized("shape", current.shape)} · {localized("color", current.color)}
