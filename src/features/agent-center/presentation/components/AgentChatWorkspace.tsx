@@ -307,19 +307,19 @@ export function AgentChatWorkspace({ connections, onNotice }: { connections: Age
   const connectionItems = activeConnections.map((item) => ({ id: item.id, text: item.name }));
   const toolItems = availableTools.map((item) => ({ id: item.name, text: item.name }));
   return (
-    <Stack gap={5} className="tp-agent-workspace">
+    <Stack gap={5} className="agent-workbench-v2">
       <Grid fullWidth>
         <Column sm={4} md={8} lg={11}>
-          <Tile className="tp-agent-workspace__chat">
+          <Tile className="agent-workbench-v2__chat">
             <Stack gap={0}>
-              <Layer className="tp-agent-workspace__toolbar">
-                <Stack orientation="horizontal" gap={3} className="tp-agent-workspace__toolbar-actions">
+              <Layer className="agent-workbench-v2__toolbar">
+                <Stack orientation="horizontal" gap={3} className="agent-workbench-v2__toolbar-actions">
                   <Button kind="tertiary" size="sm" renderIcon={Chat} disabled={busy} onClick={() => void startNewChat()}>新建聊天</Button>
                   <Button kind="tertiary" size="sm" renderIcon={History} onClick={() => setShowHistory((value) => !value)}>历史记录</Button>
                 </Stack>
-                <div className="tp-agent-workspace__identity">
-                  <AgentOrbIcon className="tp-agent-workspace__avatar" sizePx={44} state={busy ? "working" : "happy"} />
-                  <div className="tp-agent-workspace__identity-copy">
+                <div className="agent-workbench-v2__identity">
+                  <AgentOrbIcon className="agent-workbench-v2__avatar" sizePx={44} state={busy ? "working" : "happy"} />
+                  <div className="agent-workbench-v2__identity-copy">
                     <p className="cds--type-heading-compact-01">小雅 <span className="cds--type-helper-text-01">TradePilot 总协调 Agent</span></p>
                     <p className="cds--type-helper-text-01">多轮对话 · 任务理解 · Agent 调度</p>
                   </div>
@@ -327,16 +327,16 @@ export function AgentChatWorkspace({ connections, onNotice }: { connections: Age
                 </div>
               </Layer>
               {showHistory && (
-                <Layer className="tp-agent-workspace__history">
+                <Layer className="agent-workbench-v2__history">
                   <Stack gap={3}>
-                    <div className="tp-agent-workspace__section-heading">
+                    <div className="agent-workbench-v2__section-heading">
                       <h3 className="cds--type-heading-compact-01">历史聊天</h3>
                       <Button kind="ghost" size="sm" onClick={() => setShowHistory(false)}>收起</Button>
                     </div>
                     {historyLoading ? <Loading withOverlay={false} small description="正在读取历史记录" /> : conversations.length === 0 ? <p className="cds--type-body-compact-01">暂无历史聊天</p> : (
                       <Stack gap={1}>
                         {conversations.map((item) => (
-                          <Button key={item.id} kind={conversationId === item.id ? "tertiary" : "ghost"} size="sm" className="tp-agent-workspace__history-item" onClick={() => void openConversation(item.id)}>
+                          <Button key={item.id} kind={conversationId === item.id ? "tertiary" : "ghost"} size="sm" className="agent-workbench-v2__history-item" onClick={() => void openConversation(item.id)}>
                             <span>{item.title || "新聊天"}</span>
                             <span className="cds--type-helper-text-01">{new Date(item.last_message_at).toLocaleString()}</span>
                           </Button>
@@ -346,23 +346,23 @@ export function AgentChatWorkspace({ connections, onNotice }: { connections: Age
                   </Stack>
                 </Layer>
               )}
-              <div className="tp-agent-workspace__messages" aria-live="polite">
+              <div className="agent-workbench-v2__messages" aria-live="polite">
                 {messages.map((message) => (
-                  <div key={message.id} className={message.role === "user" ? "tp-agent-workspace__message tp-agent-workspace__message--user" : "tp-agent-workspace__message"}>
-                    <div className="tp-agent-workspace__message-meta">
+                  <div key={message.id} className={message.role === "user" ? "agent-workbench-v2__message agent-workbench-v2__message--user" : "agent-workbench-v2__message"}>
+                    <div className="agent-workbench-v2__message-meta">
                       {message.role === "assistant" ? <><Bot size={16} />小雅</> : "你"}
                       {message.kind === "progress" && <Tag type="blue" size="sm">处理中</Tag>}
                       {message.kind === "result" && <Tag type="green" size="sm">任务反馈</Tag>}
                     </div>
-                    <Layer className="tp-agent-workspace__message-content">
+                    <Layer className="agent-workbench-v2__message-content">
                       <p className="cds--type-body-compact-01">{message.content}</p>
                       {message.records && message.records.length > 0 && (
-                        <div className="tp-agent-workspace__results">
-                          <div className="tp-agent-workspace__section-heading">
+                        <div className="agent-workbench-v2__results">
+                          <div className="agent-workbench-v2__section-heading">
                             <p className="cds--type-label-01">本次发现明细 · {message.records.length} 条</p>
                             <Button kind="tertiary" size="sm" onClick={() => { window.location.href = "/lead-discovery/results?runId=" + encodeURIComponent(message.runId ?? ""); }}>打开完整结果</Button>
                           </div>
-                          <div className="tp-agent-workspace__table-scroll">
+                          <div className="agent-workbench-v2__table-scroll">
                             <Table size="sm">
                               <TableHead>
                                 <TableRow>
@@ -397,13 +397,13 @@ export function AgentChatWorkspace({ connections, onNotice }: { connections: Age
                 ))}
               </div>
               {showPlan && (
-                <Layer className="tp-agent-workspace__plan">
+                <Layer className="agent-workbench-v2__plan">
                   <Stack gap={4}>
-                    <div className="tp-agent-workspace__section-heading">
+                    <div className="agent-workbench-v2__section-heading">
                       <h3 className="cds--type-heading-compact-01">任务确认</h3>
                       <Tag type="blue">待你确认</Tag>
                     </div>
-                    <div className="tp-agent-workspace__goal">
+                    <div className="agent-workbench-v2__goal">
                       <p className="cds--type-label-01">任务目标</p>
                       <p className="cds--type-body-compact-01">{planGoal}</p>
                     </div>
@@ -434,20 +434,20 @@ export function AgentChatWorkspace({ connections, onNotice }: { connections: Age
                         <TextArea id="agent-workspace-args" labelText="工具参数 JSON" value={argsJson} rows={4} onChange={(event) => setArgsJson(event.target.value)} />
                       </Stack>
                     )}
-                    <div className="tp-agent-workspace__actions">
+                    <div className="agent-workbench-v2__actions">
                       <Button kind="tertiary" onClick={() => setShowPlan(false)}>取消</Button>
                       <Button renderIcon={ArrowUp} disabled={busy || (mode !== "external" && !/^[A-Z]{2}$/.test(country)) || (mode === "external" && (!connectionId || !toolName))} onClick={() => void confirmTask()}>{busy ? "正在提交…" : "确认并启动任务"}</Button>
                     </div>
                   </Stack>
                 </Layer>
               )}
-              <Layer className="tp-agent-workspace__composer">
+              <Layer className="agent-workbench-v2__composer">
                 <Stack gap={3}>
-                  <div className="tp-agent-workspace__quick-actions">
+                  <div className="agent-workbench-v2__quick-actions">
                     <span className="cds--type-helper-text-01">快速指定：</span>
                     {agentOptions.slice(1).map((agent) => <Button key={agent.id} kind="ghost" size="sm" onClick={() => setDraft((value) => (value ? value + " " : "") + "@" + agent.name + " ")}>@{agent.name}</Button>)}
                   </div>
-                  <div className="tp-agent-workspace__compose-row">
+                  <div className="agent-workbench-v2__compose-row">
                     <TextArea id="agent-workspace-message" labelText="发送消息给小雅" hideLabel rows={2} value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void sendMessage(); } }} placeholder="告诉小雅你的目标… 输入 @ 指定专业 Agent，Enter 发送" />
                     <Button hasIconOnly iconDescription="发送消息" renderIcon={ArrowUp} disabled={!draft.trim() || busy} onClick={() => void sendMessage()} />
                   </div>
@@ -459,28 +459,28 @@ export function AgentChatWorkspace({ connections, onNotice }: { connections: Age
         </Column>
         <Column sm={4} md={8} lg={5}>
           <Stack gap={4}>
-            <Tile className="tp-agent-workspace__side-tile">
+            <Tile className="agent-workbench-v2__side-tile">
               <Stack gap={3}>
-                <div className="tp-agent-workspace__side-heading"><Earth size={18} /><h3 className="cds--type-heading-compact-01">当前工作区</h3></div>
+                <div className="agent-workbench-v2__side-heading"><Earth size={18} /><h3 className="cds--type-heading-compact-01">当前工作区</h3></div>
                 <div><p className="cds--type-helper-text-01">默认协调者</p><p className="cds--type-body-compact-01">小雅</p></div>
                 <div><p className="cds--type-helper-text-01">已连接外部 Agent</p><p className="cds--type-body-compact-01">{activeConnections.length} 个</p></div>
                 <div><p className="cds--type-helper-text-01">执行模式</p><p className="cds--type-body-compact-01">{mode === "planner" ? "AI 自动规划" : mode === "internal" ? "内置搜索" : "外部工具"}</p></div>
               </Stack>
             </Tile>
-            <Tile className="tp-agent-workspace__side-tile">
+            <Tile className="agent-workbench-v2__side-tile">
               <Stack gap={3}>
                 <h3 className="cds--type-heading-compact-01">安全执行策略</h3>
-                <div className="tp-agent-workspace__policy-row"><span className="cds--type-body-compact-01">搜索与分析</span><Tag type="green">自动执行</Tag></div>
-                <div className="tp-agent-workspace__policy-row"><span className="cds--type-body-compact-01">邮件 / 批量导入</span><Tag type="gray">人工审批</Tag></div>
+                <div className="agent-workbench-v2__policy-row"><span className="cds--type-body-compact-01">搜索与分析</span><Tag type="green">自动执行</Tag></div>
+                <div className="agent-workbench-v2__policy-row"><span className="cds--type-body-compact-01">邮件 / 批量导入</span><Tag type="gray">人工审批</Tag></div>
                 <p className="cds--type-helper-text-01">任务进入统一任务执行中心；审批和执行记录保留在原有模块。</p>
               </Stack>
             </Tile>
-            <Tile className="tp-agent-workspace__side-tile">
+            <Tile className="agent-workbench-v2__side-tile">
               <Stack gap={3}>
-                <div className="tp-agent-workspace__side-heading"><Tools size={18} /><h3 className="cds--type-heading-compact-01">可用工具</h3></div>
+                <div className="agent-workbench-v2__side-heading"><Tools size={18} /><h3 className="cds--type-heading-compact-01">可用工具</h3></div>
                 <p className="cds--type-body-compact-01">内置 Agent、REST API、MCP 与 Webhook 接入共用同一工作台。</p>
-                <div className="tp-agent-workspace__policy-row"><span className="cds--type-body-compact-01">任务需确认后启动</span><CheckmarkFilled size={16} /></div>
-                <div className="tp-agent-workspace__policy-row"><span className="cds--type-body-compact-01">对话上下文持续保存</span><Clock size={16} /></div>
+                <div className="agent-workbench-v2__policy-row"><span className="cds--type-body-compact-01">任务需确认后启动</span><CheckmarkFilled size={16} /></div>
+                <div className="agent-workbench-v2__policy-row"><span className="cds--type-body-compact-01">对话上下文持续保存</span><Clock size={16} /></div>
               </Stack>
             </Tile>
           </Stack>
