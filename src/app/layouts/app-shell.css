@@ -167,6 +167,10 @@
   background: var(--cds-background, #f4f4f4);
 }
 
+.tp-page-root--grid-owned {
+  padding: 0;
+}
+
 .tp-page-canvas > * {
   max-width: 100%;
 }
