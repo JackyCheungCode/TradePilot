@@ -127,7 +127,10 @@
 
 @media (max-width: 671px) {
   .tp-agent-appearance-page {
-    padding: var(--cds-spacing-05) var(--cds-spacing-04);
+    /* The shared page root already supplies the mobile 16px gutter.
+       Remove this page's second horizontal gutter to recover usable width. */
+    padding-block: var(--cds-spacing-05);
+    padding-inline: 0;
   }
 
   .tp-agent-appearance-grid {
