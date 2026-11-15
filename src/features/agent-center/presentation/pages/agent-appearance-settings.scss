@@ -127,16 +127,26 @@
 
 @media (max-width: 767px) {
   .tp-agent-appearance-page {
-    /* AppShell .tp-page-root is the single owner of the mobile page gutter. */
+    /*
+     * The shared .tp-page-root has a 16px mobile inset. Expand this page
+     * back to the viewport, then apply a proportional 5vw safe gutter.
+     * At 390px this gives 19.5px on each side.
+     */
+    width: calc(100% + 32px);
+    max-width: none;
+    margin-inline: -16px;
     padding-block: var(--cds-spacing-05);
-    padding-inline: 0;
+    padding-inline: clamp(12px, 5vw, 24px);
   }
 
   .tp-agent-appearance-grid {
     row-gap: var(--cds-spacing-04);
-    /* Bleed the grid through the shared page gutter. Carbon Column keeps its
-       native horizontal gutter, placing each card edge 16px from the viewport. */
-    margin-inline: -16px;
+    margin-inline: 0;
+    padding-inline: 0;
+  }
+
+  .tp-agent-appearance-grid > .tp-agent-appearance-preview-column,
+  .tp-agent-appearance-grid > .tp-agent-appearance-editor-column {
     padding-inline: 0;
   }
 
