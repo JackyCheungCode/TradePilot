@@ -28,7 +28,7 @@ import {
   Bot,
   Chat,
   CheckmarkFilled,
-  Clock,
+  Time,
   Earth,
   History,
   Tools,
@@ -480,7 +480,7 @@ export function AgentChatWorkspace({ connections, onNotice }: { connections: Age
                 <div className="agent-workbench-v2__side-heading"><Tools size={18} /><h3 className="cds--type-heading-compact-01">可用工具</h3></div>
                 <p className="cds--type-body-compact-01">内置 Agent、REST API、MCP 与 Webhook 接入共用同一工作台。</p>
                 <div className="agent-workbench-v2__policy-row"><span className="cds--type-body-compact-01">任务需确认后启动</span><CheckmarkFilled size={16} /></div>
-                <div className="agent-workbench-v2__policy-row"><span className="cds--type-body-compact-01">对话上下文持续保存</span><Clock size={16} /></div>
+                <div className="agent-workbench-v2__policy-row"><span className="cds--type-body-compact-01">对话上下文持续保存</span><Time size={16} /></div>
               </Stack>
             </Tile>
           </Stack>
