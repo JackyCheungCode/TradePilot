@@ -123,6 +123,8 @@
 
 @media (max-width: 767px) {
   .tp-agent-appearance-grid {
+    /* Keep Carbon's 16px column gutter, but remove the grid container's extra page inset. */
+    padding-inline: 0;
     row-gap: var(--cds-spacing-06);
   }
 
