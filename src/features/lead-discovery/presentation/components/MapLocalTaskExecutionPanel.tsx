@@ -1,4 +1,4 @@
-import { Button, Heading, InlineLoading, ProgressBar, Stack, Tag, Tile } from "@carbon/react";
+import { Button, Heading, InlineLoading, Layer, ProgressBar, Stack, Tag, Tile } from "@carbon/react";
 import { Activity, ArrowRight, Time as Clock, Terminal } from "@carbon/icons-react";
 import type { DiscoveryLog, DiscoveryRun } from "../../domain/model";
 
@@ -58,6 +58,8 @@ export function MapLocalTaskExecutionPanel({
           <p className="cds--type-body-compact-01">实时显示地图与本地商家数据源查询状态。</p>
         </Stack>
 
+        <Layer>
+          <Tile>
         {active && run ? (
           <Stack gap={4}>
             <Stack gap={2}>
@@ -86,7 +88,11 @@ export function MapLocalTaskExecutionPanel({
             <p className="cds--type-body-compact-01">配置目标国家、省州、城市和关键词后，点击开始发现潜在客户。</p>
           </Stack>
         )}
+          </Tile>
+        </Layer>
 
+        <Layer>
+          <Tile>
         <Stack gap={3}>
           <Stack orientation="horizontal" gap={3}>
             <Terminal size={20} aria-hidden="true" />
@@ -111,6 +117,8 @@ export function MapLocalTaskExecutionPanel({
             )}
           </div>
         </Stack>
+          </Tile>
+        </Layer>
       </Stack>
     </Tile>
   );
