@@ -100,7 +100,7 @@ export function AgentAppearanceSettingsPage() {
           seed={"tradepilot-preview-" + activeAgent} />
       </div>
       <Stack gap={2} className="tp-agent-appearance-preview-copy">
-        <Heading className="cds--type-productive-heading-03">{activeName}</Heading>
+        <Heading className="cds--type-heading-02">{activeName}</Heading>
         <p className="cds--type-body-compact-01">{states.find((item) => item.id === previewState)?.label}状态 · {localized("shape", current.shape)} · {localized("color", current.color)}</p>
         <Tag type={isInherited ? "green" : "blue"}>{isInherited ? "继承全局默认" : activeAgent === "default" ? "全局默认配置" : "独立配置"}</Tag>
       </Stack>
@@ -109,16 +109,19 @@ export function AgentAppearanceSettingsPage() {
 
   return (
     <main className="tp-agent-appearance-page">
-      <Stack gap={6}>
+      <Grid className="tp-agent-appearance-grid">
+        <Column sm={4} md={8} lg={16} xlg={16} max={16}>
+          <Stack gap={4}>
         <PageHeader breadcrumbs={[{ label: "系统设置", href: "/settings/integrations" }, { label: "Agent 形象设计" }]}
           title="Agent 形象设计" actions={<Tag type={dirty ? "blue" : "gray"}>{dirty ? "有未保存更改" : "配置已保存"}</Tag>} />
         {loadError ? <InlineNotification kind="error" title="形象配置加载失败" subtitle={loadError} lowContrast hideCloseButton /> : null}
-        <Grid fullWidth className="tp-agent-appearance-grid">
+          </Stack>
+        </Column>
           <Column sm={4} md={8} lg={6} xlg={6} max={6} className="tp-agent-appearance-preview-column">
             <Stack gap={4}>
               <Tile className="tp-agent-appearance-preview">
                 <Stack gap={4}>
-                  <Section level={2}><Heading className="cds--type-productive-heading-03">实时预览</Heading></Section>
+                  <Section level={2}><Heading className="cds--type-heading-03">实时预览</Heading></Section>
                   {preview}
                   <Dropdown id="agent-appearance-state" titleText="动画状态" label="选择预览状态" items={states}
                     selectedItem={states.find((item) => item.id === previewState) ?? states[0]} itemToString={(item) => item?.label ?? ""}
@@ -195,10 +198,13 @@ export function AgentAppearanceSettingsPage() {
               </Tile>
             </Stack>
           </Column>
-        </Grid>
-        {loading ? <InlineNotification kind="info" title="正在加载形象配置" subtitle="请稍候，加载完成后即可编辑。" lowContrast hideCloseButton /> : null}
-        {loadError ? <Button kind="tertiary" onClick={retryLoad} disabled={loading}>重新加载配置</Button> : null}
-      </Stack>
+        <Column sm={4} md={8} lg={16} xlg={16} max={16}>
+          <Stack gap={3}>
+            {loading ? <InlineNotification kind="info" title="正在加载形象配置" subtitle="请稍候，加载完成后即可编辑。" lowContrast hideCloseButton /> : null}
+            {loadError ? <Button kind="tertiary" onClick={retryLoad} disabled={loading}>重新加载配置</Button> : null}
+          </Stack>
+        </Column>
+      </Grid>
     </main>
   );
 }
