@@ -15,7 +15,9 @@
   min-width: 0;
 }
 
-.tp-agent-appearance-tile {
+/* Pair Carbon's native Tile class with the page modifier so these layer and
+   spacing tokens remain authoritative over the base .cds--tile rule. */
+.cds--tile.tp-agent-appearance-tile {
   box-sizing: border-box;
   min-width: 0;
   padding: var(--cds-spacing-05);
@@ -43,7 +45,7 @@
   row-gap: var(--cds-spacing-03);
 }
 
-.tp-agent-appearance-preview {
+.cds--tile.tp-agent-appearance-preview {
   box-sizing: border-box;
   min-width: 0;
   padding: var(--cds-spacing-05);
@@ -91,7 +93,7 @@
   max-inline-size: none;
 }
 
-.tp-agent-appearance-attribution {
+.cds--tile.tp-agent-appearance-attribution {
   box-sizing: border-box;
   min-width: 0;
   padding: var(--cds-spacing-05);
