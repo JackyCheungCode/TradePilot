@@ -127,10 +127,10 @@
 
 @media (max-width: 767px) {
   .tp-agent-appearance-page {
-    /* AppShell's shared .tp-page-root owns the 16px mobile safe gutter.
-       Do not add a second page-level horizontal gutter here. */
+    /* This page renders directly in .tp-page-canvas, not .tp-page-root.
+       It therefore owns its mobile safe gutter. */
     padding-block: var(--cds-spacing-05);
-    padding-inline: 0;
+    padding-inline: 16px;
   }
 
   .tp-agent-appearance-grid {
