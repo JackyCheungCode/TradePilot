@@ -10,6 +10,7 @@ import {
   ComboBox,
   Grid,
   Heading,
+  Layer,
   MultiSelect,
   NumberInput,
   Section,
@@ -183,13 +184,16 @@ export function MapLocalDiscoveryPage() {
       <Grid>
         <Column sm={4} md={8} lg={8} xlg={8} max={8}>
           <Stack gap={7}>
-            <Tile>
-              <Stack gap={6}>
+            <Stack gap={7}>
                 <Section level={2}>
                   <Heading className="cds--type-productive-heading-03">发现条件</Heading>
                 </Section>
 
+<Layer>
+              <Tile>
                 <Stack gap={3}>
+<Grid narrow>
+                  <Column sm={4} md={8} lg={8}>
                   <CarbonSearch
                     id="map-discovery-query"
                     labelText="企业 / 行业关键词"
@@ -201,7 +205,9 @@ export function MapLocalDiscoveryPage() {
                       setTranslationApplied(false);
                     }}
                   />
-                  <Grid narrow>
+
+                  </Column>
+                </Grid>                  <Grid narrow>
                     <Column sm={4} md={4} lg={8}>
                       <Button kind="secondary" size="md" renderIcon={Language} onClick={() => void translate()} disabled={translating || !query.trim()}>
                         {translating ? "正在翻译…" : "DeepL 翻译"}
@@ -247,7 +253,12 @@ export function MapLocalDiscoveryPage() {
                     </Stack>
                   ) : null}
                 </Stack>
+              </Tile>
+            </Layer>
 
+
+<Layer>
+              <Tile>
                 <Stack gap={5}>
                   <Stack orientation="horizontal" gap={3}>
                     <Map size={20} aria-hidden="true" />
@@ -270,7 +281,12 @@ export function MapLocalDiscoveryPage() {
                       onCityChange={setCity}
                     />
                 </Stack>
+              </Tile>
+            </Layer>
 
+
+<Layer>
+              <Tile>
                 <Stack gap={3}>
                   <Heading className="cds--type-productive-heading-03">数据来源</Heading>
                   <Grid narrow>
@@ -292,12 +308,19 @@ export function MapLocalDiscoveryPage() {
                     </Column>
                   </Grid>
                 </Stack>
+              </Tile>
+            </Layer>
 
+
+<Layer>
+              <Tile>
                 <Stack gap={3}>
                   <Stack orientation="horizontal" gap={3}>
                     <Heading className="cds--type-productive-heading-03">业务类型</Heading>
                     <Tag type="blue">{businessTypes.length} 项已选</Tag>
                   </Stack>
+<Grid narrow>
+                  <Column sm={4} md={8} lg={8}>
                   <MultiSelect
                     id="map-business-types"
                     titleText="选择业务类型"
@@ -308,9 +331,16 @@ export function MapLocalDiscoveryPage() {
                     onChange={({ selectedItems }) => setBusinessTypes((selectedItems ?? []).map((item) => item.id))}
                     selectionFeedback="fixed"
                   />
-                  <Button kind="ghost" size="sm" onClick={() => setBusinessTypes([])}>清空选择</Button>
-                </Stack>
 
+                  </Column>
+                </Grid>                  <Button kind="ghost" size="sm" onClick={() => setBusinessTypes([])}>清空选择</Button>
+                </Stack>
+              </Tile>
+            </Layer>
+
+
+<Layer>
+              <Tile>
                 <Stack gap={4}>
                   <Stack orientation="horizontal" gap={3}>
                     <SettingsAdjust size={20} aria-hidden="true" />
@@ -356,7 +386,12 @@ export function MapLocalDiscoveryPage() {
                     />
                   </Stack>
                 </Stack>
+              </Tile>
+            </Layer>
 
+
+<Layer>
+              <Tile>
                 {providers.includes("openstreetmap") ? (
                   <Accordion>
                     <AccordionItem title="高级设置 · OpenStreetMap 标签映射">
@@ -404,6 +439,9 @@ export function MapLocalDiscoveryPage() {
                     </AccordionItem>
                   </Accordion>
                 ) : null}
+              </Tile>
+            </Layer>
+
 
                 <NumberInput
                   id="map-discovery-limit"
@@ -422,8 +460,7 @@ export function MapLocalDiscoveryPage() {
                 >
                   {starting ? "正在创建任务…" : running ? "任务执行中" : "开始发现潜在客户"}
                 </Button>
-              </Stack>
-            </Tile>
+            </Stack>
           </Stack>
         </Column>
 
