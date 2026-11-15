@@ -50,7 +50,7 @@ export function MapLocalTaskExecutionPanel({
     <Tile>
       <Stack gap={5}>
         <Stack gap={2}>
-          <Stack orientation="horizontal" gap={3} align="center">
+          <Stack orientation="horizontal" gap={3}>
             <Activity size={20} aria-hidden="true" />
             <Heading className="cds--type-productive-heading-03">任务执行中心</Heading>
             {run ? <Tag type={statusTypes[run.status] ?? "gray"}>{statusLabels[run.status] ?? run.status}</Tag> : null}
@@ -86,7 +86,7 @@ export function MapLocalTaskExecutionPanel({
         )}
 
         <Stack gap={3}>
-          <Stack orientation="horizontal" gap={3} align="center">
+          <Stack orientation="horizontal" gap={3}>
             <Terminal size={20} aria-hidden="true" />
             <Heading className="cds--type-productive-heading-02">实时执行日志</Heading>
             <Tag type="gray">{logs.length}</Tag>
@@ -95,7 +95,7 @@ export function MapLocalTaskExecutionPanel({
             <Stack gap={3}>
               {logs.map((log) => (
                 <Stack key={log.id} gap={2}>
-                  <Stack orientation="horizontal" gap={3} align="center">
+                  <Stack orientation="horizontal" gap={3}>
                     <span className="cds--type-caption-01">{new Date(log.createdAt).toLocaleTimeString()}</span>
                     <Tag type={logTypes[log.level]}>{log.level}</Tag>
                   </Stack>

@@ -8,7 +8,6 @@ import {
   ComboBox,
   Grid,
   Heading,
-  InlineNotification,
   MultiSelect,
   NumberInput,
   Section,
@@ -21,13 +20,10 @@ import {
   Add,
   ArrowRight,
   Building,
-  CheckmarkFilled,
-  Language,
+  Translate as Language,
   Map,
   Play,
-  Search,
   SettingsAdjust,
-  Terminal,
   TrashCan,
   UserMultiple,
 } from "@carbon/icons-react";
@@ -237,7 +233,7 @@ export function MapLocalDiscoveryPage() {
                   {translation ? (
                     <Tile>
                       <Stack gap={3}>
-                        <Stack orientation="horizontal" gap={3} align="center">
+                        <Stack orientation="horizontal" gap={3}>
                           <Heading className="cds--type-productive-heading-02">翻译预览</Heading>
                           <Tag type="blue">{targetLanguage}</Tag>
                           {translation.detected ? <Tag type="gray">源语言 {translation.detected}</Tag> : null}
@@ -262,7 +258,7 @@ export function MapLocalDiscoveryPage() {
 
                 <Tile>
                   <Stack gap={5}>
-                    <Stack orientation="horizontal" gap={3} align="center">
+                    <Stack orientation="horizontal" gap={3}>
                       <Map size={20} aria-hidden="true" />
                       <Heading className="cds--type-productive-heading-02">目标市场</Heading>
                     </Stack>
@@ -308,7 +304,7 @@ export function MapLocalDiscoveryPage() {
                 </Stack>
 
                 <Stack gap={3}>
-                  <Stack orientation="horizontal" gap={3} align="center">
+                  <Stack orientation="horizontal" gap={3}>
                     <Heading className="cds--type-productive-heading-02">业务类型</Heading>
                     <Tag type="blue">{businessTypes.length} 项已选</Tag>
                   </Stack>
@@ -326,7 +322,7 @@ export function MapLocalDiscoveryPage() {
                 </Stack>
 
                 <Stack gap={4}>
-                  <Stack orientation="horizontal" gap={3} align="center">
+                  <Stack orientation="horizontal" gap={3}>
                     <SettingsAdjust size={20} aria-hidden="true" />
                     <Heading className="cds--type-productive-heading-02">精准筛选条件</Heading>
                   </Stack>
