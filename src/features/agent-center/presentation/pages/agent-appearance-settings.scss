@@ -1,10 +1,6 @@
 .tp-agent-appearance-page {
-  box-sizing: border-box;
-  width: 100%;
-  max-width: 1584px;
   min-width: 0;
-  margin-inline: auto;
-  padding: var(--cds-spacing-06) var(--cds-spacing-07);
+  padding-block: var(--cds-spacing-06);
   color: var(--cds-text-primary);
 }
 
@@ -22,7 +18,7 @@
 .tp-agent-appearance-tile {
   box-sizing: border-box;
   min-width: 0;
-  padding: var(--cds-spacing-06);
+  padding: var(--cds-spacing-05);
   background: var(--cds-layer-01);
 }
 
@@ -48,7 +44,7 @@
 .tp-agent-appearance-preview {
   box-sizing: border-box;
   min-width: 0;
-  padding: var(--cds-spacing-06);
+  padding: var(--cds-spacing-05);
   background: var(--cds-layer-02);
 }
 
@@ -126,33 +122,8 @@
 }
 
 @media (max-width: 767px) {
-  .tp-agent-appearance-page {
-    /*
-     * The shared .tp-page-root has a 16px mobile inset. Expand this page
-     * back to the viewport, then apply a proportional 5vw safe gutter.
-     * At 390px this gives 19.5px on each side.
-     */
-    width: calc(100% + 32px);
-    max-width: none;
-    margin-inline: -16px;
-    padding-block: var(--cds-spacing-05);
-    padding-inline: clamp(12px, 5vw, 24px);
-  }
-
   .tp-agent-appearance-grid {
-    row-gap: var(--cds-spacing-04);
-    margin-inline: 0;
-    padding-inline: 0;
-  }
-
-  .tp-agent-appearance-grid > .tp-agent-appearance-preview-column,
-  .tp-agent-appearance-grid > .tp-agent-appearance-editor-column {
-    padding-inline: 0;
-  }
-
-  .tp-agent-appearance-tile,
-  .tp-agent-appearance-preview {
-    padding: var(--cds-spacing-04);
+    row-gap: var(--cds-spacing-06);
   }
 
   .tp-agent-appearance-preview-art {
