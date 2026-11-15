@@ -30,6 +30,7 @@
 
 .tp-agent-appearance-field-grid {
   min-width: 0;
+  padding-inline: var(--cds-spacing-05);
   row-gap: var(--cds-spacing-05);
 }
 
@@ -38,7 +39,8 @@
   min-width: 0;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--cds-spacing-03);
+  column-gap: var(--cds-spacing-04);
+  row-gap: var(--cds-spacing-03);
 }
 
 .tp-agent-appearance-preview {
@@ -80,7 +82,8 @@
   min-width: 0;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--cds-spacing-03);
+  column-gap: var(--cds-spacing-04);
+  row-gap: var(--cds-spacing-03);
 }
 
 .tp-agent-appearance-save {
@@ -123,9 +126,13 @@
 
 @media (max-width: 767px) {
   .tp-agent-appearance-grid {
-    /* Keep Carbon's 16px column gutter, but remove the grid container's extra page inset. */
+    /* Keep the page canvas nearly full-bleed on phones while retaining a 4px edge inset. */
     padding-inline: 0;
     row-gap: var(--cds-spacing-06);
+  }
+
+  .tp-agent-appearance-grid > .cds--col {
+    padding-inline: 4px;
   }
 
   .tp-agent-appearance-preview-art {
