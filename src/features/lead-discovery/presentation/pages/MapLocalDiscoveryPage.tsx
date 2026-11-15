@@ -184,7 +184,6 @@ export function MapLocalDiscoveryPage() {
       <Grid>
         <Column sm={4} md={8} lg={8} xlg={8} max={8}>
           <Stack gap={7}>
-            <Stack gap={7}>
                 <Section level={2}>
                   <Heading className="cds--type-productive-heading-03">发现条件</Heading>
                 </Section>
@@ -262,7 +261,7 @@ export function MapLocalDiscoveryPage() {
                 <Stack gap={5}>
                   <Stack orientation="horizontal" gap={3}>
                     <Map size={20} aria-hidden="true" />
-                    <Heading className="cds--type-productive-heading-03">目标市场</Heading>
+                    <Heading className="cds--type-productive-heading-02">目标市场</Heading>
                   </Stack>
                     <CountrySelect value={country} onChange={(next) => {
                       if (translationApplied && translation) setQuery(translation.source);
@@ -288,7 +287,7 @@ export function MapLocalDiscoveryPage() {
 <Layer>
               <Tile>
                 <Stack gap={3}>
-                  <Heading className="cds--type-productive-heading-03">数据来源</Heading>
+                  <Heading className="cds--type-productive-heading-02">数据来源</Heading>
                   <Grid narrow>
                     <Column sm={4} md={4} lg={8}>
                       <Checkbox
@@ -316,7 +315,7 @@ export function MapLocalDiscoveryPage() {
               <Tile>
                 <Stack gap={3}>
                   <Stack orientation="horizontal" gap={3}>
-                    <Heading className="cds--type-productive-heading-03">业务类型</Heading>
+                    <Heading className="cds--type-productive-heading-02">业务类型</Heading>
                     <Tag type="blue">{businessTypes.length} 项已选</Tag>
                   </Stack>
 <Grid narrow>
@@ -344,7 +343,7 @@ export function MapLocalDiscoveryPage() {
                 <Stack gap={4}>
                   <Stack orientation="horizontal" gap={3}>
                     <SettingsAdjust size={20} aria-hidden="true" />
-                    <Heading className="cds--type-productive-heading-03">精准筛选条件</Heading>
+                    <Heading className="cds--type-productive-heading-02">精准筛选条件</Heading>
                   </Stack>
                   <Grid narrow>
                     <Column sm={4} md={4} lg={8}>
@@ -470,7 +469,6 @@ export function MapLocalDiscoveryPage() {
                 </Stack>
               </Tile>
             </Layer>
-            </Stack>
           </Stack>
         </Column>
 
