@@ -1,5 +1,5 @@
 import { Button, Heading, InlineLoading, ProgressBar, Stack, Tag, Tile } from "@carbon/react";
-import { Activity, ArrowRight, Clock, Terminal } from "@carbon/icons-react";
+import { Activity, ArrowRight, Time as Clock, Terminal } from "@carbon/icons-react";
 import type { DiscoveryLog, DiscoveryRun } from "../../domain/model";
 
 const statusLabels: Record<string, string> = {
