@@ -1,35 +1,29 @@
 import isoCountries from "i18n-iso-countries";
 import zhLocale from "i18n-iso-countries/langs/zh.json";
-import { Combobox } from "@/shared/ui/primitives";
+import { ComboBox } from "@carbon/react";
 
 isoCountries.registerLocale(zhLocale);
 
-const flag = (code: string) =>
-  String.fromCodePoint(...code.toUpperCase().split("").map((character) => 127397 + character.charCodeAt(0)));
+type CountryOption = { id: string; text: string };
 const specialNames: Record<string, string> = { HK: "中国香港", MO: "中国澳门", TW: "中国台湾" };
-const countries = Object.keys(isoCountries.getAlpha2Codes())
+const countries: CountryOption[] = Object.keys(isoCountries.getAlpha2Codes())
   .map((code) => ({
-    code,
-    name: specialNames[code] ?? isoCountries.getName(code, "zh") ?? code,
-    flag: flag(code),
+    id: code,
+    text: (specialNames[code] ?? isoCountries.getName(code, "zh") ?? code) + " · " + code,
   }))
-  .sort((a, b) => a.name.localeCompare(b.name));
+  .sort((a, b) => a.text.localeCompare(b.text, "zh"));
 
 export function CountrySelect({ value, onChange }: { value: string; onChange: (next: string) => void }) {
+  const selected = countries.find((country) => country.id === value) ?? null;
   return (
-    <div className="space-y-2">
-      <label className="text-sm font-medium">国家 / 地区</label>
-      <Combobox
-        value={value}
-        onValueChange={onChange}
-        placeholder="选择国家或地区"
-        searchPlaceholder="搜索国家 / 地区"
-        options={countries.map((country) => ({
-          value: country.code,
-          label: country.flag + " " + country.name,
-          description: country.code,
-        }))}
-      />
-    </div>
+    <ComboBox
+      id="map-country-select"
+      titleText="国家 / 地区"
+      items={countries}
+      selectedItem={selected}
+      itemToString={(item) => item?.text ?? ""}
+      onChange={({ selectedItem }) => onChange(selectedItem?.id ?? value)}
+      placeholder="搜索并选择国家或地区"
+    />
   );
 }
