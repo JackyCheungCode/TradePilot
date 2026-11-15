@@ -6,13 +6,13 @@
 
 .tp-agent-appearance-grid {
   align-items: start;
-  row-gap: var(--cds-spacing-06);
   min-width: 0;
 }
 
 .tp-agent-appearance-preview-column,
 .tp-agent-appearance-editor-column {
   min-width: 0;
+  margin-block-start: var(--cds-spacing-06);
 }
 
 /* Pair Carbon's native Tile class with the page modifier so these layer and
@@ -73,16 +73,14 @@
 }
 
 .tp-agent-appearance-actions {
-  display: flex;
+  display: grid;
   min-width: 0;
-  flex-wrap: wrap;
-  align-items: center;
-  column-gap: var(--cds-spacing-04);
-  row-gap: var(--cds-spacing-03);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--cds-spacing-04);
 }
 
-.tp-agent-appearance-save {
-  flex: 1 1 10rem;
+.tp-agent-appearance-actions > button {
+  width: 100%;
   max-inline-size: none;
 }
 
@@ -126,15 +124,7 @@
   }
 
   .tp-agent-appearance-actions {
-    align-items: stretch;
-  }
-
-  .tp-agent-appearance-save {
-    flex-basis: 100%;
-  }
-
-  .tp-agent-appearance-actions > button {
-    flex: 1 1 auto;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

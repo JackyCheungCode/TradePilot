@@ -95,7 +95,7 @@ export function AgentAppearanceSettingsPage() {
   const preview = (
     <Stack gap={4} className="tp-agent-appearance-preview-content">
       <div className="tp-agent-appearance-preview-art" role="img" aria-label={`${activeName}角色预览`}>
-        <CharacterMark shape={current.shape as ShapeId} color={current.color as ColorId} styleId={current.styleId}
+        <CharacterMark key={`${activeAgent}:${current.shape}:${current.color}:${current.styleId}:${current.variant}:${current.face}:${previewState}`} shape={current.shape as ShapeId} color={current.color as ColorId} styleId={current.styleId}
           variant={current.variant as never} face={current.face} state={previewState} sizePx={156} autoPause entryEffects={false}
           seed={"tradepilot-preview-" + activeAgent} />
       </div>
@@ -157,7 +157,7 @@ export function AgentAppearanceSettingsPage() {
               <Tile className="tp-agent-appearance-tile">
                 <Stack gap={5}>
                   <Section level={2}><Heading className="cds--type-heading-03">角色与配色</Heading></Section>
-                  <Grid narrow className="tp-agent-appearance-field-grid">
+                  <Grid className="tp-agent-appearance-field-grid">
                     <Column sm={4} md={4} lg={8}>
                       <Dropdown id="agent-appearance-shape" disabled={loading || Boolean(loadError) || busy} titleText="角色造型" label="选择角色造型" items={[...SHAPE_IDS]}
                         selectedItem={current.shape} itemToString={(item) => item ? localized("shape", item) : ""}
