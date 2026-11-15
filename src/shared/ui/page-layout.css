@@ -4,7 +4,7 @@
   max-width: 1584px;
   min-width: 0;
   margin-inline: auto;
-  padding: 16px 24px;
+  padding: 4px;
 }
 
 .tp-page-root > * {
@@ -16,8 +16,8 @@
   flex-direction: column;
   gap: 14px;
   min-width: 0;
-  margin: -16px -24px 16px;
-  padding: 16px 24px;
+  margin: -4px -4px var(--cds-spacing-05);
+  padding: var(--cds-spacing-05) var(--cds-spacing-06);
   color: var(--cds-text-primary, #161616);
   background: var(--cds-background, #f4f4f4);
   border-bottom: 1px solid var(--cds-border-subtle, #e0e0e0);
@@ -93,7 +93,7 @@
 
 .tp-page-section {
   min-width: 0;
-  padding: 16px;
+  padding: var(--cds-spacing-05);
   color: var(--cds-text-primary, #161616);
   background: var(--cds-layer, #fff);
 }
@@ -177,13 +177,13 @@
 
 @media (max-width: 767px) {
   .tp-page-root {
-    padding: 16px;
+    padding: 4px;
   }
 
   .tp-control-panel {
-    gap: 12px;
-    margin: -16px -16px 16px;
-    padding: 16px;
+    gap: var(--cds-spacing-05);
+    margin: -4px -4px var(--cds-spacing-05);
+    padding: var(--cds-spacing-05);
   }
 
   .tp-control-panel__main {
@@ -206,7 +206,7 @@
   }
 
   .tp-page-section {
-    padding: 16px;
+    padding: var(--cds-spacing-05);
   }
 
   .tp-metric-grid {
