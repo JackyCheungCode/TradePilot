@@ -2,13 +2,17 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { Theme } from "@carbon/react";
 
-import { App } from "./app/App";
+// Load global design-system styles before importing page modules.
+// Page-level SCSS is imported by App's feature modules and must follow Carbon
+// so page-specific layout rules are not silently overridden by the base layer.
 import "./styles/globals.css";
 import "./styles/design-tokens.css";
 import "./styles/reset.css";
 import "./styles/carbon.scss";
 import "@carbon/charts-react/styles.css";
 import "@aora-bot/react/styles.css";
+
+import { App } from "./app/App";
 
 const rootElement = document.getElementById("root");
 
