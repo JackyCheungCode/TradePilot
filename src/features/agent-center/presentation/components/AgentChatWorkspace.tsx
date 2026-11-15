@@ -1,161 +1,493 @@
 import { useEffect, useState } from "react";
-import { Table as CarbonTable, TableHead as CarbonTableHead, TableBody as CarbonTableBody, TableRow as CarbonTableRow, TableHeader as CarbonTableHeader, TableCell as CarbonTableCell, RadioButtonGroup, RadioButton, Accordion, AccordionItem, Link as CarbonLink } from "@carbon/react";
-import { ArrowUp, Bot, Earth as Globe2, Tools as Wrench, CheckmarkFilled as CheckCircle2, Time as Clock3, History, Chat as MessageSquarePlus } from "@carbon/icons-react";
+import {
+  Accordion,
+  AccordionItem,
+  Button,
+  Column,
+  ComboBox,
+  Grid,
+  InlineNotification,
+  Layer,
+  Loading,
+  RadioButton,
+  RadioButtonGroup,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Tag,
+  TextArea,
+  TextInput,
+  Tile,
+} from "@carbon/react";
+import {
+  ArrowUp,
+  Bot,
+  Chat,
+  CheckmarkFilled,
+  Clock,
+  Earth,
+  History,
+  Message,
+  Tools,
+} from "@carbon/icons-react";
 import { AgentOrbIcon } from "./AgentOrbIcon";
-import { Badge, Button, Card, CardContent, Input, Combobox, Textarea } from "@/shared/ui/primitives";
-import { agentApi, type AgentConnection } from "../../infrastructure/agent-api";
+import { agentApi, type AgentConnection, type AgentRun } from "../../infrastructure/agent-api";
 
-type ChatRecord={id:string;name:string;country_code?:string|null;address?:string|null;phone?:string|null;email?:string|null;website?:string|null;business_type?:string|null;confidence_score?:number|null;channel?:string;record_type?:string;raw_data?:Record<string,unknown>;status?:string;sources?:Array<{provider?:string;keyword?:string;source_url?:string;raw_data?:Record<string,unknown>}>};
-type ChatMessage={id:string|number;role:"user"|"assistant";content:string;kind?:"plan"|"progress"|"result";records?:ChatRecord[];runId?:string};
-const agents=[
- {id:"auto",name:"小雅自动调度"},
- {id:"buyer_development",name:"全球买家开发"},
- {id:"market_research",name:"市场研究"},
- {id:"company_research",name:"企业调查"},
- {id:"lead_scoring",name:"客户评估"},
- {id:"multilingual_sales",name:"多语言销售"},
- {id:"follow_up",name:"外贸跟进"},
- {id:"trade_compliance",name:"贸易合规"},
+type ChatRecord = {
+  id: string;
+  name: string;
+  country_code?: string | null;
+  address?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  website?: string | null;
+  business_type?: string | null;
+  record_type?: string;
+  channel?: string;
+  sources?: Array<{ provider?: string; source_url?: string }>;
+  raw_data?: Record<string, unknown>;
+};
+type ChatMessage = {
+  id: string | number;
+  role: "user" | "assistant";
+  content: string;
+  kind?: "progress" | "result";
+  records?: ChatRecord[];
+  runId?: string;
+};
+type Conversation = { id: string; title: string; last_message_at: string; created_at: string };
+const agentOptions = [
+  { id: "auto", name: "小雅自动调度" },
+  { id: "buyer_development", name: "全球买家开发" },
+  { id: "market_research", name: "市场研究" },
+  { id: "company_research", name: "企业调查" },
+  { id: "lead_scoring", name: "客户评估" },
+  { id: "multilingual_sales", name: "多语言销售" },
+  { id: "follow_up", name: "外贸跟进" },
+  { id: "trade_compliance", name: "贸易合规" },
 ];
-export function AgentChatWorkspace({connections,onNotice}:{connections:AgentConnection[];onNotice:(message:string)=>void}){
- const welcomeMessage:ChatMessage={id:"welcome",role:"assistant",content:"你好，我是小雅。告诉我你想开发什么市场、寻找哪类客户，或者直接 @ 一位专业 Agent。我会先整理任务计划，等你确认后再执行。"};
- const [messages,setMessages]=useState<ChatMessage[]>([welcomeMessage]);
- const [conversations,setConversations]=useState<Array<{id:string;title:string;last_message_at:string;created_at:string}>>([]);
- const [showHistory,setShowHistory]=useState(false);
- const [historyLoading,setHistoryLoading]=useState(true);
- const [draft,setDraft]=useState("");
- const [selectedAgent,setSelectedAgent]=useState("auto");
- const [country,setCountry]=useState("US");
- const [mode,setMode]=useState<"planner"|"internal"|"external">("planner");
- const [connectionId,setConnectionId]=useState("");
- const [toolName,setToolName]=useState("");
- const [planGoal,setPlanGoal]=useState("");
- const [showPlan,setShowPlan]=useState(false);
- const [busy,setBusy]=useState(false);
- const [argsJson,setArgsJson]=useState("{}");
- const [activeRunId,setActiveRunId]=useState<string|null>(null);
- const [conversationId,setConversationId]=useState<string|undefined>(undefined);
- const [chatWaitSeconds,setChatWaitSeconds]=useState(0);
- async function startNewChat(){
-  if(busy)return;
-  try{
-   const row=await agentApi.createConversation("新聊天");
-   setConversations(old=>[row,...old]);
-   setConversationId(row.id);
-   setMessages([welcomeMessage]);
-   setDraft("");setShowPlan(false);setPlanGoal("");setActiveRunId(null);setShowHistory(false);
-  }catch(error){onNotice(error instanceof Error?error.message:"新建聊天失败。");}
- }
- async function openConversation(id:string){
-  if(busy)return;
-  setHistoryLoading(true);
-  try{
-   const rows=await agentApi.listConversationMessages(id);
-   setConversationId(id);
-   const restored:ChatMessage[]=rows.map(row=>({id:row.id,role:row.role,content:row.content,...(row.metadata?.kind==="result"?{kind:"result" as const}:{}),...(typeof row.metadata?.runId==="string"?{runId:row.metadata.runId}:{})}));
-   for(const item of restored){if(item.runId){try{const snapshot=await agentApi.getRun(item.runId);item.records=snapshot.records??[];}catch{/* Keep the saved message visible if an old task was removed. */}}}
-   setMessages(restored.length?restored:[welcomeMessage]);
-   const last=rows.at(-1);
-   const task=last?.metadata?.task as {goal?:string;agentKey?:string;country?:string;mode?:"planner"|"internal"|"external"}|undefined;
-   if(task?.goal){setPlanGoal(task.goal);setSelectedAgent(task.agentKey??"auto");setCountry(task.country??"US");setMode(task.mode??"planner");setShowPlan(true);}else setShowPlan(false);
-   setActiveRunId(null);setShowHistory(false);
-  }catch(error){onNotice(error instanceof Error?error.message:"读取历史聊天失败。");}
-  finally{setHistoryLoading(false);}
- }
- useEffect(()=>{
-  let alive=true;
-  const load=async()=>{
-   try{
-    const rows=await agentApi.listConversations();
-    if(!alive)return;
-    setConversations(rows);
-    if(rows.length){await openConversation(rows[0].id);}
-    else{
-     const created=await agentApi.createConversation("新聊天");
-     if(!alive)return;
-     setConversations([created]);setConversationId(created.id);setMessages([welcomeMessage]);
+const welcome: ChatMessage = {
+  id: "welcome",
+  role: "assistant",
+  content: "你好，我是小雅。告诉我你想开发什么市场、寻找哪类客户，或者指定一位专业 Agent。我会先整理任务计划，等你确认后再执行。",
+};
+
+export function AgentChatWorkspace({ connections, onNotice }: { connections: AgentConnection[]; onNotice: (message: string) => void }) {
+  const [messages, setMessages] = useState<ChatMessage[]>([welcome]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [conversationId, setConversationId] = useState<string>();
+  const [showHistory, setShowHistory] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [draft, setDraft] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState("auto");
+  const [country, setCountry] = useState("US");
+  const [mode, setMode] = useState<"planner" | "internal" | "external">("planner");
+  const [connectionId, setConnectionId] = useState("");
+  const [toolName, setToolName] = useState("");
+  const [argsJson, setArgsJson] = useState("{}");
+  const [planGoal, setPlanGoal] = useState("");
+  const [showPlan, setShowPlan] = useState(false);
+  const [activeRunId, setActiveRunId] = useState<string | null>(null);
+  const [waitSeconds, setWaitSeconds] = useState(0);
+  const [notice, setNotice] = useState<{ kind: "error" | "success"; title: string; subtitle?: string }>();
+
+  const activeConnections = connections.filter((item) => item.status === "active");
+  const selectedConnection = activeConnections.find((item) => item.id === connectionId);
+  const availableTools = selectedConnection?.protocol_tools ?? [];
+
+  useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      try {
+        const rows = await agentApi.listConversations();
+        if (!alive) return;
+        setConversations(rows);
+        if (rows.length) {
+          await openConversation(rows[0].id, alive);
+        } else {
+          const created = await agentApi.createConversation("新聊天");
+          if (!alive) return;
+          setConversations([created]);
+          setConversationId(created.id);
+          setMessages([welcome]);
+        }
+      } catch (error) {
+        if (alive) onNotice(error instanceof Error ? error.message : "加载历史聊天失败。");
+      } finally {
+        if (alive) setHistoryLoading(false);
+      }
+    };
+    void load();
+    return () => { alive = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!busy) return;
+    setWaitSeconds(0);
+    const started = Date.now();
+    const timer = window.setInterval(() => setWaitSeconds(Math.floor((Date.now() - started) / 1000)), 1000);
+    return () => window.clearInterval(timer);
+  }, [busy]);
+
+  useEffect(() => {
+    if (!activeRunId) return;
+    let alive = true;
+    const poll = async () => {
+      try {
+        const snapshot = await agentApi.getRun(activeRunId);
+        if (!alive) return;
+        const run = snapshot.run;
+        const status = run.status;
+        const progress = snapshot.discoveryRun?.progress;
+        const latest = snapshot.logs.at(-1)?.message ?? snapshot.events.at(-1)?.message ?? snapshot.discoveryRun?.message ?? "";
+        const statusLabel = status === "queued" ? "排队中" : status === "running" ? "执行中" : status === "awaiting_approval" ? "等待人工审批" : status === "succeeded" ? "执行成功" : status === "completed" ? "执行完成" : status === "partial" ? "部分完成" : status === "failed" ? "执行失败" : status;
+        const message = [statusLabel, typeof progress === "number" ? "进度 " + progress + "%" : "", latest].filter(Boolean).join(" · ");
+        setMessages((current) => {
+          const index = current.findIndex((item) => item.id === "active-progress");
+          if (index < 0) return [...current, { id: "active-progress", role: "assistant", content: message, kind: "progress" }];
+          const next = [...current];
+          next[index] = { ...next[index], content: message };
+          return next;
+        });
+        if (["succeeded", "completed", "partial", "failed", "cancelled", "awaiting_approval", "planned"].includes(status)) {
+          const records = snapshot.records ?? [];
+          const count = records.length + " 条可查看明细";
+          const result = status === "awaiting_approval" ? "任务已暂停，等待你在审批中心确认。" : status === "failed" ? (run.error_message ?? "任务执行失败，请查看执行记录。") : status === "partial" ? "任务部分完成。" + count + "，请检查下方明细和执行日志。" : status === "cancelled" ? "任务已取消。" : "任务已完成。" + count + "。";
+          setMessages((current) => [...current.filter((item) => item.id !== "active-result"), { id: "active-result", role: "assistant", content: result, kind: "result", records, runId: activeRunId }]);
+          setActiveRunId(null);
+        }
+      } catch (error) {
+        if (alive) onNotice(error instanceof Error ? error.message : "读取任务进度失败。");
+      }
+    };
+    void poll();
+    const timer = window.setInterval(() => void poll(), 3000);
+    return () => { alive = false; window.clearInterval(timer); };
+  }, [activeRunId, onNotice]);
+
+  async function openConversation(id: string, alive = true) {
+    if (busy) return;
+    setHistoryLoading(true);
+    try {
+      const rows = await agentApi.listConversationMessages(id);
+      if (!alive) return;
+      setConversationId(id);
+      const restored: ChatMessage[] = rows.map((row) => ({
+        id: row.id,
+        role: row.role,
+        content: row.content,
+        ...(row.metadata?.kind === "result" ? { kind: "result" as const } : {}),
+        ...(typeof row.metadata?.runId === "string" ? { runId: row.metadata.runId } : {}),
+      }));
+      for (const item of restored) {
+        if (item.runId) {
+          try {
+            const snapshot = await agentApi.getRun(item.runId);
+            item.records = snapshot.records ?? [];
+          } catch { /* Keep saved messages visible when an old run is unavailable. */ }
+        }
+      }
+      setMessages(restored.length ? restored : [welcome]);
+      const task = rows.at(-1)?.metadata?.task as { goal?: string; agentKey?: string; country?: string; mode?: "planner" | "internal" | "external" } | undefined;
+      if (task?.goal) {
+        setPlanGoal(task.goal);
+        setSelectedAgent(task.agentKey ?? "auto");
+        setCountry(task.country ?? "US");
+        setMode(task.mode ?? "planner");
+        setShowPlan(true);
+      } else setShowPlan(false);
+      setActiveRunId(null);
+      setShowHistory(false);
+    } catch (error) {
+      onNotice(error instanceof Error ? error.message : "读取历史聊天失败。");
+    } finally {
+      if (alive) setHistoryLoading(false);
     }
-   }catch(error){if(alive)onNotice(error instanceof Error?error.message:"加载历史聊天失败。");}
-   finally{if(alive)setHistoryLoading(false);}
-  };
-  void load();
-  return()=>{alive=false;};
- },[]);
- async function saveAssistantMessage(content:string,metadata:Record<string,unknown>={}){
-  if(!conversationId)return;
-  try{await agentApi.saveConversationMessage(conversationId,{role:"assistant",content,metadata});}
-  catch(error){onNotice(error instanceof Error?error.message:"保存聊天记录失败。");}
- }
- useEffect(()=>{if(!busy)return;setChatWaitSeconds(0);const started=Date.now();const timer=window.setInterval(()=>setChatWaitSeconds(Math.floor((Date.now()-started)/1000)),1000);return()=>window.clearInterval(timer);},[busy]);
- useEffect(()=>{if(!activeRunId)return;let alive=true;const poll=async()=>{try{const snapshot=await agentApi.getRun(activeRunId);if(!alive)return;const run=snapshot.run;const currentSteps=Array.isArray(run.plan?.execution_steps)?run.plan.execution_steps as Array<{title?:string;agentKey?:string;status?:string}>:[];const activeStep=currentSteps.find(item=>item.status==="running");const latest=(activeStep?(activeStep.title??activeStep.agentKey??"专业 Agent")+" 正在执行 · ":"")+(snapshot.logs.at(-1)?.message??snapshot.events.at(-1)?.message??snapshot.discoveryRun?.message??"");const status=run.status;const statusText=status==="queued"?"已排队":status==="running"?"正在执行":status==="awaiting_approval"?"等待人工审批":status==="succeeded"?"执行成功":status==="completed"?"执行完成":status==="partial"?"部分完成":status==="failed"?"执行失败":status==="cancelled"?"已取消":status;const progress=snapshot.discoveryRun?.progress;const update=[statusText,typeof progress==="number"?"进度 "+progress+"%":null,latest].filter(Boolean).join(" · ");setMessages(old=>{const index=old.findIndex(item=>item.id===-1);if(index<0)return [...old,{id:-1,role:"assistant",content:update,kind:"progress"}];const next=[...old];next[index]={...next[index],content:update,kind:"progress"};return next;});if(["succeeded","completed","partial","failed","cancelled","awaiting_approval","planned"].includes(status)){const specialistResults=Array.isArray(run.result?.specialists)?run.result.specialists.map(item=>item as Record<string,unknown>):[];const analysisText=specialistResults.map(item=>"\n\n【"+String(item.label??item.agentKey??"专业 Agent")+"】\n"+String(item.output??"")).join("").slice(0,18000);const actualRecords=snapshot.records??[];const reportedCount=Number(snapshot.discoveryRun?.discovered_count??0);const countNote=actualRecords.length+" 条可查看明细"+(reportedCount>actualRecords.length?"（任务统计 "+reportedCount+" 条，归档明细 "+actualRecords.length+" 条）":"");const finalMessage=status==="awaiting_approval"?"任务已暂停，等待你在审批中心确认。":status==="failed"?(run.error_message??"任务执行失败，请查看执行记录。"):status==="partial"?"任务部分完成。"+countNote+"，请检查下方明细和执行日志。":status==="cancelled"?"任务已取消。":"任务已完成。"+countNote+"。"+analysisText;setMessages(old=>[...old.filter(item=>item.id!==-2),{id:-2,role:"assistant",content:finalMessage,kind:"result",records:actualRecords,runId:activeRunId??undefined}]);setActiveRunId(null);}}catch(error){if(alive)onNotice(error instanceof Error?error.message:"读取任务进度失败。");}};void poll();const timer=window.setInterval(()=>void poll(),3000);return()=>{alive=false;window.clearInterval(timer);};},[activeRunId,onNotice]);
- const activeConnections=connections.filter(c=>c.status==="active");
- const connection=activeConnections.find(c=>c.id===connectionId);
- const tools=connection?.protocol_tools??[];
- const chosenTool=tools.find(t=>t.name===toolName);
- async function sendMessage(){
-  const text=draft.trim();if(!text||busy)return;
-  setDraft("");setBusy(true);
-  setMessages(old=>[...old,{id:Date.now(),role:"user",content:text},{id:Date.now()+1,role:"assistant",content:"小雅正在理解你的需求…",kind:"progress"}]);
-  try{
-   const response=await agentApi.chat(text,conversationId);
-   setConversationId(response.conversationId);
-   setConversations(old=>[{id:response.conversationId,title:text.slice(0,100),last_message_at:new Date().toISOString(),created_at:old.find(item=>item.id===response.conversationId)?.created_at??new Date().toISOString()},...old.filter(item=>item.id!==response.conversationId)]);
-   setMessages(old=>[...old.filter(item=>!(item.kind==="progress"&&item.content==="小雅正在理解你的需求…")),{id:Date.now()+2,role:"assistant",content:response.reply}]);
-   if(response.task){
-    setPlanGoal(response.task.goal);
-    setSelectedAgent(response.task.agentKey);
-    setCountry(response.task.country);
-    setMode(response.task.mode);
-    setShowPlan(true);
-   }
-  }catch(error){
-   setMessages(old=>[...old.filter(item=>!(item.kind==="progress"&&item.content==="小雅正在理解你的需求…")),{id:Date.now()+3,role:"assistant",content:error instanceof Error?error.message:"小雅暂时无法回复，请稍后重试。",kind:"result"}]);
-  }finally{setBusy(false);}
- }
- async function confirmTask(){
-  if(!planGoal.trim()||busy)return;
-  setBusy(true);onNotice("");
-  setMessages(old=>[...old,{id:Date.now(),role:"assistant",content:"小雅正在提交任务，稍后会在这里反馈状态…",kind:"progress"}]);
-  try{
-   if(mode==="external"){
-    if(!connection||!toolName)throw new Error("请先选择已连接的外部 Agent 和工具。");
-    let args:Record<string,unknown>;try{const parsed=JSON.parse(argsJson);if(!parsed||typeof parsed!=="object"||Array.isArray(parsed))throw new Error();args=parsed as Record<string,unknown>;}catch{throw new Error("工具参数必须是有效 JSON 对象。");}
-    const run=await agentApi.createRun(planGoal);
-    const result=await agentApi.invokeConnection(connection.id,run.id,toolName,args);
-    const message=result.status==="awaiting_approval"?"任务已提交审批中心。批准后才会执行外部写操作。":result.status==="succeeded"?"外部工具已执行，结果已写入执行记录。":"外部工具状态："+result.status;
-    setMessages(old=>[...old,{id:Date.now()+2,role:"assistant",content:message,kind:"result"}]);await saveAssistantMessage(message,{kind:"result"});
-   }else{
-    const run=await agentApi.createRun(planGoal,{mode:mode==="planner"?"planner":"internal_discovery",country:country.toUpperCase(),searchEngine:"serper",limitPerCountry:50,...(selectedAgent!=="auto"?{agentKey:selectedAgent}:{})});
-    if(["queued","running"].includes(run.status))setActiveRunId(run.id);
-    const planner=run.plan?.planner as {summary?:string;steps?:string[]}|undefined;
-    const status=run.status==="awaiting_approval"?"等待人工审批":run.status==="planned"?"等待补充执行条件":run.status==="failed"?"执行失败":"已进入统一任务执行中心";
-    const detail=[planner?.summary??run.message??"小雅已接收任务。",status,"任务编号："+(run.taskCode??run.id),...(planner?.steps??[]).map((s,i)=>(i+1)+". "+s)].join("\n");
-    setMessages(old=>[...old,{id:Date.now()+2,role:"assistant",content:detail,kind:"result"}]);await saveAssistantMessage(detail,{kind:"result",runId:run.id});
-   }
-   setShowPlan(false);
-  }catch(error){setMessages(old=>[...old,{id:Date.now()+3,role:"assistant",content:error instanceof Error?error.message:"任务提交失败。",kind:"result"}]);}
-  finally{setBusy(false);}
- }
- return <div className="tp-agent-workspace-layout">
-  <Card className="tp-agent-workspace-chat">
-   <div className="grid w-full min-w-0 grid-cols-1 gap-3 border-b bg-card px-3 py-3 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center sm:px-5 sm:py-4"><div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto sm:shrink-0"><Button size="sm" variant="outline" onClick={()=>void startNewChat()} disabled={busy}><MessageSquarePlus className="mr-1 h-4 w-4"/>新建聊天</Button><Button size="sm" variant="outline" onClick={()=>setShowHistory(v=>!v)}><History className="mr-1 h-4 w-4"/>历史记录</Button></div><div className="grid w-full min-w-0 grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-3"><AgentOrbIcon className="h-11 w-11 shrink-0" sizePx={44} state={busy?"working":"happy"}/><div className="min-w-0 flex-1"><p className="truncate font-semibold">小雅 <span className="cds--type-helper-text-01 font-normal text-muted-foreground">TradePilot 总协调 Agent</span></p><p className="cds--type-helper-text-01 text-muted-foreground">多轮对话 · 任务理解 · Agent 调度</p></div><Badge variant="success" className="shrink-0">在线</Badge></div></div>
-   {showHistory&&<div className="max-h-64 overflow-y-auto border-b bg-card p-3"><div className="mb-2 flex items-center justify-between"><p className="cds--type-body-compact-01 font-semibold">历史聊天</p><Button size="sm" variant="ghost" onClick={()=>setShowHistory(false)}>收起</Button></div>{historyLoading?<p className="p-3 cds--type-helper-text-01 text-muted-foreground">正在读取历史记录…</p>:conversations.length===0?<p className="p-3 cds--type-helper-text-01 text-muted-foreground">暂无历史聊天</p>:<div className="space-y-1">{conversations.map(item=><Button key={item.id} type="button" size="sm" variant="ghost" onClick={()=>void openConversation(item.id)} className={`w-full justify-start text-left ${conversationId===item.id?"bg-muted font-medium":""}`}><span className="block truncate">{item.title||"新聊天"}</span><span className="cds--type-helper-text-01 text-muted-foreground">{new Date(item.last_message_at).toLocaleString()}</span></Button>)}</div>}</div>}
-   <CardContent className="tp-agent-workspace-messages flex min-w-0 flex-1 flex-col gap-4 overflow-x-hidden overflow-y-auto p-3 sm:p-4 md:p-6">
-    {messages.map(m=><div key={m.id} className={m.role==="user"?"ml-auto max-w-[88%]":"mr-auto max-w-[94%]"}>
-     <div className="mb-1 flex items-center gap-2 cds--type-helper-text-01 text-muted-foreground">{m.role==="assistant"?<><Bot className="h-3.5 w-3.5"/>小雅</>:"你"}{m.kind==="progress"&&<Badge>处理中</Badge>}{m.kind==="result"&&<Badge variant="success">任务反馈</Badge>}</div>
-     <div className={m.role==="user"?"tp-agent-message-bubble tp-agent-message-bubble--user":"tp-agent-message-bubble tp-agent-message-bubble--assistant"}>{m.content}{m.records&&m.records.length>0&&<div className="tp-agent-results-preview mt-4 overflow-hidden text-foreground"><div className="tp-agent-results-heading flex flex-wrap items-center justify-between gap-2 px-3 py-2"><p className="cds--type-helper-text-01 font-semibold">本次发现明细 · {m.records.length} 条</p><Button size="sm" variant="outline" onClick={()=>{window.location.href="/lead-discovery/results?runId="+encodeURIComponent(m.runId??"");}}>打开完整结果</Button></div><div className="grid gap-2 p-2 md:hidden">{m.records.map(record=><article key={record.id} className="tp-agent-result-record min-w-0 p-3"><div className="flex min-w-0 items-start justify-between gap-2"><div className="min-w-0"><p className="break-words cds--type-body-compact-01 font-semibold">{record.name||"未命名记录"}</p>{record.website?<CarbonLink href={record.website} target="_blank" rel="noreferrer" className="mt-1 block break-all">{record.website}</CarbonLink>:<p className="mt-1 cds--type-helper-text-01 text-muted-foreground">未发现官网</p>}</div><Badge variant="outline" className="shrink-0">{record.country_code??"未知国家"}</Badge></div><div className="tp-agent-result-fields mt-3 grid gap-2 cds--type-body-compact-01"><div><p className="text-muted-foreground">业务类型</p><p className="break-words">{record.business_type??record.record_type??"—"}</p></div>{record.address&&<div><p className="text-muted-foreground">地址</p><p className="break-words">{record.address}</p></div>}<div><p className="text-muted-foreground">联系方式</p>{record.phone?<CarbonLink href={"tel:"+record.phone} className="block break-all">{record.phone}</CarbonLink>:null}{record.email?<CarbonLink href={"mailto:"+record.email} className="block break-all">{record.email}</CarbonLink>:null}{!record.phone&&!record.email&&<p>未采集</p>}</div><div><p className="text-muted-foreground">发现来源</p><p className="break-words">{[...new Set((record.sources??[]).map(source=>source.provider).filter(Boolean))].join("、")||record.channel||"—"}</p>{record.sources?.[0]?.source_url&&<CarbonLink href={record.sources[0].source_url} target="_blank" rel="noreferrer" className="mt-1 inline-block break-all">打开来源页面</CarbonLink>}</div></div><Accordion size="sm"><AccordionItem title="查看完整字段"><pre className="max-h-64 overflow-auto whitespace-pre-wrap break-all">{JSON.stringify({address:record.address,raw_data:record.raw_data,sources:record.sources},null,2)}</pre></AccordionItem></Accordion></article>)}</div><div className="hidden max-h-[440px] overflow-auto md:block"><CarbonTable className="w-full min-w-[760px]"><CarbonTableHead><CarbonTableRow><CarbonTableHeader>企业 / 网站</CarbonTableHeader><CarbonTableHeader>国家</CarbonTableHeader><CarbonTableHeader>业务</CarbonTableHeader><CarbonTableHeader>联系方式</CarbonTableHeader><CarbonTableHeader>发现来源</CarbonTableHeader></CarbonTableRow></CarbonTableHead><CarbonTableBody>{m.records.map(record=><CarbonTableRow key={record.id} className="border-t align-top"><CarbonTableCell><p className="font-medium">{record.name||"未命名记录"}</p>{record.website?<CarbonLink href={record.website} target="_blank" rel="noreferrer" className="mt-1 block break-all">{record.website}</CarbonLink>:<span className="text-muted-foreground">未发现官网</span>}<Accordion size="sm"><AccordionItem title="完整字段"><pre className="max-w-[300px] whitespace-pre-wrap break-all">{JSON.stringify({address:record.address,raw_data:record.raw_data,sources:record.sources},null,2)}</pre></AccordionItem></Accordion></CarbonTableCell><CarbonTableCell>{record.country_code??"—"}{record.address&&<p className="mt-1 max-w-[160px] text-muted-foreground">{record.address}</p>}</CarbonTableCell><CarbonTableCell>{record.business_type??record.record_type??"—"}</CarbonTableCell><CarbonTableCell>{record.phone&&<p>{record.phone}</p>}{record.email&&<p className="break-all">{record.email}</p>}{!record.phone&&!record.email&&<span className="text-muted-foreground">未采集</span>}</CarbonTableCell><CarbonTableCell>{[...new Set((record.sources??[]).map(source=>source.provider).filter(Boolean))].join("、")||record.channel||"—"}{record.sources?.[0]?.source_url&&<CarbonLink href={record.sources[0].source_url} target="_blank" rel="noreferrer" className="mt-1 block">来源页面</CarbonLink>}</CarbonTableCell></CarbonTableRow>)}</CarbonTableBody></CarbonTable></div></div>}{m.records&&m.records.length===0&&m.kind==="result"&&<p className="mt-2 cds--type-helper-text-01 text-muted-foreground">本次任务没有关联到可展示的客户明细。请检查搜索归档记录，不会把统计数字冒充为客户清单。</p>}</div>
-    </div>)}
-    {showPlan&&<div className="mr-auto w-full max-w-[94%]"><Card className="tp-agent-task-confirmation"><CardContent className="space-y-4 p-4">
-     <div className="flex items-center justify-between"><p className="font-semibold">任务确认卡片</p><Badge>待你确认</Badge></div>
-     <div className="tp-agent-task-goal"><p className="cds--type-label-01">任务目标</p><p className="cds--type-body-compact-01">{planGoal}</p></div>
-     <div className="tp-agent-workspace-choice"><RadioButtonGroup legendText="执行 Agent" name="agent-workspace-agent" value={selectedAgent} onChange={(value)=>setSelectedAgent(String(value))} orientation="vertical">{agents.map(a=><RadioButton key={a.id} id={`agent-workspace-${a.id}`} value={a.id} labelText={a.name}/>)}</RadioButtonGroup></div>
-     <div className="grid gap-3 sm:grid-cols-2"><label className="space-y-1 cds--type-helper-text-01 text-muted-foreground">目标国家 / 市场代码<Input value={country} onChange={e=>setCountry(e.target.value.toUpperCase())} maxLength={2} placeholder="US"/></label><div className="tp-agent-workspace-choice"><RadioButtonGroup legendText="执行方式" name="agent-workspace-mode" value={mode} onChange={(value)=>setMode(value as "planner"|"internal"|"external")} orientation="vertical"><RadioButton id="agent-workspace-mode-planner" value="planner" labelText="小雅规划"/><RadioButton id="agent-workspace-mode-internal" value="internal" labelText="内置搜索"/><RadioButton id="agent-workspace-mode-external" value="external" labelText="外部工具"/></RadioButtonGroup></div></div>
-     {mode==="external"&&<div className="space-y-2"><label className="block space-y-1 cds--type-helper-text-01 text-muted-foreground">外部 Agent<Combobox value={connectionId} onValueChange={value=>{setConnectionId(value);setToolName("");}} placeholder="选择已连接 Agent" options={[{value:"",label:"选择已连接 Agent"},...activeConnections.map(c=>({value:c.id,label:c.name}))]}/></label><label className="block space-y-1 cds--type-helper-text-01 text-muted-foreground">工具<Combobox value={toolName} onValueChange={setToolName} placeholder="选择工具" options={[{value:"",label:"选择工具"},...tools.map(t=>({value:t.name,label:t.name,description:t.risk==="read_only"?"自动执行":"需审批"}))]}/></label>{chosenTool&&<p className="cds--type-helper-text-01 text-muted-foreground">{chosenTool.description}</p>}<label className="block space-y-1 cds--type-helper-text-01 text-muted-foreground">工具参数 JSON<Textarea value={argsJson} onChange={e=>setArgsJson(e.target.value)} rows={3} className="font-mono cds--type-helper-text-01"/></label></div>}
-     <div className="flex flex-wrap justify-end gap-2"><Button variant="outline" size="sm" onClick={()=>setShowPlan(false)}>取消</Button><Button size="sm" disabled={busy||(mode!=="external"&&!/^[A-Z]{2}$/.test(country))||(mode==="external"&&(!connectionId||!toolName))} onClick={()=>void confirmTask()}>{busy?"正在提交…":"确认并启动任务"} <ArrowUp className="ml-1 h-4 w-4"/></Button></div>
-    </CardContent></Card></div>}
-   </CardContent>
-   <div className="tp-agent-workspace-composer p-3 md:p-4"><div className="mb-2 flex flex-wrap items-center gap-2"><span className="cds--type-helper-text-01 text-muted-foreground">快速指定：</span>{agents.slice(1).map(a=><Button key={a.id} size="sm" variant="outline"  onClick={()=>setDraft(v=>(v? v+" ":"")+"@"+a.name+" ")}>@{a.name}</Button>)}</div><div className="flex items-end gap-2"><Textarea value={draft} onChange={e=>setDraft(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage();}}} placeholder="告诉小雅你的目标… 输入 @ 选择专业 Agent，Enter 发送" rows={2} className="flex-1"/><Button size="icon" disabled={!draft.trim()||busy} onClick={sendMessage}><ArrowUp className="h-4 w-4"/></Button></div><p className="mt-2 cds--type-helper-text-01 text-muted-foreground">{busy?"正在等待小雅响应 · "+chatWaitSeconds+" 秒。超过 55 秒会自动结束并显示错误。":"小雅会结合上下文理解需求并生成任务建议；只有你确认后才会启动执行。"}邮件发送、批量导入等操作仍需人工审批。</p></div>
-  </Card>
-  <aside className="space-y-3"><Card><CardContent className="space-y-3 p-4"><div className="flex items-center gap-2"><Globe2 className="h-4 w-4"/><p className="cds--type-body-compact-01 font-semibold">当前工作区</p></div><div><p className="cds--type-helper-text-01 text-muted-foreground">默认协调者</p><p className="cds--type-body-compact-01 font-medium">小雅</p></div><div><p className="cds--type-helper-text-01 text-muted-foreground">已连接外部 Agent</p><p className="cds--type-body-compact-01 font-medium">{activeConnections.length} 个</p></div><div><p className="cds--type-helper-text-01 text-muted-foreground">执行模式</p><p className="cds--type-body-compact-01 font-medium">{mode==="planner"?"AI 自动规划":mode==="internal"?"内置搜索":"外部工具"}</p></div></CardContent></Card><Card><CardContent className="space-y-3 p-4"><p className="cds--type-body-compact-01 font-semibold">安全执行策略</p><div className="flex items-center justify-between cds--type-helper-text-01"><span>搜索与分析</span><Badge variant="success">自动执行</Badge></div><div className="flex items-center justify-between cds--type-helper-text-01"><span>邮件 / 批量导入</span><Badge>人工审批</Badge></div><p className="cds--type-helper-text-01 text-muted-foreground">每次任务都会进入统一任务执行中心，审批和执行记录保留在原有模块。</p></CardContent></Card><Card><CardContent className="space-y-2 p-4"><div className="flex items-center gap-2"><Wrench className="h-4 w-4"/><p className="cds--type-body-compact-01 font-semibold">可用工具</p></div><p className="cds--type-helper-text-01 text-muted-foreground">内置 Agent、REST API、MCP 与 Webhook 接入共用同一工作台。</p><div className="flex items-center gap-2 cds--type-helper-text-01"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-600"/>任务需确认后启动</div><div className="flex items-center gap-2 cds--type-helper-text-01"><Clock3 className="h-3.5 w-3.5"/>对话上下文持续保存</div></CardContent></Card></aside>
- </div>;
+  }
+
+  async function startNewChat() {
+    if (busy) return;
+    try {
+      const row = await agentApi.createConversation("新聊天");
+      setConversations((old) => [row, ...old]);
+      setConversationId(row.id);
+      setMessages([welcome]);
+      setDraft("");
+      setShowPlan(false);
+      setPlanGoal("");
+      setActiveRunId(null);
+      setShowHistory(false);
+    } catch (error) {
+      onNotice(error instanceof Error ? error.message : "新建聊天失败。");
+    }
+  }
+
+  async function saveAssistantMessage(content: string, metadata: Record<string, unknown> = {}) {
+    if (!conversationId) return;
+    try {
+      await agentApi.saveConversationMessage(conversationId, { role: "assistant", content, metadata });
+    } catch (error) {
+      onNotice(error instanceof Error ? error.message : "保存聊天记录失败。");
+    }
+  }
+
+  async function sendMessage() {
+    const text = draft.trim();
+    if (!text || busy) return;
+    setDraft("");
+    setBusy(true);
+    setNotice(undefined);
+    setMessages((old) => [...old, { id: Date.now(), role: "user", content: text }, { id: Date.now() + 1, role: "assistant", content: "小雅正在理解你的需求…", kind: "progress" }]);
+    try {
+      const response = await agentApi.chat(text, conversationId);
+      setConversationId(response.conversationId);
+      setConversations((old) => [{ id: response.conversationId, title: text.slice(0, 100), last_message_at: new Date().toISOString(), created_at: old.find((item) => item.id === response.conversationId)?.created_at ?? new Date().toISOString() }, ...old.filter((item) => item.id !== response.conversationId)]);
+      setMessages((old) => [...old.filter((item) => !(item.kind === "progress" && item.content === "小雅正在理解你的需求…")), { id: Date.now() + 2, role: "assistant", content: response.reply }]);
+      if (response.task) {
+        setPlanGoal(response.task.goal);
+        setSelectedAgent(response.task.agentKey);
+        setCountry(response.task.country);
+        setMode(response.task.mode);
+        setShowPlan(true);
+      }
+    } catch (error) {
+      setMessages((old) => [...old.filter((item) => !(item.kind === "progress" && item.content === "小雅正在理解你的需求…")), { id: Date.now() + 3, role: "assistant", content: error instanceof Error ? error.message : "小雅暂时无法回复，请稍后重试。", kind: "result" }]);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function confirmTask() {
+    if (!planGoal.trim() || busy) return;
+    setBusy(true);
+    setNotice(undefined);
+    setMessages((old) => [...old, { id: Date.now(), role: "assistant", content: "小雅正在提交任务，稍后会在这里反馈状态…", kind: "progress" }]);
+    try {
+      if (mode === "external") {
+        if (!selectedConnection || !toolName) throw new Error("请先选择已连接的外部 Agent 和工具。");
+        let args: Record<string, unknown>;
+        try {
+          const parsed = JSON.parse(argsJson);
+          if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error();
+          args = parsed as Record<string, unknown>;
+        } catch { throw new Error("工具参数必须是有效 JSON 对象。"); }
+        const run = await agentApi.createRun(planGoal);
+        const result = await agentApi.invokeConnection(selectedConnection.id, run.id, toolName, args);
+        const message = result.status === "awaiting_approval" ? "任务已提交审批中心。批准后才会执行外部写操作。" : result.status === "succeeded" ? "外部工具已执行，结果已写入执行记录。" : "外部工具状态：" + result.status;
+        setMessages((old) => [...old, { id: Date.now() + 2, role: "assistant", content: message, kind: "result" }]);
+        await saveAssistantMessage(message, { kind: "result" });
+      } else {
+        const run = await agentApi.createRun(planGoal, {
+          mode: mode === "planner" ? "planner" : "internal_discovery",
+          country: country.toUpperCase(),
+          searchEngine: "serper",
+          limitPerCountry: 50,
+          ...(selectedAgent !== "auto" ? { agentKey: selectedAgent } : {}),
+        });
+        if (["queued", "running"].includes(run.status)) setActiveRunId(run.id);
+        const planner = run.plan?.planner as { summary?: string; steps?: string[] } | undefined;
+        const status = run.status === "awaiting_approval" ? "等待人工审批" : run.status === "planned" ? "等待补充执行条件" : run.status === "failed" ? "执行失败" : "已进入统一任务执行中心";
+        const detail = [planner?.summary ?? run.message ?? "小雅已接收任务。", status, "任务编号：" + (run.taskCode ?? run.id), ...(planner?.steps ?? []).map((step, index) => (index + 1) + ". " + step)].join("\n");
+        setMessages((old) => [...old, { id: Date.now() + 2, role: "assistant", content: detail, kind: "result" }]);
+        await saveAssistantMessage(detail, { kind: "result", runId: run.id });
+      }
+      setShowPlan(false);
+    } catch (error) {
+      setMessages((old) => [...old, { id: Date.now() + 3, role: "assistant", content: error instanceof Error ? error.message : "任务提交失败。", kind: "result" }]);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const agentItems = agentOptions.map((item) => ({ id: item.id, text: item.name }));
+  const connectionItems = activeConnections.map((item) => ({ id: item.id, text: item.name }));
+  const toolItems = availableTools.map((item) => ({ id: item.name, text: item.name }));
+  return (
+    <Stack gap={5} className="tp-agent-workspace">
+      <Grid fullWidth>
+        <Column sm={4} md={8} lg={11}>
+          <Tile className="tp-agent-workspace__chat">
+            <Stack gap={0}>
+              <Layer className="tp-agent-workspace__toolbar">
+                <Stack orientation="horizontal" gap={3} className="tp-agent-workspace__toolbar-actions">
+                  <Button kind="tertiary" size="sm" renderIcon={Chat} disabled={busy} onClick={() => void startNewChat()}>新建聊天</Button>
+                  <Button kind="tertiary" size="sm" renderIcon={History} onClick={() => setShowHistory((value) => !value)}>历史记录</Button>
+                </Stack>
+                <div className="tp-agent-workspace__identity">
+                  <AgentOrbIcon className="tp-agent-workspace__avatar" sizePx={44} state={busy ? "working" : "happy"} />
+                  <div className="tp-agent-workspace__identity-copy">
+                    <p className="cds--type-heading-compact-01">小雅 <span className="cds--type-helper-text-01">TradePilot 总协调 Agent</span></p>
+                    <p className="cds--type-helper-text-01">多轮对话 · 任务理解 · Agent 调度</p>
+                  </div>
+                  <Tag type="green" size="sm">在线</Tag>
+                </div>
+              </Layer>
+              {showHistory && (
+                <Layer className="tp-agent-workspace__history">
+                  <Stack gap={3}>
+                    <div className="tp-agent-workspace__section-heading">
+                      <h3 className="cds--type-heading-compact-01">历史聊天</h3>
+                      <Button kind="ghost" size="sm" onClick={() => setShowHistory(false)}>收起</Button>
+                    </div>
+                    {historyLoading ? <Loading withOverlay={false} small description="正在读取历史记录" /> : conversations.length === 0 ? <p className="cds--type-body-compact-01">暂无历史聊天</p> : (
+                      <Stack gap={1}>
+                        {conversations.map((item) => (
+                          <Button key={item.id} kind={conversationId === item.id ? "tertiary" : "ghost"} size="sm" className="tp-agent-workspace__history-item" onClick={() => void openConversation(item.id)}>
+                            <span>{item.title || "新聊天"}</span>
+                            <span className="cds--type-helper-text-01">{new Date(item.last_message_at).toLocaleString()}</span>
+                          </Button>
+                        ))}
+                      </Stack>
+                    )}
+                  </Stack>
+                </Layer>
+              )}
+              <div className="tp-agent-workspace__messages" aria-live="polite">
+                {messages.map((message) => (
+                  <div key={message.id} className={message.role === "user" ? "tp-agent-workspace__message tp-agent-workspace__message--user" : "tp-agent-workspace__message"}>
+                    <div className="tp-agent-workspace__message-meta">
+                      {message.role === "assistant" ? <><Bot size={16} />小雅</> : "你"}
+                      {message.kind === "progress" && <Tag type="blue" size="sm">处理中</Tag>}
+                      {message.kind === "result" && <Tag type="green" size="sm">任务反馈</Tag>}
+                    </div>
+                    <Layer className="tp-agent-workspace__message-content">
+                      <p className="cds--type-body-compact-01">{message.content}</p>
+                      {message.records && message.records.length > 0 && (
+                        <div className="tp-agent-workspace__results">
+                          <div className="tp-agent-workspace__section-heading">
+                            <p className="cds--type-label-01">本次发现明细 · {message.records.length} 条</p>
+                            <Button kind="tertiary" size="sm" onClick={() => { window.location.href = "/lead-discovery/results?runId=" + encodeURIComponent(message.runId ?? ""); }}>打开完整结果</Button>
+                          </div>
+                          <div className="tp-agent-workspace__table-scroll">
+                            <Table size="sm">
+                              <TableHead>
+                                <TableRow>
+                                  <TableHeader>企业 / 网站</TableHeader>
+                                  <TableHeader>国家</TableHeader>
+                                  <TableHeader>业务</TableHeader>
+                                  <TableHeader>联系方式</TableHeader>
+                                  <TableHeader>发现来源</TableHeader>
+                                </TableRow>
+                              </TableHead>
+                              <TableBody>
+                                {message.records.map((record) => (
+                                  <TableRow key={record.id}>
+                                    <TableCell>
+                                      <strong>{record.name || "未命名记录"}</strong>
+                                      {record.website ? <p><a href={record.website} target="_blank" rel="noreferrer">{record.website}</a></p> : <p>未发现官网</p>}
+                                      <Accordion size="sm"><AccordionItem title="完整字段"><pre>{JSON.stringify({ address: record.address, raw_data: record.raw_data, sources: record.sources }, null, 2)}</pre></AccordionItem></Accordion>
+                                    </TableCell>
+                                    <TableCell>{record.country_code ?? "—"}</TableCell>
+                                    <TableCell>{record.business_type ?? record.record_type ?? "—"}</TableCell>
+                                    <TableCell>{record.phone && <p>{record.phone}</p>}{record.email && <p>{record.email}</p>}{!record.phone && !record.email && "未采集"}</TableCell>
+                                    <TableCell>{[...new Set((record.sources ?? []).map((source) => source.provider).filter(Boolean))].join("、") || record.channel || "—"}</TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </div>
+                      )}
+                    </Layer>
+                  </div>
+                ))}
+              </div>
+              {showPlan && (
+                <Layer className="tp-agent-workspace__plan">
+                  <Stack gap={4}>
+                    <div className="tp-agent-workspace__section-heading">
+                      <h3 className="cds--type-heading-compact-01">任务确认</h3>
+                      <Tag type="blue">待你确认</Tag>
+                    </div>
+                    <div className="tp-agent-workspace__goal">
+                      <p className="cds--type-label-01">任务目标</p>
+                      <p className="cds--type-body-compact-01">{planGoal}</p>
+                    </div>
+                    <Grid>
+                      <Column sm={4} md={4} lg={8}>
+                        <ComboBox
+                          id="agent-workspace-agent"
+                          titleText="执行 Agent"
+                          items={agentItems}
+                          itemToString={(item) => item?.text ?? ""}
+                          selectedItem={agentItems.find((item) => item.id === selectedAgent) ?? null}
+                          onChange={({ selectedItem }) => setSelectedAgent(selectedItem?.id ?? "auto")}
+                        />
+                      </Column>
+                      <Column sm={4} md={4} lg={4}>
+                        <TextInput id="agent-workspace-country" labelText="目标国家 / 市场代码" value={country} maxLength={2} onChange={(event) => setCountry(event.target.value.toUpperCase())} />
+                      </Column>
+                    </Grid>
+                    <RadioButtonGroup legendText="执行方式" name="agent-workspace-mode" value={mode} onChange={(value) => setMode(String(value) as "planner" | "internal" | "external")} orientation="vertical">
+                      <RadioButton id="agent-workspace-mode-planner" value="planner" labelText="小雅规划" />
+                      <RadioButton id="agent-workspace-mode-internal" value="internal" labelText="内置搜索" />
+                      <RadioButton id="agent-workspace-mode-external" value="external" labelText="外部工具" />
+                    </RadioButtonGroup>
+                    {mode === "external" && (
+                      <Stack gap={3}>
+                        <ComboBox id="agent-workspace-connection" titleText="外部 Agent" items={connectionItems} itemToString={(item) => item?.text ?? ""} selectedItem={connectionItems.find((item) => item.id === connectionId) ?? null} onChange={({ selectedItem }) => { setConnectionId(selectedItem?.id ?? ""); setToolName(""); }} />
+                        <ComboBox id="agent-workspace-tool" titleText="工具" items={toolItems} itemToString={(item) => item?.text ?? ""} selectedItem={toolItems.find((item) => item.id === toolName) ?? null} onChange={({ selectedItem }) => setToolName(selectedItem?.id ?? "")} />
+                        <TextArea id="agent-workspace-args" labelText="工具参数 JSON" value={argsJson} rows={4} onChange={(event) => setArgsJson(event.target.value)} />
+                      </Stack>
+                    )}
+                    <div className="tp-agent-workspace__actions">
+                      <Button kind="tertiary" onClick={() => setShowPlan(false)}>取消</Button>
+                      <Button renderIcon={ArrowUp} disabled={busy || (mode !== "external" && !/^[A-Z]{2}$/.test(country)) || (mode === "external" && (!connectionId || !toolName))} onClick={() => void confirmTask()}>{busy ? "正在提交…" : "确认并启动任务"}</Button>
+                    </div>
+                  </Stack>
+                </Layer>
+              )}
+              <Layer className="tp-agent-workspace__composer">
+                <Stack gap={3}>
+                  <div className="tp-agent-workspace__quick-actions">
+                    <span className="cds--type-helper-text-01">快速指定：</span>
+                    {agentOptions.slice(1).map((agent) => <Button key={agent.id} kind="ghost" size="sm" onClick={() => setDraft((value) => (value ? value + " " : "") + "@" + agent.name + " ")}>@{agent.name}</Button>)}
+                  </div>
+                  <div className="tp-agent-workspace__compose-row">
+                    <TextArea id="agent-workspace-message" labelText="发送消息给小雅" hideLabel rows={2} value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void sendMessage(); } }} placeholder="告诉小雅你的目标… 输入 @ 指定专业 Agent，Enter 发送" />
+                    <Button hasIconOnly iconDescription="发送消息" renderIcon={ArrowUp} disabled={!draft.trim() || busy} onClick={() => void sendMessage()} />
+                  </div>
+                  <p className="cds--type-helper-text-01">{busy ? "小雅正在处理 · " + waitSeconds + " 秒" : "小雅会先整理任务建议；只有你确认后才会启动执行。邮件发送、批量导入等操作仍需人工审批。"}</p>
+                </Stack>
+              </Layer>
+            </Stack>
+          </Tile>
+        </Column>
+        <Column sm={4} md={8} lg={5}>
+          <Stack gap={4}>
+            <Tile className="tp-agent-workspace__side-tile">
+              <Stack gap={3}>
+                <div className="tp-agent-workspace__side-heading"><Earth size={18} /><h3 className="cds--type-heading-compact-01">当前工作区</h3></div>
+                <div><p className="cds--type-helper-text-01">默认协调者</p><p className="cds--type-body-compact-01">小雅</p></div>
+                <div><p className="cds--type-helper-text-01">已连接外部 Agent</p><p className="cds--type-body-compact-01">{activeConnections.length} 个</p></div>
+                <div><p className="cds--type-helper-text-01">执行模式</p><p className="cds--type-body-compact-01">{mode === "planner" ? "AI 自动规划" : mode === "internal" ? "内置搜索" : "外部工具"}</p></div>
+              </Stack>
+            </Tile>
+            <Tile className="tp-agent-workspace__side-tile">
+              <Stack gap={3}>
+                <h3 className="cds--type-heading-compact-01">安全执行策略</h3>
+                <div className="tp-agent-workspace__policy-row"><span className="cds--type-body-compact-01">搜索与分析</span><Tag type="green">自动执行</Tag></div>
+                <div className="tp-agent-workspace__policy-row"><span className="cds--type-body-compact-01">邮件 / 批量导入</span><Tag type="gray">人工审批</Tag></div>
+                <p className="cds--type-helper-text-01">任务进入统一任务执行中心；审批和执行记录保留在原有模块。</p>
+              </Stack>
+            </Tile>
+            <Tile className="tp-agent-workspace__side-tile">
+              <Stack gap={3}>
+                <div className="tp-agent-workspace__side-heading"><Tools size={18} /><h3 className="cds--type-heading-compact-01">可用工具</h3></div>
+                <p className="cds--type-body-compact-01">内置 Agent、REST API、MCP 与 Webhook 接入共用同一工作台。</p>
+                <div className="tp-agent-workspace__policy-row"><span className="cds--type-body-compact-01">任务需确认后启动</span><CheckmarkFilled size={16} /></div>
+                <div className="tp-agent-workspace__policy-row"><span className="cds--type-body-compact-01">对话上下文持续保存</span><Clock size={16} /></div>
+              </Stack>
+            </Tile>
+          </Stack>
+        </Column>
+      </Grid>
+      {notice && <InlineNotification kind={notice.kind} title={notice.title} subtitle={notice.subtitle} lowContrast hideCloseButton />}
+    </Stack>
+  );
 }
