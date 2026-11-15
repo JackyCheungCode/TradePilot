@@ -8,6 +8,6 @@ export function PageHeader({ breadcrumbs = [], title, actions, className }: Page
       const isCurrentPage = index === breadcrumbs.length - 1;
       return <BreadcrumbItem key={item.label + "-" + index} href={isCurrentPage ? undefined : item.href} isCurrentPage={isCurrentPage}>{item.label}</BreadcrumbItem>;
     })}</Breadcrumb> : null}
-    <Heading className="cds--type-productive-heading-04">{title}</Heading>
+    <Heading className="cds--type-heading-04">{title}</Heading>
   </Stack>{actions ? <div>{actions}</div> : null}</Stack></Section>;
 }
