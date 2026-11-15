@@ -167,7 +167,9 @@
   background: var(--cds-background, #f4f4f4);
 }
 
-.tp-page-root--grid-owned {
+/* Two classes make this page-level reset win over the shared .tp-page-root
+   rule regardless of which feature stylesheet Vite emits later. */
+.tp-page-root.tp-page-root--grid-owned {
   padding: 0;
 }
 
