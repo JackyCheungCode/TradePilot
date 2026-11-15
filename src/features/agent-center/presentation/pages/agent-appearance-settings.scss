@@ -125,16 +125,26 @@
   }
 }
 
-@media (max-width: 671px) {
+@media (max-width: 767px) {
   .tp-agent-appearance-page {
-    /* The shared page root already supplies the mobile 16px gutter.
-       Remove this page's second horizontal gutter to recover usable width. */
+    /* AppShell's shared .tp-page-root owns the 16px mobile safe gutter.
+       Do not add a second page-level horizontal gutter here. */
     padding-block: var(--cds-spacing-05);
     padding-inline: 0;
   }
 
   .tp-agent-appearance-grid {
     row-gap: var(--cds-spacing-04);
+    /* Carbon Grid and Column gutters compound the shared page gutter on
+       this single-column mobile layout. Keep the outer 16px gutter and
+       remove only these page-specific horizontal grid gutters. */
+    padding-inline: 0;
+    margin-inline: 0;
+  }
+
+  .tp-agent-appearance-grid > .tp-agent-appearance-preview-column,
+  .tp-agent-appearance-grid > .tp-agent-appearance-editor-column {
+    padding-inline: 0;
   }
 
   .tp-agent-appearance-tile,
