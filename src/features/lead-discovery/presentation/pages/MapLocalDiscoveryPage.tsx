@@ -443,6 +443,11 @@ export function MapLocalDiscoveryPage() {
             </Layer>
 
 
+<Layer>
+              <Tile>
+                <Stack gap={5}>
+                  <Grid narrow>
+                    <Column sm={4} md={8} lg={8}>
                 <NumberInput
                   id="map-discovery-limit"
                   label="每个目标市场最多处理数量"
@@ -460,6 +465,11 @@ export function MapLocalDiscoveryPage() {
                 >
                   {starting ? "正在创建任务…" : running ? "任务执行中" : "开始发现潜在客户"}
                 </Button>
+                    </Column>
+                  </Grid>
+                </Stack>
+              </Tile>
+            </Layer>
             </Stack>
           </Stack>
         </Column>
